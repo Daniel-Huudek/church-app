@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Church App",
+    "slug": "church-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "churchapp",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.churchapp.app" },
+    "android": { "package": "com.churchapp.app" },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "entry": "./app/_layout.tsx"
+      }
+    }
+  }
+}

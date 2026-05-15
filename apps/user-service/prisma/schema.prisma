@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id        String   @id @default(uuid())
+  userId    String @unique
+  name      String
+  email     String
+  phone     String
+  avatar    String?
+  role      Role     @default(MEMBER)
+  ministryId String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  ministry  Ministry? @relation("MinistryMembers", fields: [ministryId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  ledMinistry Ministry? @relation("MinistryLeader")
+
+  @@map("members")
+}
+
+model Ministry {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  leaderId    String @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  leader      Member   @relation("MinistryLeader", fields: [leaderId], references: [id])
+  members     Member[] @relation("MinistryMembers")
+
+  @@map("ministries")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  name        String
+  password    String?
+  avatar      String?
+  role        Role     @default(MEMBER)
+  permissions Permission[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  member      Member?
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  LEADER
+  MEMBER
+}
+
+enum Permission {
+  users_read
+  users_write
+  users_delete
+  schedules_read
+  schedules_write
+  schedules_delete
+  events_read
+  events_write
+  events_delete
+  ministries_read
+  ministries_write
+  ministries_delete
+  notifications_send
+}
