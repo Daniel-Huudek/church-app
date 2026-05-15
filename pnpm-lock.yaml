@@ -14,6 +14,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^18.6.0
         version: 18.6.3
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       husky:
         specifier: ^9.0.11
         version: 9.1.7

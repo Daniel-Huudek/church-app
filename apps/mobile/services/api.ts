@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_URL = 'http://10.0.2.2:3000';
+const getApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:3000';
+    }
+  }
+  if (__DEV__) {
+    return 'http://10.0.2.2:3000';
+  }
+  return 'http://localhost:3000';
+};
+
+const API_URL = getApiUrl();
 
 export const api = axios.create({ baseURL: API_URL });
 
