@@ -28,7 +28,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
-      data: { name, email, password: hashedPassword, role: 'MEMBER', permissions: [] },
+      data: { name, email, password: hashedPassword, role: 'MEMBRO', permissions: [] },
     });
 
     return this.generateTokens(user);
@@ -66,7 +66,7 @@ export class AuthService {
         user = await this.prisma.user.update({ where: { id: user.id }, data: { googleId: payload.sub, avatar: payload.picture } });
       } else {
         user = await this.prisma.user.create({
-          data: { email: payload.email!, name: payload.name!, googleId: payload.sub, avatar: payload.picture, role: 'MEMBER', permissions: [] },
+          data: { email: payload.email!, name: payload.name!, googleId: payload.sub, avatar: payload.picture, role: 'MEMBRO', permissions: [] },
         });
       }
     }

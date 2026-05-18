@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  type            TransactionType
+  value           Decimal           @db.Decimal(15,2)
+  description     String?
+  date            DateTime
+  dueDate         DateTime?
+  paymentDate     DateTime?
+  categoryId      String?
+  costCenterId    String?
+  createdById     String
+  createdByRole   String?
+  status          TransactionStatus @default(PENDING)
+  paymentMethod   String?
+  isRecurring     Boolean           @default(false)
+  recurrenceRule  String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  category        TransactionCategory? @relation(fields: [categoryId], references: [id])
+  costCenter      CostCenter?          @relation(fields: [costCenterId], references: [id])
+  attachments     Attachment[]
+  auditLogs       FinancialAuditLog[]
+
+  @@map("transactions")
+}
+
+model TransactionCategory {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  type        TransactionType
+  description String?
+  color       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  transactions Transaction[]
+
+  @@map("transaction_categories")
+}
+
+model CostCenter {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  description String?
+  budget      Decimal?      @db.Decimal(15,2)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  transactions Transaction[]
+
+  @@map("cost_centers")
+}
+
+model Attachment {
+  id            String         @id @default(uuid())
+  transactionId String
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  url           String
+  type          AttachmentType @default(OTHER)
+  createdAt     DateTime       @default(now())
+
+  transaction   Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+model FinancialAuditLog {
+  id            String      @id @default(uuid())
+  transactionId String
+  action        String
+  changedById   String
+  changedByRole String?
+  oldValue      Json?
+  newValue      Json?
+  createdAt     DateTime    @default(now())
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  @@map("financial_audit_logs")
+}
+
+model MonthlyClose {
+  id            String      @id @default(uuid())
+  referenceDate DateTime    @unique
+  totalIncome   Decimal     @db.Decimal(15,2)
+  totalExpense  Decimal     @db.Decimal(15,2)
+  balance       Decimal     @db.Decimal(15,2)
+  closedById    String
+  closedByRole  String?
+  closedAt      DateTime    @default(now())
+  status        CloseStatus @default(OPEN)
+  notes         String?
+  createdAt     DateTime    @default(now())
+
+  @@map("monthly_closes")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TITHE
+  OFFERING
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum AttachmentType {
+  RECEIPT
+  PROOF
+  DOCUMENT
+  OTHER
+}
+
+enum CloseStatus {
+  OPEN
+  CLOSED
+  REOPENED
+}

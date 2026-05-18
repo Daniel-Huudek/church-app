@@ -7,28 +7,34 @@ services:
       dockerfile: apps/api-gateway/Dockerfile
     container_name: church-app-api-gateway
     ports:
-      - "3000:3000"
+      - "3000"
     environment:
       - NODE_ENV=development
       - PORT=3000
       - AUTH_SERVICE_URL=http://auth-service:3001
-      - USER_SERVICE_URL=http://user-service:3002
+      - MEMBER_SERVICE_URL=http://member-service:3006
       - SCHEDULE_SERVICE_URL=http://schedule-service:3003
       - EVENT_SERVICE_URL=http://event-service:3004
       - NOTIFICATION_SERVICE_URL=http://notification-service:3005
+      - PRAYER_SERVICE_URL=http://prayer-service:3007
+      - FINANCIAL_SERVICE_URL=http://financial-service:3008
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
     depends_on:
       auth-service:
         condition: service_started
-      user-service:
+      member-service:
         condition: service_started
       schedule-service:
         condition: service_started
       event-service:
         condition: service_started
       notification-service:
+        condition: service_started
+      prayer-service:
+        condition: service_started
+      financial-service:
         condition: service_started
     networks:
       - church-app-network
@@ -44,7 +50,7 @@ services:
       dockerfile: apps/auth-service/Dockerfile
     container_name: church-app-auth-service
     ports:
-      - "3001:3001"
+      - "3001"
     environment:
       - NODE_ENV=development
       - PORT=3001
@@ -66,25 +72,25 @@ services:
       timeout: 10s
       retries: 3
 
-  user-service:
+  member-service:
     build:
       context: .
-      dockerfile: apps/user-service/Dockerfile
-    container_name: church-app-user-service
+      dockerfile: apps/member-service/Dockerfile
+    container_name: church-app-member-service
     ports:
-      - "3002:3002"
+      - "3006"
     environment:
       - NODE_ENV=development
-      - PORT=3002
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-user:5432/user_db
+      - PORT=3006
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-member:5432/member_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
-      postgres-user:
+      postgres-member:
         condition: service_healthy
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3006/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -95,7 +101,7 @@ services:
       dockerfile: apps/schedule-service/Dockerfile
     container_name: church-app-schedule-service
     ports:
-      - "3003:3003"
+      - "3003"
     environment:
       - NODE_ENV=development
       - PORT=3003
@@ -118,7 +124,7 @@ services:
       dockerfile: apps/event-service/Dockerfile
     container_name: church-app-event-service
     ports:
-      - "3004:3004"
+      - "3004"
     environment:
       - NODE_ENV=development
       - PORT=3004
@@ -141,7 +147,7 @@ services:
       dockerfile: apps/notification-service/Dockerfile
     container_name: church-app-notification-service
     ports:
-      - "3005:3005"
+      - "3005"
     environment:
       - NODE_ENV=development
       - PORT=3005
@@ -160,6 +166,52 @@ services:
       timeout: 10s
       retries: 3
 
+  prayer-service:
+    build:
+      context: .
+      dockerfile: apps/prayer-service/Dockerfile
+    container_name: church-app-prayer-service
+    ports:
+      - "3007"
+    environment:
+      - NODE_ENV=development
+      - PORT=3007
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-prayer:5432/prayer_db
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+    depends_on:
+      postgres-prayer:
+        condition: service_healthy
+    networks:
+      - church-app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  financial-service:
+    build:
+      context: .
+      dockerfile: apps/financial-service/Dockerfile
+    container_name: church-app-financial-service
+    ports:
+      - "3008"
+    environment:
+      - NODE_ENV=development
+      - PORT=3008
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-financial:5432/financial_db
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+    depends_on:
+      postgres-financial:
+        condition: service_healthy
+    networks:
+      - church-app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   postgres-auth:
     image: postgres:16-alpine
     container_name: church-app-postgres-auth
@@ -172,24 +224,24 @@ services:
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d auth_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  postgres-user:
+  postgres-member:
     image: postgres:16-alpine
-    container_name: church-app-postgres-user
+    container_name: church-app-postgres-member
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-church}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=user_db
+      - POSTGRES_DB=member_db
     volumes:
-      - postgres-user-data:/var/lib/postgresql/data
+      - postgres-member-data:/var/lib/postgresql/data
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d member_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -206,7 +258,7 @@ services:
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d schedule_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -223,7 +275,7 @@ services:
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d event_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -240,7 +292,41 @@ services:
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d notification_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-prayer:
+    image: postgres:16-alpine
+    container_name: church-app-postgres-prayer
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-church}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
+      - POSTGRES_DB=prayer_db
+    volumes:
+      - postgres-prayer-data:/var/lib/postgresql/data
+    networks:
+      - church-app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d prayer_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-financial:
+    image: postgres:16-alpine
+    container_name: church-app-postgres-financial
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-church}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
+      - POSTGRES_DB=financial_db
+    volumes:
+      - postgres-financial-data:/var/lib/postgresql/data
+    networks:
+      - church-app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d financial_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -251,7 +337,9 @@ networks:
 
 volumes:
   postgres-auth-data:
-  postgres-user-data:
+  postgres-member-data:
   postgres-schedule-data:
   postgres-event-data:
   postgres-notification-data:
+  postgres-prayer-data:
+  postgres-financial-data:

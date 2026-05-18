@@ -5,10 +5,12 @@ import rateLimit from '@fastify/rate-limit';
 import jwt from '@fastify/jwt';
 import { AppError } from './shared/index.js';
 import { authRoutes } from './routes/auth';
-import { userRoutes } from './routes/user';
+import { memberRoutes } from './routes/member';
 import { scheduleRoutes } from './routes/schedule';
 import { eventRoutes } from './routes/event';
 import { notificationRoutes } from './routes/notification';
+import { prayerRoutes } from './routes/prayer';
+import { financeRoutes } from './routes/finance';
 import { logger } from './logger';
 
 const fastify = Fastify({
@@ -48,10 +50,12 @@ async function bootstrap() {
   fastify.get('/health', async () => ({ status: 'ok', service: 'api-gateway' }));
 
   await fastify.register(authRoutes, { prefix: '/auth' });
-  await fastify.register(userRoutes, { prefix: '/users' });
+  await fastify.register(memberRoutes, { prefix: '/members' });
   await fastify.register(scheduleRoutes, { prefix: '/schedules' });
   await fastify.register(eventRoutes, { prefix: '/events' });
   await fastify.register(notificationRoutes, { prefix: '/notifications' });
+  await fastify.register(prayerRoutes, { prefix: '/prayers' });
+  await fastify.register(financeRoutes, { prefix: '/finance' });
 
   fastify.setErrorHandler((error, request, reply) => {
     logger.error('Error occurred', error, { path: request.url, method: request.method });

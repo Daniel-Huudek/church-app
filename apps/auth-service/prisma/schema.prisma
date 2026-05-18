@@ -13,7 +13,7 @@ model User {
   name          String
   password      String?
   avatar        String?
-  role          Role      @default(MEMBER)
+  role          Role      @default(MEMBRO)
   permissions   Permission[]
   googleId      String?   @unique
   createdAt     DateTime  @default(now())
@@ -51,23 +51,42 @@ model RefreshToken {
 }
 
 enum Role {
-  ADMIN
-  LEADER
-  MEMBER
+  ADMINISTRADOR
+  PASTOR
+  FINANCEIRO
+  LIDER
+  MEMBRO
 }
 
 enum Permission {
   users_read
   users_write
   users_delete
+  members_read
+  members_write
+  members_delete
+  members_export
+  members_import
+  ministries_read
+  ministries_write
+  ministries_delete
   schedules_read
   schedules_write
   schedules_delete
   events_read
   events_write
   events_delete
-  ministries_read
-  ministries_write
-  ministries_delete
+  prayers_read
+  prayers_write
+  prayers_delete
+  prayers_comment
+  prayers_react
+  finance_read
+  finance_write
+  finance_delete
+  finance_export
+  finance_audit
+  finance_close
+  finance_reports
   notifications_send
 }

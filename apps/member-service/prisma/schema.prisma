@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id              String    @id @default(uuid())
+  userId          String?   @unique
+  name            String
+  email           String?
+  phone           String?
+  avatar          String?
+  dateOfBirth     DateTime?
+  gender          String?
+  maritalStatus   String?
+  baptismDate     DateTime?
+  baptismChurch   String?
+  conversionDate  DateTime?
+  isBaptized      Boolean   @default(false)
+  status          MemberStatus @default(ATIVO)
+  role            MemberRole @default(MEMBRO)
+  ministryId      String?
+  occupation      String?
+  notes           String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  ministry        Ministry? @relation("MinistryMembers", fields: [ministryId], references: [id])
+  ledMinistry     Ministry? @relation("MinistryLeader")
+  address         Address?
+  documents       Document[]
+  familyMembers   FamilyMember[]
+  ministerialHistory MinisterialHistory[]
+  auditLogs       AuditLog[]
+
+  @@map("members")
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  memberId     String   @unique
+  street       String
+  number       String?
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  member       Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  memberId  String
+  type      String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model FamilyMember {
+  id        String   @id @default(uuid())
+  memberId  String
+  name      String
+  kinship   String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("family_members")
+}
+
+model MinisterialHistory {
+  id          String   @id @default(uuid())
+  memberId    String
+  ministry    String
+  role        String
+  startDate   DateTime
+  endDate     DateTime?
+  description String?
+  createdAt   DateTime @default(now())
+
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("ministerial_histories")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  memberId  String
+  action    String
+  changedBy String?
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime @default(now())
+
+  member    Member   @relation(fields: [memberId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Ministry {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  leaderId    String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  leader      Member   @relation("MinistryLeader", fields: [leaderId], references: [id])
+  members     Member[] @relation("MinistryMembers")
+
+  @@map("ministries")
+}
+
+enum MemberStatus {
+  ATIVO
+  INATIVO
+  AFASTADO
+  TRANSFERIDO
+  EXCLUIDO
+}
+
+enum MemberRole {
+  MEMBRO
+  DIACONO
+  PRESBITERO
+  PASTOR
+}
