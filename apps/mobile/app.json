@@ -19,7 +19,10 @@
     "extra": {
       "router": {
         "entry": "./app/_layout.tsx"
-      }
+      },
+      "googleClientId": "SEU_GOOGLE_CLIENT_ID",
+      "googleAndroidClientId": "SEU_GOOGLE_ANDROID_CLIENT_ID",
+      "googleIosClientId": "SEU_GOOGLE_IOS_CLIENT_ID"
     }
   }
 }
