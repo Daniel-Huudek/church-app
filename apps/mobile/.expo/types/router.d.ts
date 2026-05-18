@@ -7,11 +7,11 @@ declare module "expo-router" {
   export * from 'expo-router/build';
 
   // prettier-ignore
-  type StaticRoutes = `/` | `/(tabs)/calendar` | `/calendar` | `/(tabs)/` | `/(tabs)` | `/(tabs)/profile` | `/profile` | `/(tabs)/schedules` | `/schedules` | `/login`;
+  type StaticRoutes = `/` | `/(app)/(tabs)/calendar` | `/calendar` | `/(app)/(tabs)/chat/` | `/chat/` | `/(app)/(tabs)/chat` | `/(app)/(tabs)/finance/cash-flow` | `/finance/cash-flow` | `/(app)/(tabs)/finance/` | `/finance/` | `/(app)/(tabs)/finance` | `/(app)/(tabs)/finance/reports` | `/finance/reports` | `/(app)/(tabs)/finance/transactions` | `/finance/transactions` | `/(app)/(tabs)/` | `/(app)/(tabs)` | `/(app)/(tabs)/members/` | `/members/` | `/(app)/(tabs)/members` | `/(app)/(tabs)/prayers/create` | `/prayers/create` | `/(app)/(tabs)/prayers/` | `/prayers/` | `/(app)/(tabs)/prayers` | `/(app)/(tabs)/profile` | `/profile` | `/(app)/(tabs)/schedule-detail` | `/schedule-detail` | `/(app)/(tabs)/schedules` | `/schedules` | `/(app)/notifications` | `/notifications` | `/(app)/settings` | `/settings` | `/(auth)/login` | `/login` | `/(auth)/splash` | `/splash`;
   // prettier-ignore
-  type DynamicRoutes<T extends string> = never;
+  type DynamicRoutes<T extends string> = `/(app)/(tabs)/chat/${SingleRoutePart<T>}` | `/chat/${SingleRoutePart<T>}` | `/(app)/(tabs)/members/${SingleRoutePart<T>}` | `/members/${SingleRoutePart<T>}` | `/(app)/(tabs)/prayers/${SingleRoutePart<T>}` | `/prayers/${SingleRoutePart<T>}`;
   // prettier-ignore
-  type DynamicRouteTemplate = never;
+  type DynamicRouteTemplate = `/(app)/(tabs)/chat/[id]` | `/(app)/(tabs)/members/[id]` | `/(app)/(tabs)/prayers/[id]`;
 
   type RelativePathString = `./${string}` | `../${string}` | '..';
   type AbsoluteRoute = DynamicRouteTemplate | StaticRoutes;
