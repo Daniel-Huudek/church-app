@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PrayerRequest {
+  id          String   @id @default(uuid())
+  authorId    String
+  title       String
+  content     String
+  categoryId  String?
+  isPublic    Boolean  @default(true)
+  isAnonymous Boolean  @default(false)
+  isUrgent    Boolean  @default(false)
+  isAnswered  Boolean  @default(false)
+  answeredAt  DateTime?
+  answeredBy  String?
+  viewsCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  category    PrayerCategory? @relation(fields: [categoryId], references: [id])
+  comments    PrayerComment[]
+  reactions   PrayerReaction[]
+  intercessors Intercessor[]
+  favoritedBy UserFavorite[]
+
+  @@map("prayer_requests")
+}
+
+model PrayerCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String?
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prayers   PrayerRequest[]
+
+  @@map("prayer_categories")
+}
+
+model PrayerComment {
+  id        String   @id @default(uuid())
+  prayerId  String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@map("prayer_comments")
+}
+
+model PrayerReaction {
+  id        String   @id @default(uuid())
+  prayerId  String
+  userId    String
+  type      String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@unique([prayerId, userId, type])
+  @@map("prayer_reactions")
+}
+
+model Intercessor {
+  id        String   @id @default(uuid())
+  prayerId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@unique([prayerId, userId])
+  @@map("intercessors")
+}
+
+model UserFavorite {
+  id        String   @id @default(uuid())
+  prayerId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@unique([prayerId, userId])
+  @@map("user_favorites")
+}

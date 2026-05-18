@@ -21,13 +21,15 @@ Plataforma completa de gerenciamento de escalas para igrejas com arquitetura de 
 
 ```
 /apps
-  /api-gateway      - Gateway central (porta 3000)
-  /auth-service     - Autenticação (porta 3001)
-  /user-service     - Membros e ministérios (porta 3002)
-  /schedule-service - Escalas (porta 3003)
-  /event-service    - Eventos (porta 3004)
+  /api-gateway          - Gateway central (porta 3000)
+  /auth-service         - Autenticação (porta 3001)
+  /member-service       - Membros e ministérios (porta 3006)
+  /schedule-service     - Escalas (porta 3003)
+  /event-service        - Eventos (porta 3004)
   /notification-service - WhatsApp/Evolution API (porta 3005)
-  /mobile           - App Expo
+  /prayer-service       - Pedidos de oração (porta 3007)
+  /financial-service    - Gestão financeira (porta 3008)
+  /mobile               - App Expo
 
 /packages
   /shared           - Utilitários compartilhados
@@ -67,10 +69,12 @@ docker-compose up -d
 |---------|-------|-----------|
 | API Gateway | 3000 | Roteamento, auth JWT |
 | Auth Service | 3001 | Login, OAuth Google |
-| User Service | 3002 | Membros, ministérios |
 | Schedule Service | 3003 | Escalas, confirmações |
 | Event Service | 3004 | Eventos, calendário |
 | Notification Service | 3005 | WhatsApp/Evolution API |
+| Member Service | 3006 | Membros, ministérios, perfis |
+| Prayer Service | 3007 | Pedidos de oração |
+| Financial Service | 3008 | Gestão financeira com RBAC |
 
 ## Deploy
 

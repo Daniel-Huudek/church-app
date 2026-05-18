@@ -1,0 +1,23 @@
+FROM node:20-alpine
+RUN apk add --no-cache openssl
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml ./
+COPY apps/financial-service/package.json ./apps/financial-service/
+COPY packages/ ./packages/
+
+WORKDIR /app/apps/financial-service
+
+RUN npm install -g pnpm && pnpm install
+
+COPY apps/financial-service/prisma ./prisma
+COPY apps/financial-service/src ./src
+COPY apps/financial-service/package.json ./
+COPY apps/financial-service/start.sh ./
+
+RUN npx prisma generate
+RUN chmod +x start.sh
+
+EXPOSE 3008
+
+CMD ["./start.sh"]
