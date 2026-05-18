@@ -16,8 +16,7 @@ COPY apps/financial-service/package.json ./
 COPY apps/financial-service/start.sh ./
 
 RUN npx prisma generate
-RUN chmod +x start.sh
 
 EXPOSE 3008
 
-CMD ["./start.sh"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss || true && pnpm dev"]

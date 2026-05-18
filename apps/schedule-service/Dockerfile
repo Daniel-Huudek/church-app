@@ -13,11 +13,8 @@ RUN npm install -g pnpm && pnpm install
 COPY apps/schedule-service/prisma ./prisma
 COPY apps/schedule-service/src ./src
 COPY apps/schedule-service/package.json ./
-COPY apps/schedule-service/start.sh ./
-
 RUN npx prisma generate
-RUN chmod +x start.sh
 
 EXPOSE 3003
 
-CMD ["./start.sh"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss || true && pnpm dev"]

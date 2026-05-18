@@ -13,11 +13,8 @@ RUN npm install -g pnpm && pnpm install
 COPY apps/auth-service/prisma ./prisma
 COPY apps/auth-service/src ./src
 COPY apps/auth-service/package.json ./
-COPY apps/auth-service/start.sh ./
-
 RUN npx prisma generate
-RUN chmod +x start.sh
 
 EXPOSE 3001
 
-CMD ["./start.sh"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss || true && pnpm dev"]
