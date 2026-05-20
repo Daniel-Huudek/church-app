@@ -8,7 +8,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm@8 && pnpm install
 
 COPY packages/shared/src ./packages/shared/src
 COPY packages/types/src ./packages/types/src

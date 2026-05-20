@@ -9,7 +9,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm@8 && pnpm install
 
 COPY apps/prayer-service/prisma ./apps/prayer-service/prisma
 RUN cd apps/prayer-service && npx prisma generate
