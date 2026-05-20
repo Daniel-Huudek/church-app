@@ -9,7 +9,7 @@ services:
     ports:
       - "3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3000
       - AUTH_SERVICE_URL=http://auth-service:3001
       - MEMBER_SERVICE_URL=http://member-service:3006
@@ -52,7 +52,7 @@ services:
     ports:
       - "3001"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3001
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-auth:5432/auth_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
@@ -80,7 +80,7 @@ services:
     ports:
       - "3006"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3006
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-member:5432/member_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
@@ -103,7 +103,7 @@ services:
     ports:
       - "3003"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3003
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-schedule:5432/schedule_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
@@ -126,7 +126,7 @@ services:
     ports:
       - "3004"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3004
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-event:5432/event_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
@@ -149,7 +149,7 @@ services:
     ports:
       - "3005"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3005
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-notification:5432/notification_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
@@ -174,7 +174,7 @@ services:
     ports:
       - "3007"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3007
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-prayer:5432/prayer_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
@@ -197,7 +197,7 @@ services:
     ports:
       - "3008"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3008
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-financial:5432/financial_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}

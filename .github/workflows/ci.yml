@@ -54,5 +54,7 @@ jobs:
     needs: [lint, test, build]
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker images
-        run: docker-compose build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build docker-compose images
+        run: docker compose build
