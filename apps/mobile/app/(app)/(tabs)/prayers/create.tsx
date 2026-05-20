@@ -41,7 +41,6 @@ export default function CreatePrayerScreen() {
         isUrgent: false,
         isPublic: true,
       };
-      console.log('Prayer payload:', JSON.stringify(payload));
       await prayersService.create(payload as any);
       Alert.alert('✅', 'Pedido enviado com sucesso!', [
         { text: 'OK', onPress: () => router.back() }
@@ -103,8 +102,8 @@ export default function CreatePrayerScreen() {
           <Switch
             value={isAnonymous}
             onValueChange={setIsAnonymous}
-            trackColor={{ false: borderColor, true: '#8B5CF680' }}
-            thumbColor={isAnonymous ? '#8B5CF6' : textSecondary}
+            trackColor={{ false: borderColor, true: '#008CFF80' }}
+            thumbColor={isAnonymous ? '#008CFF' : textSecondary}
           />
         </View>
 
@@ -113,7 +112,7 @@ export default function CreatePrayerScreen() {
           disabled={loading || !title.trim() || !content.trim()}
           style={[
             styles.submitBtn,
-            { backgroundColor: !title.trim() || !content.trim() ? '#6B7280' : '#8B5CF6' }
+            { backgroundColor: !title.trim() || !content.trim() ? '#6B7280' : '#008CFF' }
           ]}
         >
           <Text style={styles.submitText}>

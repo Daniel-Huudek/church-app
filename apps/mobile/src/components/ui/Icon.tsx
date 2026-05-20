@@ -44,7 +44,7 @@ export function Icon({ name, size = 24, color, style, ...props }: IconProps) {
   }
 
   const icon = paths[name];
-  const fill = color ?? '#8B5CF6';
+  const fill = color ?? '#008CFF';
 
   return (
     <Svg width={size} height={size} viewBox={icon.viewBox} {...props}>

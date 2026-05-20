@@ -174,8 +174,8 @@ export default function FinanceDashboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
+            tintColor={isDark ? '#66B5FF' : '#0066CC'}
+            colors={['#0066CC']}
             progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
           />
         }
@@ -184,8 +184,8 @@ export default function FinanceDashboardScreen() {
           <View
             className="rounded-3xl p-6 mb-5 overflow-hidden"
             style={{
-              backgroundColor: isDark ? '#1A1A2E' : '#7C3AED',
-              shadowColor: isDark ? '#000' : '#7C3AED',
+              backgroundColor: isDark ? '#1A1A2E' : '#0066CC',
+              shadowColor: isDark ? '#000' : '#0066CC',
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: isDark ? 0.4 : 0.3,
               shadowRadius: 24,

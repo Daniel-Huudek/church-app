@@ -6,7 +6,7 @@ import { useAuthStore } from '../../src/store';
 function LoadingScreen() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0A0A0F' }}>
-      <ActivityIndicator size="large" color="#8B5CF6" />
+      <ActivityIndicator size="large" color="#008CFF" />
     </View>
   );
 }

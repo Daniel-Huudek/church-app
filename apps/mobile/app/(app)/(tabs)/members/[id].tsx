@@ -186,11 +186,11 @@ export default function MemberDetailScreen() {
   const canEdit = user?.id === member.id || user?.role === 'ADMINISTRADOR' || user?.role === 'PASTOR';
 
   const gradientColors: [string, string][] = [
-    ['#8B5CF6', '#EC4899'],
+    ['#008CFF', '#EC4899'],
     ['#3B82F6', '#06B6D4'],
     ['#10B981', '#34D399'],
     ['#F59E0B', '#EF4444'],
-    ['#A78BFA', '#6366F1'],
+    ['#008CFF', '#6366F1'],
   ];
   const hash = member.name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
   const [avatarGradA, avatarGradB] = gradientColors[Math.abs(hash) % gradientColors.length];

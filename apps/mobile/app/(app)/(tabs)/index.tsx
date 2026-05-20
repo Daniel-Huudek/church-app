@@ -71,8 +71,7 @@ export default function Dashboard() {
       if (prayersRes.success) {
         setPrayersCount(prayersRes.data.total);
       }
-    } catch (error) {
-      console.error('Error loading dashboard:', error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -91,7 +90,7 @@ export default function Dashboard() {
   const quickActionHandlers = {
     'nova-escala': () => router.push('/(app)/(tabs)/schedules'),
     'novo-evento': () => {},
-    'pedido-oracao': () => router.push('/(app)/(tabs)/prayers/index'),
+    'pedido-oracao': () => router.push('/(app)/(tabs)/prayers'),
     'nova-transacao': () => router.push('/(app)/(tabs)/finance/index'),
   };
 
@@ -125,8 +124,8 @@ export default function Dashboard() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
+            tintColor={isDark ? '#66B5FF' : '#0066CC'}
+            colors={['#0066CC']}
             progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
           />
         }

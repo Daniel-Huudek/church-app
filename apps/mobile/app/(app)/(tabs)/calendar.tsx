@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, SectionList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, SectionList, TouchableOpacity, RefreshControl, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '../../../src/hooks/useColorScheme';
 import { useAuth } from '../../../src/hooks/useAuth';
 import { usePermission } from '../../../src/hooks/usePermission';
@@ -51,6 +52,7 @@ export default function Calendar() {
   const router = useRouter();
   const { isDark } = useColorScheme();
   const { canCreateEvent } = usePermission();
+  const insets = useSafeAreaInsets();
   const now = new Date();
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
@@ -73,8 +75,7 @@ export default function Calendar() {
       if (response.success) {
         setEvents(response.data.data);
       }
-    } catch (error) {
-      console.error('Error loading events:', error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -169,34 +170,39 @@ export default function Calendar() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
+            tintColor={isDark ? '#66B5FF' : '#0066CC'}
+            colors={['#0066CC']}
             progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
           />
         }
       />
 
       {canCreateEvent() && (
-        <TouchableOpacity
-          onPress={() => router.push('/(app)/events/create')}
-          style={{
-            position: 'absolute',
-            right: 20,
-            bottom: 100,
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: '#8B5CF6',
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/events/create')}
+            activeOpacity={0.8}
+            style={{
+              position: 'absolute',
+              right: 20,
+              bottom: insets.bottom + 20,
+              width: 56,
+              height: 56,
+            borderRadius: 12,
+            backgroundColor: '#008CFF',
             alignItems: 'center',
             justifyContent: 'center',
-            shadowColor: '#8B5CF6',
+            shadowColor: '#008CFF',
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.4,
             shadowRadius: 8,
             elevation: 8,
           }}
         >
-          <Text style={{ fontSize: 28, color: '#FFFFFF', fontWeight: '300' }}>+</Text>
+          <Image
+            source={require('../../../assets/add.png')}
+            style={{ width: 24, height: 24 }}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       )}
     </View>

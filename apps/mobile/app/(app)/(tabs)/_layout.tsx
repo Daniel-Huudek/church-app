@@ -11,7 +11,7 @@ import { useColorScheme } from '../../../src/hooks';
 import { spacing } from '../../../src/theme';
 import { Icon, IconName } from '../../../src/components/ui';
 
-const DRAWER_WIDTH = 200;
+const DRAWER_WIDTH = 230;
 
 const menuItems = [
   { name: 'index', label: 'Dashboard', icon: '📊', permission: 'admin' },
@@ -105,7 +105,7 @@ function ProfileAvatar({ avatar, name, focused }: { avatar?: string; name?: stri
           height: size,
           borderRadius: size / 2,
           borderWidth: focused ? 0 : 1.5,
-          borderColor: '#8B5CF6',
+          borderColor: '#008CFF',
         }}
       />
     );
@@ -118,14 +118,14 @@ function ProfileAvatar({ avatar, name, focused }: { avatar?: string; name?: stri
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: focused ? '#FFFFFF' : '#8B5CF6',
+        backgroundColor: focused ? '#FFFFFF' : '#008CFF',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: focused ? 0 : 1.5,
-        borderColor: '#8B5CF6',
+        borderColor: '#008CFF',
       }}
     >
-      <Text style={{ fontSize: 16, fontWeight: '600', color: focused ? '#8B5CF6' : '#FFFFFF' }}>
+      <Text style={{ fontSize: 16, fontWeight: '600', color: focused ? '#008CFF' : '#FFFFFF' }}>
         {initial}
       </Text>
     </View>
@@ -168,7 +168,7 @@ function DrawerButton({ onPress }: { onPress: () => void }) {
           borderBottomLeftRadius: 0,
           borderTopRightRadius: 10,
           borderBottomRightRadius: 10,
-          backgroundColor: '#8B5CF6',
+          backgroundColor: '#008CFF',
           alignItems: 'center',
           justifyContent: 'center',
           padding: 4,
@@ -227,8 +227,8 @@ function MyTabBar({ state, navigation }: any) {
           shadowOpacity: isDark ? 0.4 : 0.12,
           shadowRadius: 20,
           elevation: 10,
-          paddingVertical: 6,
-          paddingHorizontal: 8,
+          paddingVertical: 7,
+          paddingHorizontal: 10,
           alignItems: 'center',
           justifyContent: 'space-around',
         }}>
@@ -248,20 +248,20 @@ function MyTabBar({ state, navigation }: any) {
                 style={{
                   alignItems: 'center',
                   justifyContent: 'center',
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
-                  borderRadius: 16,
-                  backgroundColor: isFocused ? activeBg : 'transparent',
+                  paddingVertical: 10,
+                  paddingHorizontal: 16,
+                  borderRadius: 18,
+                  backgroundColor: isFocused ? (tab.key === 'index' ? (isDark ? 'rgba(107,114,128,0.15)' : 'rgba(156,163,175,0.15)') : activeBg) : 'transparent',
                   flexDirection: 'row',
-                  gap: 6,
+                  gap: 8,
                 }}
               >
-                <Icon name={tab.icon} size={22} color={isFocused ? '#8B5CF6' : (isDark ? '#6B7280' : '#9CA3AF')} />
+                <Icon name={tab.icon} size={25} color={isFocused ? (tab.key === 'index' ? (isDark ? '#6B7280' : '#9CA3AF') : '#008CFF') : (isDark ? '#6B7280' : '#9CA3AF')} />
                 {isFocused && (
                   <Text style={{
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: '700',
-                    color: '#8B5CF6',
+                    color: tab.key === 'index' ? (isDark ? '#6B7280' : '#9CA3AF') : '#008CFF',
                   }}>
                     {tab.label}
                   </Text>
@@ -291,11 +291,11 @@ export default function TabLayout() {
         tabBar={(props) => <MyTabBar {...props} />}
         screenOptions={{ 
           headerShown: false,
-          sceneStyle: { paddingTop: 80 }
+          sceneStyle: { paddingTop: 0 }
         }}
       >
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="prayers/index" />
+      <Tabs.Screen name="prayers" />
       <Tabs.Screen name="calendar" />
       <Tabs.Screen name="schedules" />
       <Tabs.Screen name="profile" />
@@ -303,8 +303,6 @@ export default function TabLayout() {
       <Tabs.Screen name="schedule-create" options={{ href: null }} />
       <Tabs.Screen name="members/index" />
       <Tabs.Screen name="members/[id]" options={{ href: null }} />
-      <Tabs.Screen name="prayers/[id]" options={{ href: null }} />
-      <Tabs.Screen name="prayers/create" options={{ href: null }} />
       <Tabs.Screen name="finance/transactions" />
       <Tabs.Screen name="finance/cash-flow" />
       <Tabs.Screen name="finance/reports" />

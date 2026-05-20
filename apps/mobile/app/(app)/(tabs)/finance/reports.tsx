@@ -28,7 +28,7 @@ const reportTypes: ReportType[] = [
     title: 'Relatório Mensal',
     description: 'Resumo completo de receitas e despesas do mês',
     icon: '📅',
-    color: '#8B5CF6',
+    color: '#008CFF',
     bgColor: 'bg-purple-500/15',
   },
   {

@@ -15,6 +15,8 @@ interface RawPrayer {
   isAnswered: boolean;
   isAnonymous: boolean;
   authorId: string;
+  authorName?: string;
+  authorAvatar?: string;
   createdAt: string;
   updatedAt: string;
   answeredAt?: string;
@@ -41,8 +43,8 @@ function mapPrayer(raw: RawPrayer): Prayer {
     reactionsCount: raw._count?.reactions || raw.reactions?.length || 0,
     intercessionCount: raw._count?.intercessors || raw.intercessors?.length || 0,
     authorId: raw.authorId,
-    authorName: '',
-    authorAvatar: undefined,
+    authorName: raw.authorName || '',
+    authorAvatar: raw.authorAvatar || undefined,
     comments: (raw.comments || []) as PrayerComment[],
     reactions: (raw.reactions || []) as PrayerReaction[],
     intercessors: (raw.intercessors || []) as PrayerIntercessor[],

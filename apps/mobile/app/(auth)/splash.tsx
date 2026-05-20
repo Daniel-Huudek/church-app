@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Dimensions, Image } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,34 +12,6 @@ import Animated, {
 import { router } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
-
-const CROSS_SIZE = 80;
-const CROSS_STROKE = 6;
-
-function CrossIcon() {
-  return (
-    <View style={{ width: CROSS_SIZE, height: CROSS_SIZE, alignItems: 'center', justifyContent: 'center' }}>
-      <View
-        style={{
-          position: 'absolute',
-          width: CROSS_SIZE,
-          height: CROSS_STROKE,
-          backgroundColor: '#C4B5FD',
-          borderRadius: CROSS_STROKE / 2,
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          width: CROSS_STROKE,
-          height: CROSS_SIZE,
-          backgroundColor: '#C4B5FD',
-          borderRadius: CROSS_STROKE / 2,
-        }}
-      />
-    </View>
-  );
-}
 
 function DecorativeCircle({ size, left, top, delay: d }: { size: number; left: number; top: number; delay: number }) {
   const opacity = useSharedValue(0);
@@ -75,26 +47,13 @@ function DecorativeCircle({ size, left, top, delay: d }: { size: number; left: n
 }
 
 export default function SplashScreen() {
-  const crossScale = useSharedValue(0);
-  const crossOpacity = useSharedValue(0);
-  const titleOpacity = useSharedValue(0);
-  const titleTranslateY = useSharedValue(30);
-  const subtitleOpacity = useSharedValue(0);
-  const subtitleTranslateY = useSharedValue(20);
-  const taglineOpacity = useSharedValue(0);
+  const logoSuffixle = useSharedValue(0);
+  const logoOpacity = useSharedValue(0);
   const pulseScale = useSharedValue(1);
 
   useEffect(() => {
-    crossScale.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.back(1.5)) });
-    crossOpacity.value = withTiming(1, { duration: 400 });
-
-    titleOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
-    titleTranslateY.value = withDelay(400, withTiming(0, { duration: 500 }));
-
-    subtitleOpacity.value = withDelay(700, withTiming(1, { duration: 400 }));
-    subtitleTranslateY.value = withDelay(700, withTiming(0, { duration: 400 }));
-
-    taglineOpacity.value = withDelay(1000, withTiming(1, { duration: 400 }));
+    logoSuffixle.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.back(1.5)) });
+    logoOpacity.value = withTiming(1, { duration: 400 });
 
     pulseScale.value = withDelay(300, withRepeat(
       withSequence(
@@ -113,23 +72,13 @@ export default function SplashScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const crossStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: crossScale.value }],
-    opacity: crossOpacity.value,
+  const logoStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: logoSuffixle.value }],
+    opacity: logoOpacity.value,
   }));
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
-  }));
-
-  const titleStyle = useAnimatedStyle(() => ({
-    opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }],
-  }));
-
-  const subtitleStyle = useAnimatedStyle(() => ({
-    opacity: subtitleOpacity.value,
-    transform: [{ translateY: subtitleTranslateY.value }],
   }));
 
   return (
@@ -140,52 +89,13 @@ export default function SplashScreen() {
       <DecorativeCircle size={160} left={width * 0.65} top={height * 0.65} delay={300} />
 
       <View style={{ alignItems: 'center', gap: 16 }}>
-        <Animated.View style={[crossStyle, pulseStyle]}>
-          <CrossIcon />
+        <Animated.View style={[logoStyle, pulseStyle]}>
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 160, height: 160 }}
+            resizeMode="contain"
+          />
         </Animated.View>
-
-        <View style={{ alignItems: 'center', gap: 8 }}>
-          <Animated.View style={titleStyle}>
-            <Text
-              style={{
-                fontSize: 36,
-                fontWeight: '700',
-                color: '#F9FAFB',
-                letterSpacing: 2,
-                textAlign: 'center',
-              }}
-            >
-              Church App
-            </Text>
-          </Animated.View>
-
-          <Animated.View style={subtitleStyle}>
-            <Text
-              style={{
-                fontSize: 16,
-                color: '#9CA3AF',
-                textAlign: 'center',
-                letterSpacing: 0.5,
-              }}
-            >
-              Sua igreja conectada
-            </Text>
-          </Animated.View>
-
-          <Animated.View style={[{ opacity: taglineOpacity, marginTop: 24 }]}>
-            <Text
-              style={{
-                fontSize: 13,
-                color: '#6B7280',
-                textAlign: 'center',
-                letterSpacing: 1,
-                textTransform: 'uppercase',
-              }}
-            >
-              Fé • Comunhão • Serviço
-            </Text>
-          </Animated.View>
-        </View>
       </View>
     </View>
   );

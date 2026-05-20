@@ -3,8 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Platform,
-  TextInput,
+  Image,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -14,7 +13,6 @@ import Animated, {
   Easing,
   withSequence,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -26,12 +24,9 @@ import { useAuth } from '../../src/hooks';
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
-  const { login, loginWithGoogle } = useAuth();
+  const { loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
 
   const extra = Constants.expoConfig?.extra;
   const clientId = extra?.googleClientId || '';
@@ -49,20 +44,15 @@ export default function LoginScreen() {
   });
 
   useEffect(() => {
-    console.log('Auth response:', response);
     if (response?.type === 'success') {
       const idToken = 
         response.params.id_token || 
         response.params.idToken || 
         response.authentication?.idToken;
       
-      console.log('idToken found:', !!idToken);
-      
       if (idToken) {
         handleGoogleLogin(idToken);
       } else {
-        console.log('Response params:', response.params);
-        console.log('Response authentication:', response.authentication);
         setError('Token não encontrado na resposta.');
       }
     } else if (response?.type === 'error') {
@@ -74,11 +64,9 @@ export default function LoginScreen() {
     setLoading(true);
     setError('');
     try {
-      console.log('Sending idToken to backend:', idToken.substring(0, 50) + '...');
       await loginWithGoogle(idToken);
       router.replace('/(app)/(tabs)');
     } catch (err: any) {
-      console.log('Login error:', err);
       const message =
         err?.response?.data?.message ||
         err?.message ||
@@ -98,24 +86,6 @@ export default function LoginScreen() {
     }
   }, [promptAsync]);
 
-  const handleEmailLogin = useCallback(async () => {
-    if (!email || !password) {
-      setError('Por favor, preencha email e senha.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      await login(email, password);
-      router.replace('/(app)/(tabs)');
-    } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Erro ao fazer login. Tente novamente.';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [email, password, login]);
-
   // Animations
   const logoScale = useSharedValue(0);
   const logoOpacity = useSharedValue(0);
@@ -134,31 +104,15 @@ export default function LoginScreen() {
   }));
 
   return (
-    <LinearGradient colors={['#1a0533', '#0f0f2e', '#0a0a1a']} style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#008CFF' }}>
       <SafeAreaView style={{ flex: 1 }}>
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 24 }}>
           <Animated.View style={[{ alignItems: 'center', marginBottom: 64 }, logoStyle]}>
-            <View
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 20,
-                backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 20,
-                borderWidth: 1,
-                borderColor: 'rgba(139, 92, 246, 0.3)',
-              }}
-            >
-              <View style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ position: 'absolute', width: 32, height: 3.5, backgroundColor: '#C4B5FD', borderRadius: 2 }} />
-                <View style={{ position: 'absolute', width: 3.5, height: 32, backgroundColor: '#C4B5FD', borderRadius: 2 }} />
-              </View>
-            </View>
-            <Text style={{ fontSize: 32, fontWeight: '700', color: '#F9FAFB', letterSpacing: 1 }}>
-              Church App
-            </Text>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={{ width: 180, height: 180 }}
+              resizeMode="contain"
+            />
             <Text style={{ fontSize: 15, color: '#9CA3AF', marginTop: 6 }}>
               Sua igreja conectada
             </Text>
@@ -173,10 +127,11 @@ export default function LoginScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                alignSelf: 'center',
                 backgroundColor: '#FFFFFF',
                 borderRadius: 28,
                 paddingVertical: 16,
-                paddingHorizontal: 24,
+                paddingHorizontal: 48,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.3,
@@ -190,88 +145,6 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
           </FadeSlideIn>
-
-          <FadeSlideIn delay={550}>
-            <TouchableOpacity
-              onPress={() => setShowPasswordLogin(!showPasswordLogin)}
-              activeOpacity={0.8}
-              style={{
-                marginTop: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                borderRadius: 28,
-                paddingVertical: 16,
-                paddingHorizontal: 24,
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.2)',
-              }}
-            >
-              <Text style={{ color: '#F9FAFB', fontSize: 16, fontWeight: '600' }}>
-                {showPasswordLogin ? 'Entrar com Google' : 'Entrar com Email'}
-              </Text>
-            </TouchableOpacity>
-          </FadeSlideIn>
-
-          {showPasswordLogin && (
-            <FadeSlideIn delay={600}>
-              <View style={{ marginTop: 16, width: '100%' }}>
-                <TextInput
-                  placeholder="Email"
-                  placeholderTextColor="#9CA3AF"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    paddingHorizontal: 16,
-                    color: '#F9FAFB',
-                    fontSize: 16,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    marginBottom: 12,
-                  }}
-                />
-                <TextInput
-                  placeholder="Senha"
-                  placeholderTextColor="#9CA3AF"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: 12,
-                    paddingVertical: 14,
-                    paddingHorizontal: 16,
-                    color: '#F9FAFB',
-                    fontSize: 16,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.2)',
-                    marginBottom: 16,
-                  }}
-                />
-                <TouchableOpacity
-                  onPress={handleEmailLogin}
-                  disabled={loading}
-                  activeOpacity={0.8}
-                  style={{
-                    backgroundColor: '#8B5CF6',
-                    borderRadius: 28,
-                    paddingVertical: 16,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
-                    {loading ? 'Entrando...' : 'Entrar'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </FadeSlideIn>
-          )}
 
           {loading && (
             <FadeSlideIn delay={600}>
@@ -312,7 +185,7 @@ export default function LoginScreen() {
         <FadeSlideIn delay={800}>
           <Text
             style={{
-              color: '#6B7280',
+              color: '#FFFFFF',
               fontSize: 11,
               textAlign: 'center',
               paddingBottom: 24,
@@ -323,15 +196,17 @@ export default function LoginScreen() {
           </Text>
         </FadeSlideIn>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 function GoogleIcon() {
   return (
-    <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: '#4285F4' }}>G</Text>
-    </View>
+    <Image
+      source={require('../../assets/google.png')}
+      style={{ width: 16, height: 16 }}
+      resizeMode="contain"
+    />
   );
 }
 

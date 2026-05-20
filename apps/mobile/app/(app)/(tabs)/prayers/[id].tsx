@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -96,9 +96,17 @@ export default function PrayerDetailScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, { backgroundColor: cardBg }]}>
           <View style={styles.authorRow}>
-            <View style={[styles.avatar, { backgroundColor: prayer.isAnonymous ? '#6B7280' : '#8B5CF6' }]}>
-              <Text style={styles.avatarText}>{prayer.isAnonymous ? '??' : '?'}</Text>
-            </View>
+            {prayer.isAnonymous ? (
+              <View style={[styles.avatar, { backgroundColor: '#6B7280' }]}>
+                <Text style={styles.avatarText}>??</Text>
+              </View>
+            ) : prayer.authorAvatar ? (
+              <Image source={{ uri: prayer.authorAvatar }} style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: '#008CFF' }]}>
+                <Text style={styles.avatarText}>{prayer.authorName?.charAt(0) || '?'}</Text>
+              </View>
+            )}
             <View style={styles.authorInfo}>
               <Text style={[styles.authorName, { color: textPrimary }]}>
                 {prayer.isAnonymous ? 'Anônimo' : prayer.authorName}
@@ -137,10 +145,10 @@ export default function PrayerDetailScreen() {
               <TouchableOpacity
                 key={r.type}
                 onPress={() => handleReact(r.type)}
-                style={[styles.reactionBtn, { borderColor, backgroundColor: isActive ? '#8B5CF620' : cardBg }]}
+                style={[styles.reactionBtn, { borderColor, backgroundColor: isActive ? '#008CFF20' : cardBg }]}
               >
                 <Text style={styles.reactionEmoji}>{r.emoji}</Text>
-                <Text style={[styles.reactionLabel, { color: isActive ? '#8B5CF6' : textPrimary }]}>{r.label}</Text>
+                <Text style={[styles.reactionLabel, { color: isActive ? '#008CFF' : textPrimary }]}>{r.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -152,9 +160,13 @@ export default function PrayerDetailScreen() {
             {prayer.comments.map((comment: PrayerComment) => (
               <View key={comment.id} style={[styles.commentItem, { borderBottomColor: borderColor }]}>
                 <View style={styles.commentHeader}>
-                  <View style={[styles.commentAvatar, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-                    <Text style={styles.commentAvatarText}>{comment.authorName?.charAt(0) || '?'}</Text>
-                  </View>
+                  {comment.authorAvatar ? (
+                    <Image source={{ uri: comment.authorAvatar }} style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }} />
+                  ) : (
+                    <View style={[styles.commentAvatar, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                      <Text style={styles.commentAvatarText}>{comment.authorName?.charAt(0) || '?'}</Text>
+                    </View>
+                  )}
                   <View style={styles.commentInfo}>
                     <Text style={[styles.commentAuthor, { color: textPrimary }]}>{comment.authorName}</Text>
                     <Text style={[styles.commentTime, { color: textSecondary }]}>
@@ -185,7 +197,7 @@ export default function PrayerDetailScreen() {
         <TouchableOpacity
           onPress={handleSendComment}
           disabled={!commentText.trim() || sendingComment}
-          style={[styles.sendBtn, { backgroundColor: commentText.trim() ? '#8B5CF6' : '#6B7280' }]}
+          style={[styles.sendBtn, { backgroundColor: commentText.trim() ? '#008CFF' : '#6B7280' }]}
         >
           <Text style={styles.sendBtnText}>{sendingComment ? '…' : '→'}</Text>
         </TouchableOpacity>
@@ -224,7 +236,7 @@ const styles = StyleSheet.create({
   commentItem: { paddingVertical: 12, borderBottomWidth: 1 },
   commentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   commentAvatar: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  commentAvatarText: { fontSize: 13, fontWeight: 'bold', color: '#8B5CF6' },
+  commentAvatarText: { fontSize: 13, fontWeight: 'bold', color: '#008CFF' },
   commentInfo: { flex: 1 },
   commentAuthor: { fontSize: 14, fontWeight: '600' },
   commentTime: { fontSize: 11, marginTop: 1 },

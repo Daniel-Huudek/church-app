@@ -18,7 +18,7 @@ interface User {
 
 const roleLabels: Record<string, { label: string; color: string }> = {
   ADMINISTRADOR: { label: 'Admin', color: '#EF4444' },
-  PASTOR: { label: 'Pastor', color: '#8B5CF6' },
+  PASTOR: { label: 'Pastor', color: '#008CFF' },
   FINANCEIRO: { label: 'Financeiro', color: '#3B82F6' },
   LIDER: { label: 'Líder', color: '#F59E0B' },
   MEMBRO: { label: 'Membro', color: '#10B981' },
@@ -38,8 +38,6 @@ export default function UsersScreen() {
     try {
       const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000';
       const token = useAuthStore.getState().accessToken;
-      console.log('API URL:', API_URL);
-      console.log('Token value:', token?.substring(0, 20) + '...');
       
       if (!token) {
         Alert.alert('Erro', 'Você precisa estar logado para acessar esta página');
@@ -52,16 +50,13 @@ export default function UsersScreen() {
           'Authorization': `Bearer ${token}`
         }
       });
-      console.log('Response status:', response.status);
       const json = await response.json();
-      console.log('Response data:', json);
       if (json.success) {
         setUsers(json.data);
       } else {
         Alert.alert('Erro', json.message || 'Falha ao carregar');
       }
     } catch (error: any) {
-      console.log('Error loading users:', error?.message || error);
       Alert.alert('Erro', 'Falha ao carregar usuários: ' + (error?.message || 'Erro desconhecido'));
     } finally {
       setLoading(false);
@@ -143,7 +138,7 @@ export default function UsersScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
+            tintColor={isDark ? '#66B5FF' : '#0066CC'}
           />
         }
       >
@@ -165,7 +160,7 @@ export default function UsersScreen() {
                 borderColor: borderColor,
               }}
             >
-              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#008CFF', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' }}>{getInitials(user.name)}</Text>
               </View>
               

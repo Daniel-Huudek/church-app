@@ -118,12 +118,12 @@ export default function CreateEvent() {
                 key={item.value}
                 onPress={() => setType(item.value)}
                 style={{
-                  backgroundColor: type === item.value ? '#8B5CF6' : cardBg,
+                  backgroundColor: type === item.value ? '#008CFF' : cardBg,
                   paddingHorizontal: 14,
                   paddingVertical: 8,
                   borderRadius: 20,
                   borderWidth: 1,
-                  borderColor: type === item.value ? '#8B5CF6' : borderColor,
+                  borderColor: type === item.value ? '#008CFF' : borderColor,
                 }}
               >
                 <Text style={{ fontSize: 14, color: type === item.value ? '#FFFFFF' : textPrimary }}>
@@ -193,7 +193,7 @@ export default function CreateEvent() {
           onPress={handleSave}
           disabled={loading}
           style={{
-            backgroundColor: '#8B5CF6',
+            backgroundColor: '#008CFF',
             borderRadius: 12,
             padding: 16,
             alignItems: 'center',

@@ -87,27 +87,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   logout: async () => {
-    console.log('Starting logout...');
     const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
     const token = await getAccessToken();
     
     if (token) {
       try {
-        console.log('Sending logout to API...');
         await axios.post(`${API_URL}/auth/logout`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        console.log('API logout done');
-      } catch (err) {
-        console.log('Logout API error (ignoring):', err);
+      } catch {
       }
-    } else {
-      console.log('No token, skipping API logout');
     }
     
-    console.log('Clearing local storage...');
     await clearAll();
-    console.log('Storage cleared');
     set({
       user: null,
       accessToken: null,
@@ -115,7 +107,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthenticated: false,
       isLoading: false,
     });
-    console.log('Store state updated to logged out');
   },
 
   loadStoredAuth: async () => {

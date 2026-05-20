@@ -70,8 +70,8 @@ export function Input({
       ? '#EF4444'
       : isFocused
       ? isDark
-        ? '#A78BFA'
-        : '#7C3AED'
+        ? '#66B5FF'
+        : '#0066CC'
       : isDark
       ? '#374151'
       : '#E5E7EB',

@@ -30,7 +30,7 @@ const eventTypeLabels: Record<EventType, string> = {
 };
 
 const eventTypeColors: Record<EventType, string> = {
-  CULTO: '#8B5CF6',
+  CULTO: '#008CFF',
   REUNIAO: '#3B82F6',
   ESTUDO: '#10B981',
   EVENTO_SOCIAL: '#F59E0B',

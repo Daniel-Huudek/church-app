@@ -160,8 +160,8 @@ export default function CreateScheduleScreen() {
                   <Switch
                     value={isSelected}
                     onValueChange={() => toggleMember(user.id)}
-                    trackColor={{ false: borderColor, true: '#8B5CF680' }}
-                    thumbColor={isSelected ? '#8B5CF6' : textSecondary}
+                    trackColor={{ false: borderColor, true: '#008CFF80' }}
+                    thumbColor={isSelected ? '#008CFF' : textSecondary}
                   />
                 </View>
               );
@@ -176,7 +176,7 @@ export default function CreateScheduleScreen() {
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={loading || !title.trim() || !date || !startTime || !endTime}
-          style={[styles.submitBtn, { backgroundColor: !title.trim() || !date || !startTime || !endTime ? '#6B7280' : '#8B5CF6' }]}
+          style={[styles.submitBtn, { backgroundColor: !title.trim() || !date || !startTime || !endTime ? '#6B7280' : '#008CFF' }]}
         >
           <Text style={styles.submitText}>{loading ? 'Criando...' : 'Criar Escala'}</Text>
         </TouchableOpacity>

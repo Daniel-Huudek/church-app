@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../../src/hooks/useAuth';
 import { useColorScheme } from '../../../src/hooks/useColorScheme';
 
 const roleLabels: Record<string, { label: string; color: string; icon: string }> = {
   ADMINISTRADOR: { label: 'Administrador', color: '#EF4444', icon: '👑' },
-  PASTOR: { label: 'Pastor', color: '#8B5CF6', icon: '✝️' },
+  PASTOR: { label: 'Pastor', color: '#008CFF', icon: '✝️' },
   FINANCEIRO: { label: 'Financeiro', color: '#3B82F6', icon: '💰' },
   LIDER: { label: 'Líder', color: '#F59E0B', icon: '⭐' },
   MEMBRO: { label: 'Membro', color: '#10B981', icon: '🙂' },
@@ -14,7 +14,7 @@ const roleLabels: Record<string, { label: string; color: string; icon: string }>
 };
 
 const menuItems = [
-  { icon: '👤', label: 'Editar Perfil', color: '#8B5CF6', action: 'editProfile' },
+  { icon: '👤', label: 'Editar Perfil', color: '#008CFF', action: 'editProfile' },
   { icon: '⚙️', label: 'Configurações', color: '#3B82F6', action: 'settings' },
   { icon: '🔔', label: 'Notificações', color: '#F59E0B', action: 'notifications', badge: 3 },
   { icon: '📅', label: 'Minhas Escalas', color: '#10B981', action: 'schedules' },
@@ -23,7 +23,7 @@ const menuItems = [
 ];
 
 const quickActions = [
-  { icon: '📱', label: 'Compartilhar App', color: '#8B5CF6' },
+  { icon: '📱', label: 'Compartilhar App', color: '#008CFF' },
   { icon: '❓', label: 'Ajuda', color: '#3B82F6' },
   { icon: 'ℹ️', label: 'Sobre', color: '#6B7280' },
 ];
@@ -86,12 +86,16 @@ export default function Profile() {
   return (
     <View style={{ flex: 1, backgroundColor: bgColor }}>
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-        <View style={{ height: 180, backgroundColor: '#8B5CF6', position: 'relative' }}>
+        <View style={{ height: 180, backgroundColor: '#008CFF', position: 'relative' }}>
           <View style={{ position: 'absolute', bottom: -50, left: 0, right: 0, alignItems: 'center' }}>
             <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: cardBg, padding: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 }}>
-              <View style={{ width: '100%', height: '100%', borderRadius: 46, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#FFFFFF' }}>{initials}</Text>
-              </View>
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={{ width: '100%', height: '100%', borderRadius: 46 }} />
+              ) : (
+                <View style={{ width: '100%', height: '100%', borderRadius: 46, backgroundColor: '#008CFF', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#FFFFFF' }}>{initials}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -126,7 +130,7 @@ export default function Profile() {
             <Text style={{ fontSize: 16, fontWeight: '600', color: textPrimary, marginBottom: 12 }}>Estatísticas</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {[
-                { icon: '📅', value: '0', label: 'Escalas', color: '#8B5CF6' },
+                { icon: '📅', value: '0', label: 'Escalas', color: '#008CFF' },
                 { icon: '🎉', value: '0', label: 'Eventos', color: '#3B82F6' },
                 { icon: '🙏', value: '0', label: 'Orações', color: '#10B981' },
               ].map((stat, index) => (
@@ -193,7 +197,7 @@ export default function Profile() {
                   <Text style={{ fontSize: 18 }}>{isDark ? '🌙' : '☀️'}</Text>
                 </View>
                 <Text style={{ flex: 1, fontSize: 15, color: textPrimary, marginLeft: 12 }}>Tema</Text>
-                <Text style={{ fontSize: 14, color: '#8B5CF6', fontWeight: '500', marginRight: 8 }}>{isDark ? 'Escuro' : 'Claro'}</Text>
+                <Text style={{ fontSize: 14, color: '#008CFF', fontWeight: '500', marginRight: 8 }}>{isDark ? 'Escuro' : 'Claro'}</Text>
                 <Text style={{ fontSize: 20, color: textSecondary }}>›</Text>
               </TouchableOpacity>
             </View>

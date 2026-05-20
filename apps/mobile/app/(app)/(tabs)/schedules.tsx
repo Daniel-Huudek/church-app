@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '../../../src/hooks/useColorScheme';
@@ -10,7 +10,7 @@ import type { Schedule, ScheduleStatus } from '../../../src/types';
 const statusConfig: Record<ScheduleStatus, { label: string; color: string; bg: string }> = {
   AGENDADO: { label: 'Agendado', color: '#3B82F6', bg: '#3B82F615' },
   CONFIRMADO: { label: 'Confirmado', color: '#10B981', bg: '#10B98115' },
-  EM_ANDAMENTO: { label: 'Em Andamento', color: '#8B5CF6', bg: '#8B5CF615' },
+  EM_ANDAMENTO: { label: 'Em Andamento', color: '#008CFF', bg: '#008CFF15' },
   CONCLUIDO: { label: 'Concluído', color: '#6B7280', bg: '#6B728015' },
   CANCELADO: { label: 'Cancelado', color: '#EF4444', bg: '#EF444415' },
 };
@@ -58,8 +58,8 @@ function ScheduleItem({ schedule, onPress }: { schedule: Schedule; onPress: () =
       )}
 
       {schedule.ministryName && (
-        <View style={[styles.ministryTag, { backgroundColor: isDark ? '#8B5CF620' : '#8B5CF610' }]}>
-          <Text style={[styles.ministryText, { color: '#8B5CF6' }]}>{schedule.ministryName}</Text>
+        <View style={[styles.ministryTag, { backgroundColor: isDark ? '#008CFF20' : '#008CFF10' }]}>
+          <Text style={[styles.ministryText, { color: '#008CFF' }]}>{schedule.ministryName}</Text>
         </View>
       )}
 
@@ -100,8 +100,7 @@ export default function Schedules() {
     try {
       const res = await schedulesService.getAll({ limit: 50 });
       setSchedules(res.data);
-    } catch (error) {
-      console.error('Error loading schedules:', error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -150,7 +149,7 @@ export default function Schedules() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#008CFF" />
         }
         renderItem={({ item }) => (
           <ScheduleItem 
@@ -175,7 +174,11 @@ export default function Schedules() {
         onPress={() => router.push('/(app)/(tabs)/schedule-create')}
         style={[styles.fab, { bottom: insets.bottom + 20 }]}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Image
+          source={require('../../../assets/add.png')}
+          style={{ width: 24, height: 24 }}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
     </View>
   );
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, marginTop: 4 },
   tabs: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 8 },
   tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: '#1A1A2E' },
-  tabActive: { backgroundColor: '#8B5CF6' },
+  tabActive: { backgroundColor: '#008CFF' },
   tabText: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
   tabTextActive: { color: '#FFFFFF' },
   list: { paddingHorizontal: 20, paddingBottom: 100 },
@@ -206,7 +209,7 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1 },
   confirmedText: { fontSize: 12 },
   avatars: { flexDirection: 'row' },
-  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#008CFF', alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 12, fontWeight: 'bold', color: '#FFFFFF' },
   moreAvatars: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
   moreText: { fontSize: 10, fontWeight: '600' },
@@ -214,6 +217,6 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '600', marginTop: 16 },
   emptySubtitle: { fontSize: 14, marginTop: 4 },
-  fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
-  fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '300' },
+  fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 12, backgroundColor: '#008CFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#008CFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
+  fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '600', textAlign: 'center', lineHeight: 27 },
 });

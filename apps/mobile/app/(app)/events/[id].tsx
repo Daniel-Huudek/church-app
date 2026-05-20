@@ -100,7 +100,7 @@ export default function EventDetail() {
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: textPrimary }}>Detalhes</Text>
         {canEdit ? (
           <TouchableOpacity onPress={handleEdit}>
-            <Text style={{ fontSize: 18, color: '#8B5CF6' }}>✏️</Text>
+            <Text style={{ fontSize: 18, color: '#008CFF' }}>✏️</Text>
           </TouchableOpacity>
         ) : <View style={{ width: 24 }} />}
       </View>
@@ -111,8 +111,8 @@ export default function EventDetail() {
         </Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <View style={{ backgroundColor: '#8B5CF620', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 }}>
-            <Text style={{ fontSize: 14, color: '#8B5CF6' }}>{event.type}</Text>
+          <View style={{ backgroundColor: '#008CFF20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 }}>
+            <Text style={{ fontSize: 14, color: '#008CFF' }}>{event.type}</Text>
           </View>
           <View style={{ backgroundColor: event.status === 'CONFIRMADO' ? '#10B98120' : '#F59E0B20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 }}>
             <Text style={{ fontSize: 14, color: event.status === 'CONFIRMADO' ? '#10B981' : '#F59E0B' }}>
@@ -123,7 +123,7 @@ export default function EventDetail() {
 
         <View style={{ backgroundColor: cardBg, borderRadius: 16, padding: 16, marginBottom: 16, gap: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#008CFF20', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 18 }}>📅</Text>
             </View>
             <View>

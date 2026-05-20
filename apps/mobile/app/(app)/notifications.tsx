@@ -78,7 +78,7 @@ export default function NotificationsScreen() {
                 style={{ marginRight: spacing.lg }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={{ color: '#8B5CF6', fontSize: 14, fontWeight: '600' }}>
+                <Text style={{ color: '#008CFF', fontSize: 14, fontWeight: '600' }}>
                   Marcar todas como lidas
                 </Text>
               </TouchableOpacity>
@@ -93,7 +93,7 @@ export default function NotificationsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? '#8B5CF6' : '#7C3AED'}
+            tintColor={isDark ? '#008CFF' : '#0066CC'}
           />
         }
         contentContainerStyle={{ flexGrow: 1, paddingBottom: spacing['2xl'] }}

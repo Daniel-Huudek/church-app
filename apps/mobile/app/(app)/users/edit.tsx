@@ -14,7 +14,7 @@ interface User {
 
 const ROLES = [
   { value: 'ADMINISTRADOR', label: 'Administrador', color: '#EF4444' },
-  { value: 'PASTOR', label: 'Pastor', color: '#8B5CF6' },
+  { value: 'PASTOR', label: 'Pastor', color: '#008CFF' },
   { value: 'FINANCEIRO', label: 'Financeiro', color: '#3B82F6' },
   { value: 'LIDER', label: 'Líder', color: '#F59E0B' },
   { value: 'MEMBRO', label: 'Membro', color: '#10B981' },
@@ -162,8 +162,8 @@ export default function EditUser() {
                         height: 20, 
                         borderRadius: 4, 
                         borderWidth: 2, 
-                        borderColor: isActive ? '#8B5CF6' : borderColor,
-                        backgroundColor: isActive ? '#8B5CF6' : 'transparent',
+                        borderColor: isActive ? '#008CFF' : borderColor,
+                        backgroundColor: isActive ? '#008CFF' : 'transparent',
                         marginRight: 6,
                       }}>
                         {isActive && <Text style={{ color: '#FFF', fontSize: 12, textAlign: 'center' }}>✓</Text>}
@@ -180,7 +180,7 @@ export default function EditUser() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={saving}
-          style={{ backgroundColor: '#8B5CF6', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 40 }}
+          style={{ backgroundColor: '#008CFF', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 40 }}
         >
           <Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>
             {saving ? 'Salvando...' : 'Salvar Alterações'}

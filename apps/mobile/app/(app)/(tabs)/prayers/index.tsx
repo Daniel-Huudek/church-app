@@ -43,11 +43,19 @@ function PrayerCard({ prayer, onPress }: { prayer: Prayer; onPress: () => void }
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={[styles.card, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
       <View style={styles.cardHeader}>
         <View style={styles.author}>
-          <View style={[styles.avatar, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
-            <Text style={styles.avatarText}>{prayer.authorName?.charAt(0) || '?'}</Text>
-          </View>
+          {prayer.isAnonymous ? (
+            <View style={[styles.avatar, { backgroundColor: '#6B7280' }]}>
+              <Text style={styles.avatarText}>??</Text>
+            </View>
+          ) : prayer.authorAvatar ? (
+            <Image source={{ uri: prayer.authorAvatar }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+              <Text style={styles.avatarText}>{prayer.authorName?.charAt(0) || '?'}</Text>
+            </View>
+          )}
           <View>
-            <Text style={[styles.authorName, { color: isDark ? '#F9FAFB' : '#111827' }]}>{prayer.authorName}</Text>
+            <Text style={[styles.authorName, { color: isDark ? '#F9FAFB' : '#111827' }]}>{prayer.isAnonymous ? 'Anônimo' : prayer.authorName}</Text>
             <Text style={[styles.postedAt, { color: isDark ? '#6B7280' : '#9CA3AF' }]}>
               {new Date(prayer.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
             </Text>
@@ -65,7 +73,7 @@ function PrayerCard({ prayer, onPress }: { prayer: Prayer; onPress: () => void }
       </Text>
 
       {prayer.categoryName && (
-        <View style={[styles.categoryBadge, { backgroundColor: isDark ? '#8B5CF620' : '#8B5CF610' }]}>
+        <View style={[styles.categoryBadge, { backgroundColor: isDark ? '#008CFF20' : '#008CFF10' }]}>
           <Text style={styles.categoryText}>{prayer.categoryName}</Text>
         </View>
       )}
@@ -167,7 +175,7 @@ export default function PrayerFeedScreen() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#008CFF" />
         }
         renderItem={({ item }) => (
           <PrayerCard
@@ -192,7 +200,11 @@ export default function PrayerFeedScreen() {
         onPress={() => router.push('/(app)/(tabs)/prayers/create')}
         style={[styles.fab, { bottom: insets.bottom + 20 }]}
       >
-        <Text style={styles.fabText}>+</Text>
+          <Image
+            source={require('../../../../assets/add.png')}
+            style={{ width: 24, height: 24 }}
+            resizeMode="contain"
+          />
       </TouchableOpacity>
     </View>
   );
@@ -208,7 +220,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 15 },
   tabs: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 8 },
   tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: '#1A1A2E' },
-  tabActive: { backgroundColor: '#8B5CF6' },
+  tabActive: { backgroundColor: '#008CFF' },
   tabText: { fontSize: 13, fontWeight: '600', color: '#9CA3AF' },
   tabTextActive: { color: '#FFFFFF' },
   list: { paddingHorizontal: 20, paddingBottom: 100 },
@@ -216,14 +228,14 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   author: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  avatarText: { fontSize: 16, fontWeight: 'bold', color: '#8B5CF6' },
+  avatarText: { fontSize: 16, fontWeight: 'bold', color: '#008CFF' },
   authorName: { fontSize: 14, fontWeight: '600' },
   postedAt: { fontSize: 12, marginTop: 2 },
   urgentBadge: { backgroundColor: '#EF444420', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   urgentText: { fontSize: 12, color: '#EF4444', fontWeight: '600' },
   content: { fontSize: 15, lineHeight: 22, marginBottom: 12 },
   categoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  categoryText: { fontSize: 12, color: '#8B5CF6', fontWeight: '600' },
+  categoryText: { fontSize: 12, color: '#008CFF', fontWeight: '600' },
   cardFooter: { flexDirection: 'row', paddingTop: 12, borderTopWidth: 1, gap: 20 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   actionIcon: { fontSize: 18 },
@@ -232,6 +244,6 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '600', marginTop: 16 },
   emptySubtitle: { fontSize: 14, marginTop: 4 },
-  fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
-  fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '300' },
+  fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 12, backgroundColor: '#008CFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#008CFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
+  fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '600', textAlign: 'center', lineHeight: 27 },
 });
