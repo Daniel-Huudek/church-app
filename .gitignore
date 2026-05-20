@@ -7,5 +7,4 @@ coverage
 .vscode
 .idea
 *.tgz
-apps/mobile/assets
 apps/mobile/node_modules
