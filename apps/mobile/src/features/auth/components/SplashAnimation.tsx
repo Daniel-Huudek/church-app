@@ -87,13 +87,13 @@ export function SplashAnimation({ onFinish }: SplashAnimationProps) {
       style={{
         width,
         height,
-        backgroundColor: '#7C3AED',
+        backgroundColor: '#0066CC',
       }}
     >
       <View className="absolute top-0 left-0 right-0 bottom-0 opacity-30">
         <View
           className="absolute -top-20 -right-20 w-72 h-72 rounded-full"
-          style={{ backgroundColor: '#8B5CF6' }}
+          style={{ backgroundColor: '#008CFF' }}
         />
         <View
           className="absolute -bottom-32 -left-16 w-96 h-96 rounded-full"
@@ -101,7 +101,7 @@ export function SplashAnimation({ onFinish }: SplashAnimationProps) {
         />
         <View
           className="absolute top-1/3 -left-10 w-40 h-40 rounded-full"
-          style={{ backgroundColor: '#A78BFA' }}
+          style={{ backgroundColor: '#66B5FF' }}
         />
       </View>
 

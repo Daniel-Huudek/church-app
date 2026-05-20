@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Platform,
+  Image,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -13,11 +13,11 @@ import Animated, {
   Easing,
   withSequence,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
 import { useAuth } from '../../src/hooks';
 
@@ -30,20 +30,30 @@ export default function LoginScreen() {
 
   const extra = Constants.expoConfig?.extra;
   const clientId = extra?.googleClientId || '';
-  const androidClientId = extra?.googleAndroidClientId || '';
-  const iosClientId = extra?.googleIosClientId || '';
+  
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: 'churchapp',
+    path: '+expo-auth-session',
+  });
 
-  const [_, response, promptAsync] = Google.useAuthRequest({
+  const [request, response, promptAsync] = Google.useAuthRequest({
     clientId,
-    androidClientId,
-    iosClientId,
+    redirectUri,
+    scopes: ['openid', 'profile', 'email'],
+    responseType: 'id_token',
   });
 
   useEffect(() => {
     if (response?.type === 'success') {
-      const { idToken } = response.params;
+      const idToken = 
+        response.params.id_token || 
+        response.params.idToken || 
+        response.authentication?.idToken;
+      
       if (idToken) {
         handleGoogleLogin(idToken);
+      } else {
+        setError('Token não encontrado na resposta.');
       }
     } else if (response?.type === 'error') {
       setError('Login com Google cancelado ou falhou.');
@@ -94,31 +104,15 @@ export default function LoginScreen() {
   }));
 
   return (
-    <LinearGradient colors={['#1a0533', '#0f0f2e', '#0a0a1a']} style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#008CFF' }}>
       <SafeAreaView style={{ flex: 1 }}>
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 24 }}>
           <Animated.View style={[{ alignItems: 'center', marginBottom: 64 }, logoStyle]}>
-            <View
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 20,
-                backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 20,
-                borderWidth: 1,
-                borderColor: 'rgba(139, 92, 246, 0.3)',
-              }}
-            >
-              <View style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ position: 'absolute', width: 32, height: 3.5, backgroundColor: '#C4B5FD', borderRadius: 2 }} />
-                <View style={{ position: 'absolute', width: 3.5, height: 32, backgroundColor: '#C4B5FD', borderRadius: 2 }} />
-              </View>
-            </View>
-            <Text style={{ fontSize: 32, fontWeight: '700', color: '#F9FAFB', letterSpacing: 1 }}>
-              Church App
-            </Text>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={{ width: 180, height: 180 }}
+              resizeMode="contain"
+            />
             <Text style={{ fontSize: 15, color: '#9CA3AF', marginTop: 6 }}>
               Sua igreja conectada
             </Text>
@@ -133,10 +127,11 @@ export default function LoginScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                alignSelf: 'center',
                 backgroundColor: '#FFFFFF',
                 borderRadius: 28,
                 paddingVertical: 16,
-                paddingHorizontal: 24,
+                paddingHorizontal: 48,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.3,
@@ -190,7 +185,7 @@ export default function LoginScreen() {
         <FadeSlideIn delay={800}>
           <Text
             style={{
-              color: '#6B7280',
+              color: '#FFFFFF',
               fontSize: 11,
               textAlign: 'center',
               paddingBottom: 24,
@@ -201,15 +196,17 @@ export default function LoginScreen() {
           </Text>
         </FadeSlideIn>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 function GoogleIcon() {
   return (
-    <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: '#4285F4' }}>G</Text>
-    </View>
+    <Image
+      source={require('../../assets/google.png')}
+      style={{ width: 16, height: 16 }}
+      resizeMode="contain"
+    />
   );
 }
 

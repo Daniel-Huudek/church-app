@@ -275,8 +275,8 @@ export default function MembersListScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
+            tintColor={isDark ? '#66B5FF' : '#0066CC'}
+            colors={['#0066CC']}
             progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
           />
         }
@@ -285,7 +285,7 @@ export default function MembersListScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View className="py-4 items-center">
-              <ActivityIndicator color={isDark ? '#A78BFA' : '#7C3AED'} />
+              <ActivityIndicator color={isDark ? '#66B5FF' : '#0066CC'} />
             </View>
           ) : null
         }
@@ -318,10 +318,10 @@ export default function MembersListScreen() {
         activeOpacity={0.8}
         className="absolute w-14 h-14 rounded-full items-center justify-center"
         style={{
-          backgroundColor: '#7C3AED',
+          backgroundColor: '#0066CC',
           bottom: insets.bottom + 24,
           right: 20,
-          shadowColor: '#7C3AED',
+          shadowColor: '#0066CC',
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.4,
           shadowRadius: 8,

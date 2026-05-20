@@ -108,7 +108,7 @@ export function ScheduleCard({
           <View className="flex-row items-center mb-2">
             <Text
               className="text-xs"
-              style={{ color: isDark ? '#A78BFA' : '#7C3AED' }}
+              style={{ color: isDark ? '#66B5FF' : '#0066CC' }}
             >
               ◆
             </Text>

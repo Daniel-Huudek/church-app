@@ -222,8 +222,8 @@ export default function CashFlowScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
+            tintColor={isDark ? '#66B5FF' : '#0066CC'}
+            colors={['#0066CC']}
             progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
           />
         }

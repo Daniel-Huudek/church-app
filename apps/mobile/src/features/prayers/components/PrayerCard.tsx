@@ -91,7 +91,7 @@ export function PrayerCard({
           <View
             className="w-9 h-9 rounded-full items-center justify-center"
             style={{
-              backgroundColor: prayer.isAnonymous ? '#9CA3AF' : '#8B5CF6',
+              backgroundColor: prayer.isAnonymous ? '#9CA3AF' : '#008CFF',
             }}
           >
             <Text className="text-xs font-bold text-white">
@@ -117,14 +117,14 @@ export function PrayerCard({
               className="rounded-full px-2.5 py-1"
               style={{
                 backgroundColor: isDark
-                  ? `${prayer.category.color || '#8B5CF6'}25`
-                  : `${prayer.category.color || '#8B5CF6'}15`,
+                  ? `${prayer.category.color || '#008CFF'}25`
+                  : `${prayer.category.color || '#008CFF'}15`,
               }}
             >
               <Text
                 className="text-xs font-medium"
                 style={{
-                  color: prayer.category.color || '#8B5CF6',
+                  color: prayer.category.color || '#008CFF',
                 }}
               >
                 {prayer.category.name}

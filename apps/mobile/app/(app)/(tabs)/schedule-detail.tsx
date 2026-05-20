@@ -51,8 +51,7 @@ export default function ScheduleDetail() {
     try {
       const response = await schedulesService.getById(id);
       setSchedule(response);
-    } catch (error) {
-      console.error('Error loading schedule:', error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -72,8 +71,7 @@ export default function ScheduleDetail() {
         });
         loadSchedule();
       }
-    } catch (error) {
-      console.error('Error confirming presence:', error);
+    } catch {
     }
   }, [schedule, loadSchedule]);
 

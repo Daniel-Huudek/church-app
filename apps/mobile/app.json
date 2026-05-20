@@ -6,23 +6,32 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "churchapp",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.churchapp.app" },
-    "android": { "package": "com.churchapp.app" },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store"
-    ],
+    "ios": {
+      "icon": "./assets/icon.png",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.churchapp.app"
+    },
+    "android": {
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#008CFF"
+      },
+      "package": "com.churchapp.app"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
+      "apiUrl": "https://api.ipiavare.com.br",
       "router": {
         "entry": "./app/_layout.tsx"
       },
-      "googleClientId": "SEU_GOOGLE_CLIENT_ID",
-      "googleAndroidClientId": "SEU_GOOGLE_ANDROID_CLIENT_ID",
-      "googleIosClientId": "SEU_GOOGLE_IOS_CLIENT_ID"
+      "googleClientId": "520104571386-bfmr77vb7rggo5qc2643jiaopk11m920.apps.googleusercontent.com",
+      "googleRedirectUri": "http://localhost:8081/+expo-auth-session"
     }
   }
 }

@@ -123,7 +123,7 @@ export default function TransactionsScreen() {
     if (!loadingMore) return null;
     return (
       <View className="py-4 items-center">
-        <ActivityIndicator size="small" color={isDark ? '#A78BFA' : '#7C3AED'} />
+        <ActivityIndicator size="small" color={isDark ? '#66B5FF' : '#0066CC'} />
       </View>
     );
   };
@@ -274,8 +274,8 @@ export default function TransactionsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-              colors={['#7C3AED']}
+              tintColor={isDark ? '#66B5FF' : '#0066CC'}
+              colors={['#0066CC']}
               progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
             />
           }
@@ -292,8 +292,8 @@ export default function TransactionsScreen() {
         activeOpacity={0.85}
         className="absolute bottom-6 right-6 w-14 h-14 rounded-full items-center justify-center"
         style={{
-          backgroundColor: isDark ? '#7C3AED' : '#7C3AED',
-          shadowColor: '#7C3AED',
+          backgroundColor: isDark ? '#0066CC' : '#0066CC',
+          shadowColor: '#0066CC',
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.4,
           shadowRadius: 8,

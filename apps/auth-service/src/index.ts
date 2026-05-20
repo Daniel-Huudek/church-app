@@ -26,6 +26,15 @@ async function bootstrap() {
 
   fastify.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
 
+  fastify.get('/seed-admin', async () => {
+    try {
+      await seedAdminUser();
+      return { success: true, message: 'Admin user created/verified' };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  });
+
   await fastify.register(authRoutes, { prefix: '/auth' });
 
   fastify.setErrorHandler((error, request, reply) => {

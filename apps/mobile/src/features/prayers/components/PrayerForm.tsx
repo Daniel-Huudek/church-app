@@ -292,9 +292,9 @@ export function PrayerForm({
                   onValueChange={onChange}
                   trackColor={{
                     false: isDark ? '#374151' : '#D1D5DB',
-                    true: '#8B5CF680',
+                    true: '#008CFF80',
                   }}
-                  thumbColor={value ? '#8B5CF6' : isDark ? '#6B7280' : '#F9FAFB'}
+                  thumbColor={value ? '#008CFF' : isDark ? '#6B7280' : '#F9FAFB'}
                 />
               </View>
             )}

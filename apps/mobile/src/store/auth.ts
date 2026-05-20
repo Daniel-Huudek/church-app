@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import axios from 'axios';
 import type { User, LoginCredentials, RegisterData, UpdateProfileData } from '../types';
 import { authService } from '../services';
+import { API_URL } from '../services/api';
 import {
   getAccessToken,
   getRefreshToken,
@@ -36,16 +38,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   login: async (email: string, password: string) => {
     const response = await authService.login({ email, password });
-    const { user, tokens } = response;
+    const { user, accessToken, refreshToken } = response;
     await Promise.all([
-      setAccessToken(tokens.accessToken),
-      setRefreshToken(tokens.refreshToken),
+      setAccessToken(accessToken),
+      setRefreshToken(refreshToken),
       setStoredUser(user),
     ]);
     set({
       user,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      accessToken,
+      refreshToken,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -53,16 +55,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   loginWithGoogle: async (idToken: string) => {
     const response = await authService.googleLogin(idToken);
-    const { user, tokens } = response;
+    const { user, accessToken, refreshToken } = response;
     await Promise.all([
-      setAccessToken(tokens.accessToken),
-      setRefreshToken(tokens.refreshToken),
+      setAccessToken(accessToken),
+      setRefreshToken(refreshToken),
       setStoredUser(user),
     ]);
     set({
       user,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      accessToken,
+      refreshToken,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -70,27 +72,33 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   register: async (data: RegisterData) => {
     const response = await authService.register(data);
-    const { user, tokens } = response;
+    const { user, accessToken, refreshToken } = response;
     await Promise.all([
-      setAccessToken(tokens.accessToken),
-      setRefreshToken(tokens.refreshToken),
+      setAccessToken(accessToken),
+      setRefreshToken(refreshToken),
       setStoredUser(user),
     ]);
     set({
       user,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      accessToken,
+      refreshToken,
       isAuthenticated: true,
       isLoading: false,
     });
   },
 
   logout: async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // proceed with local cleanup even if API call fails
+    const token = await getAccessToken();
+    
+    if (token) {
+      try {
+        await axios.post(`${API_URL}/auth/logout`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch {
+      }
     }
+    
     await clearAll();
     set({
       user: null,

@@ -28,7 +28,7 @@ export function DashboardCard({
   title,
   value,
   trend,
-  color = '#8B5CF6',
+  color = '#008CFF',
   onPress,
   index = 0,
 }: DashboardCardProps) {

@@ -132,7 +132,7 @@ export default function SettingsScreen() {
                 marginBottom: spacing.md,
               }}
             >
-              <Text style={{ fontSize: 28, fontWeight: '700', color: '#A78BFA' }}>
+              <Text style={{ fontSize: 28, fontWeight: '700', color: '#66B5FF' }}>
                 {user.name?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
             </View>
@@ -154,7 +154,7 @@ export default function SettingsScreen() {
               value={isDark}
               onValueChange={toggleTheme}
               trackColor={{ false: '#D4D4D4', true: 'rgba(139, 92, 246, 0.3)' }}
-              thumbColor={isDark ? '#8B5CF6' : '#A3A3A3'}
+              thumbColor={isDark ? '#008CFF' : '#A3A3A3'}
             />
           }
         />
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
             <Switch
               value={true}
               trackColor={{ false: '#D4D4D4', true: 'rgba(139, 92, 246, 0.3)' }}
-              thumbColor={'#8B5CF6'}
+              thumbColor={'#008CFF'}
             />
           }
         />
@@ -178,7 +178,7 @@ export default function SettingsScreen() {
             <Switch
               value={true}
               trackColor={{ false: '#D4D4D4', true: 'rgba(139, 92, 246, 0.3)' }}
-              thumbColor={'#8B5CF6'}
+              thumbColor={'#008CFF'}
             />
           }
           isLast

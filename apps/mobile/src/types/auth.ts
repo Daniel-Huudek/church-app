@@ -5,6 +5,7 @@ export interface User {
   phone?: string;
   avatar?: string;
   role: 'ADMINISTRADOR' | 'PASTOR' | 'FINANCEIRO' | 'MEMBRO' | 'VISITANTE';
+  permissions?: string[];
   ministries: string[];
   createdAt: string;
   updatedAt: string;
@@ -15,14 +16,10 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
 export interface AuthResponse {
   user: User;
-  tokens: AuthTokens;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface RegisterData {

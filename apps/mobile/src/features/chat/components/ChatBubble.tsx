@@ -101,12 +101,12 @@ export function ChatBubble({
           }`}
           style={{
             borderLeftWidth: 3,
-            borderLeftColor: isSent ? '#A78BFA' : '#8B5CF6',
+            borderLeftColor: isSent ? '#66B5FF' : '#008CFF',
           }}
         >
           <Text
             className="text-xs font-semibold mb-0.5"
-            style={{ color: isSent ? '#C4B5FD' : '#8B5CF6' }}
+            style={{ color: isSent ? '#C4B5FD' : '#008CFF' }}
           >
             {message.replyTo.senderName}
           </Text>

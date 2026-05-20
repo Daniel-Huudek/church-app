@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, SectionList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, SectionList, TouchableOpacity, RefreshControl, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '../../../src/hooks/useColorScheme';
+import { useAuth } from '../../../src/hooks/useAuth';
+import { usePermission } from '../../../src/hooks/usePermission';
 import { eventsService } from '../../../src/services/events';
-import { Header, Skeleton, EmptyState } from '../../../src/components/ui';
 import { FadeIn } from '../../../src/components/animations';
 import { EventCard } from '../../../src/features/events/components/EventCard';
-import { EventFilter } from '../../../src/features/events/components/EventFilter';
-import type { Event, EventFilter as EventFilterType } from '../../../src/types';
+import type { Event } from '../../../src/types';
 
 function getMonthName(year: number, month: number): string {
   return new Date(year, month - 1).toLocaleDateString('pt-BR', {
@@ -50,13 +51,14 @@ function groupEventsByDate(events: Event[]): EventSection[] {
 export default function Calendar() {
   const router = useRouter();
   const { isDark } = useColorScheme();
+  const { canCreateEvent } = usePermission();
+  const insets = useSafeAreaInsets();
   const now = new Date();
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filters, setFilters] = useState<EventFilterType>({});
 
   const monthRange = useMemo(
     () => getMonthRange(currentYear, currentMonth),
@@ -66,7 +68,6 @@ export default function Calendar() {
   const loadEvents = useCallback(async () => {
     try {
       const response = await eventsService.getAll({
-        ...filters,
         startDate: monthRange.start,
         endDate: monthRange.end,
         limit: 100,
@@ -74,12 +75,11 @@ export default function Calendar() {
       if (response.success) {
         setEvents(response.data.data);
       }
-    } catch (error) {
-      console.error('Error loading events:', error);
+    } catch {
     } finally {
       setLoading(false);
     }
-  }, [monthRange, filters]);
+  }, [monthRange]);
 
   useEffect(() => {
     setLoading(true);
@@ -106,127 +106,105 @@ export default function Calendar() {
     setCurrentYear(newYear);
   }, [currentMonth, currentYear]);
 
-  const handleFilterChange = useCallback((newFilters: EventFilterType) => {
-    setFilters(newFilters);
-  }, []);
-
   const sections = useMemo(() => groupEventsByDate(events), [events]);
 
-  const renderSkeleton = () => (
-    <View className="flex-1 px-4 pt-20" style={{ backgroundColor: isDark ? '#0A0A0F' : '#FFFFFF' }}>
-      <Skeleton variant="text" width="40%" height={28} className="mb-4" />
-      <Skeleton variant="text" width="60%" height={20} className="mb-6" />
-      <Skeleton variant="card" height={160} className="mb-3" />
-      <Skeleton variant="card" height={160} className="mb-3" />
-      <Skeleton variant="card" height={160} className="mb-3" />
-    </View>
-  );
-
-  if (loading) {
-    return renderSkeleton();
-  }
-
   return (
-    <View className="flex-1" style={{ backgroundColor: isDark ? '#0A0A0F' : '#FFFFFF' }}>
-      <Header
-        title="Agenda"
-        largeTitle
-      />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#0A0A0F' : '#FFFFFF', paddingHorizontal: 24 }}>
+      <View style={{ paddingTop: 20, paddingBottom: 16 }}>
+        <Text style={{ fontSize: 32, fontWeight: 'bold', color: isDark ? '#F9FAFB' : '#111827' }}>
+          Agenda
+        </Text>
+      </View>
 
       <View
-        className="mx-6 mb-4 rounded-2xl p-2 flex-row items-center justify-between"
         style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+          padding: 12,
+          borderRadius: 16,
           backgroundColor: isDark ? '#1A1A2E' : '#F3F4F6',
         }}
       >
-        <TouchableOpacity
-          onPress={() => changeMonth(-1)}
-          className="w-10 h-10 rounded-full items-center justify-center"
-          activeOpacity={0.7}
-          style={{
-            backgroundColor: isDark ? '#12121A' : '#FFFFFF',
-          }}
-        >
-          <Text
-            className="text-lg font-bold"
-            style={{ color: isDark ? '#F9FAFB' : '#111827' }}
-          >
-            ‹
-          </Text>
+        <TouchableOpacity onPress={() => changeMonth(-1)} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 24, color: isDark ? '#F9FAFB' : '#111827' }}>‹</Text>
         </TouchableOpacity>
-
-        <Text
-          className="text-base font-bold capitalize"
-          style={{ color: isDark ? '#F9FAFB' : '#111827' }}
-        >
+        <Text style={{ fontSize: 16, fontWeight: 'bold', color: isDark ? '#F9FAFB' : '#111827', textTransform: 'capitalize' }}>
           {getMonthName(currentYear, currentMonth)}
         </Text>
-
-        <TouchableOpacity
-          onPress={() => changeMonth(1)}
-          className="w-10 h-10 rounded-full items-center justify-center"
-          activeOpacity={0.7}
-          style={{
-            backgroundColor: isDark ? '#12121A' : '#FFFFFF',
-          }}
-        >
-          <Text
-            className="text-lg font-bold"
-            style={{ color: isDark ? '#F9FAFB' : '#111827' }}
-          >
-            ›
-          </Text>
+        <TouchableOpacity onPress={() => changeMonth(1)} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 24, color: isDark ? '#F9FAFB' : '#111827' }}>›</Text>
         </TouchableOpacity>
       </View>
-
-      <EventFilter filters={filters} onChange={handleFilterChange} />
 
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: 40,
-        }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         renderSectionHeader={({ section: { title } }) => (
           <FadeIn direction="left" distance={10} duration={300}>
-            <View className="pt-4 pb-2">
-              <Text
-                className="text-sm font-bold uppercase tracking-wider"
-                style={{ color: isDark ? '#9CA3AF' : '#6B7280' }}
-              >
+            <View style={{ paddingVertical: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: isDark ? '#9CA3AF' : '#6B7280', textTransform: 'uppercase' }}>
                 {title}
               </Text>
             </View>
           </FadeIn>
         )}
         renderItem={({ item, index }) => (
-          <EventCard
-            event={item}
-            index={index}
-            onPress={() => {}}
-          />
+          <EventCard event={item} index={index} onPress={() => router.push(`/(app)/events/${item.id}`)} />
         )}
         ListEmptyComponent={
-          <FadeIn direction="up" distance={20}>
-            <EmptyState
-              icon={<Text className="text-5xl">📅</Text>}
-              title="Nenhum evento"
-              subtitle="Não há eventos para este período"
-            />
-          </FadeIn>
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ fontSize: 48 }}>📅</Text>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: isDark ? '#F9FAFB' : '#111827', marginTop: 16 }}>
+              Nenhum evento
+            </Text>
+            <Text style={{ fontSize: 14, color: isDark ? '#9CA3AF' : '#6B7280', marginTop: 8 }}>
+              Não há eventos para este período
+            </Text>
+          </View>
         }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
+            tintColor={isDark ? '#66B5FF' : '#0066CC'}
+            colors={['#0066CC']}
             progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
           />
         }
       />
+
+      {canCreateEvent() && (
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/events/create')}
+            activeOpacity={0.8}
+            style={{
+              position: 'absolute',
+              right: 20,
+              bottom: insets.bottom + 20,
+              width: 56,
+              height: 56,
+            borderRadius: 12,
+            backgroundColor: '#008CFF',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#008CFF',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+            elevation: 8,
+          }}
+        >
+          <Image
+            source={require('../../../assets/add.png')}
+            style={{ width: 24, height: 24 }}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

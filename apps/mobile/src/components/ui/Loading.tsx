@@ -20,7 +20,7 @@ export function Loading({
   className = '',
 }: LoadingProps) {
   const { isDark } = useColorScheme();
-  const spinnerColor = color || (isDark ? '#A78BFA' : '#7C3AED');
+  const spinnerColor = color || (isDark ? '#66B5FF' : '#0066CC');
 
   if (!visible) return null;
 

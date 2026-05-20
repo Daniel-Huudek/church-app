@@ -23,6 +23,22 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.post('/google', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { idToken } = request.body as { idToken: string };
+    if (!idToken) {
+      return reply.status(400).send({ success: false, message: 'idToken not provided' });
+    }
+    try {
+      const data = await authClient.post('/auth/google', { idToken });
+      return reply.send(data);
+    } catch (error: any) {
+      return reply.status(error.statusCode || 500).send({
+        success: false,
+        message: error.message || 'Google authentication failed',
+      });
+    }
+  });
+
   fastify.post('/login', async (request: FastifyRequest, reply: FastifyReply) => {
     const { email, password } = request.body as { email: string; password: string };
     try {

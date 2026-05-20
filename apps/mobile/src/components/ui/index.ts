@@ -34,3 +34,5 @@ export { Loading } from './Loading';
 export type { LoadingProps } from './Loading';
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
+export { Icon } from './Icon';
+export type { IconName } from './Icon';

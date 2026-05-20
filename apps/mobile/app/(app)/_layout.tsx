@@ -6,7 +6,7 @@ import { useAuthStore } from '../../src/store';
 function LoadingScreen() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0A0A0F' }}>
-      <ActivityIndicator size="large" color="#8B5CF6" />
+      <ActivityIndicator size="large" color="#008CFF" />
     </View>
   );
 }
@@ -28,6 +28,11 @@ export default function AppLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
       <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="events/create" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="events/edit" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="users/index" options={{ headerShown: false }} />
+      <Stack.Screen name="users/edit" options={{ presentation: 'modal', headerShown: false }} />
     </Stack>
   );
 }

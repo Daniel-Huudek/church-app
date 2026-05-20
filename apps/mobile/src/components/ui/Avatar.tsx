@@ -22,11 +22,11 @@ const sizeConfig: Record<AvatarSize, { dim: number; text: string; online: number
 };
 
 const gradientColors = [
-  ['#8B5CF6', '#EC4899'],
+  ['#008CFF', '#EC4899'],
   ['#3B82F6', '#06B6D4'],
   ['#10B981', '#34D399'],
   ['#F59E0B', '#EF4444'],
-  ['#A78BFA', '#6366F1'],
+  ['#008CFF', '#6366F1'],
 ];
 
 function getInitialColors(name: string): [string, string] {

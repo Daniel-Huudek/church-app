@@ -27,11 +27,11 @@ export function MemberCard({
   const isActive = member.status === 'ATIVO';
 
   const gradientColors = [
-    ['#8B5CF6', '#EC4899'],
+    ['#008CFF', '#EC4899'],
     ['#3B82F6', '#06B6D4'],
     ['#10B981', '#34D399'],
     ['#F59E0B', '#EF4444'],
-    ['#A78BFA', '#6366F1'],
+    ['#66B5FF', '#6366F1'],
   ];
 
   const hash = member.name.split('').reduce(
@@ -87,7 +87,7 @@ export function MemberCard({
               <>
                 <Text
                   className="text-xs"
-                  style={{ color: isDark ? '#A78BFA' : '#7C3AED' }}
+                  style={{ color: isDark ? '#66B5FF' : '#0066CC' }}
                 >
                   ◆
                 </Text>
