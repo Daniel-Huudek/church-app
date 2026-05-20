@@ -32,7 +32,7 @@ export default function LoginScreen() {
   const clientId = extra?.googleClientId || '';
   
   const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'churchapp',
+    scheme: 'ipiavare',
     path: '+expo-auth-session',
   });
 

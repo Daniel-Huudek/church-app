@@ -113,7 +113,7 @@ export function SplashAnimation({ onFinish }: SplashAnimationProps) {
 
       <Animated.View style={titleStyle} className="items-center">
         <Text className="text-4xl font-bold text-white tracking-wider">
-          Church App
+          IPI Avaré APP
         </Text>
       </Animated.View>
 
@@ -128,7 +128,7 @@ export function SplashAnimation({ onFinish }: SplashAnimationProps) {
         className="absolute bottom-12 items-center"
       >
         <Text className="text-sm text-white/50">
-          © 2024 Church App. Todos os direitos reservados.
+          © 2024 IPI Avaré APP. Todos os direitos reservados.
         </Text>
       </Animated.View>
     </View>

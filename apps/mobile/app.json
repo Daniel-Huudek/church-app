@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "Church App",
-    "slug": "church-app",
+    "name": "ipiavare",
+    "slug": "ipiavare",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "scheme": "churchapp",
+    "scheme": "ipiavare",
     "icon": "./assets/icon.png",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "icon": "./assets/icon.png",
       "supportsTablet": true,
-      "bundleIdentifier": "com.churchapp.app"
+      "bundleIdentifier": "com.ipiavare.app"
     },
     "android": {
       "icon": "./assets/icon.png",
@@ -19,19 +21,27 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#008CFF"
       },
-      "package": "com.churchapp.app"
+      "package": "com.ipiavare.app"
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "apiUrl": "https://api.ipiavare.com.br",
       "router": {
-        "entry": "./app/_layout.tsx"
+        "entry": "./app/_layout.tsx",
+        "origin": false
       },
       "googleClientId": "520104571386-bfmr77vb7rggo5qc2643jiaopk11m920.apps.googleusercontent.com",
-      "googleRedirectUri": "http://localhost:8081/+expo-auth-session"
-    }
+      "googleRedirectUri": "http://localhost:8081/+expo-auth-session",
+      "eas": {
+        "projectId": "df12c7ac-c627-42c1-839a-f17f05dd38cc"
+      }
+    },
+    "owner": "inspeare-software-house"
   }
 }
