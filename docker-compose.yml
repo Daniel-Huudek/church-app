@@ -7,7 +7,7 @@ services:
       dockerfile: apps/api-gateway/Dockerfile
     container_name: church-app-api-gateway
     ports:
-      - "3000:3000"
+      - "3000"
     environment:
       - NODE_ENV=development
       - PORT=3000
@@ -50,7 +50,7 @@ services:
       dockerfile: apps/auth-service/Dockerfile
     container_name: church-app-auth-service
     ports:
-      - "3001:3001"
+      - "3001"
     environment:
       - NODE_ENV=development
       - PORT=3001
@@ -78,7 +78,7 @@ services:
       dockerfile: apps/member-service/Dockerfile
     container_name: church-app-member-service
     ports:
-      - "3006:3006"
+      - "3006"
     environment:
       - NODE_ENV=development
       - PORT=3006
@@ -101,7 +101,7 @@ services:
       dockerfile: apps/schedule-service/Dockerfile
     container_name: church-app-schedule-service
     ports:
-      - "3003:3003"
+      - "3003"
     environment:
       - NODE_ENV=development
       - PORT=3003
@@ -124,7 +124,7 @@ services:
       dockerfile: apps/event-service/Dockerfile
     container_name: church-app-event-service
     ports:
-      - "3004:3004"
+      - "3004"
     environment:
       - NODE_ENV=development
       - PORT=3004
@@ -147,7 +147,7 @@ services:
       dockerfile: apps/notification-service/Dockerfile
     container_name: church-app-notification-service
     ports:
-      - "3005:3005"
+      - "3005"
     environment:
       - NODE_ENV=development
       - PORT=3005
@@ -172,7 +172,7 @@ services:
       dockerfile: apps/prayer-service/Dockerfile
     container_name: church-app-prayer-service
     ports:
-      - "3007:3007"
+      - "3007"
     environment:
       - NODE_ENV=development
       - PORT=3007
@@ -195,7 +195,7 @@ services:
       dockerfile: apps/financial-service/Dockerfile
     container_name: church-app-financial-service
     ports:
-      - "3008:3008"
+      - "3008"
     environment:
       - NODE_ENV=development
       - PORT=3008
