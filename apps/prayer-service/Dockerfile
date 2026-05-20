@@ -1,36 +1,22 @@
-FROM node:20-alpine AS builder
-RUN apk add --no-cache openssl
-WORKDIR /app
-
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY apps/prayer-service/package.json ./apps/prayer-service/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/types/package.json ./packages/types/
-COPY packages/eslint-config/package.json ./packages/eslint-config/
-COPY packages/tsconfig/package.json ./packages/tsconfig/
-
-RUN npm install -g pnpm@8 && pnpm install
-
-COPY apps/prayer-service/prisma ./apps/prayer-service/prisma
-RUN cd apps/prayer-service && npx prisma generate
-
-COPY packages/shared/src ./packages/shared/src
-COPY packages/types/src ./packages/types/src
-COPY apps/prayer-service/src ./apps/prayer-service/src
-
-RUN pnpm --filter @church-app/prayer-service build
-
 FROM node:20-alpine
 RUN apk add --no-cache openssl
 WORKDIR /app
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/prayer-service/prisma ./apps/prayer-service/prisma
-COPY --from=builder /app/apps/prayer-service/src ./apps/prayer-service/src
-
 COPY package.json pnpm-workspace.yaml ./
 COPY apps/prayer-service/package.json ./apps/prayer-service/
+COPY packages/ ./packages/
+
+WORKDIR /app/apps/prayer-service
+
+RUN npm install -g pnpm && pnpm install
+
+COPY apps/prayer-service/prisma ./prisma
+COPY apps/prayer-service/src ./src
+COPY apps/prayer-service/package.json ./
+COPY apps/prayer-service/start.sh ./
+
+RUN npx prisma generate
 
 EXPOSE 3007
-CMD ["sh", "-c", "cd apps/prayer-service && npx prisma db push --skip-generate --accept-data-loss || true && tsx src/index.ts"]
+
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss || true && npx --no-install tsx src/index.ts"]
