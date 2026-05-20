@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput } from 'react-native';
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '../../../src/hooks/useColorScheme';
 import { usePermission } from '../../../src/hooks/usePermission';
 import { useAuthStore } from '../../../src/store/auth';
+import { API_URL } from '../../../src/services/api';
 
 interface User {
   id: string;
@@ -36,7 +36,6 @@ export default function UsersScreen() {
 
   const loadUsers = useCallback(async () => {
     try {
-      const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000';
       const token = useAuthStore.getState().accessToken;
       
       if (!token) {

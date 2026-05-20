@@ -6,15 +6,27 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "churchapp",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.churchapp.app" },
-    "android": { "package": "com.churchapp.app" },
+    "ios": {
+      "icon": "./assets/icon.png",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.churchapp.app"
+    },
+    "android": {
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#008CFF"
+      },
+      "package": "com.churchapp.app"
+    },
     "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://localhost:3000",
+      "apiUrl": "https://api.ipiavare.com.br",
       "router": {
         "entry": "./app/_layout.tsx"
       },

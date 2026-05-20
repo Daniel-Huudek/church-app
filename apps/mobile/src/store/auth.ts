@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 import type { User, LoginCredentials, RegisterData, UpdateProfileData } from '../types';
 import { authService } from '../services';
+import { API_URL } from '../services/api';
 import {
   getAccessToken,
   getRefreshToken,
@@ -87,7 +88,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   logout: async () => {
-    const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
     const token = await getAccessToken();
     
     if (token) {
