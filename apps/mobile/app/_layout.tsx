@@ -4,7 +4,16 @@ import { useState, createContext, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import Constants from 'expo-constants';
 import { useColorScheme } from '../src/hooks';
+
+const extra = Constants.expoConfig?.extra;
+GoogleSignin.configure({
+  webClientId: extra?.googleClientId,
+  androidClientId: extra?.googleAndroidClientId || extra?.googleClientId,
+  iosClientId: extra?.googleIosClientId || extra?.googleClientId,
+});
 
 interface ThemeContextType {
   isDark: boolean;

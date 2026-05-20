@@ -11,7 +11,7 @@
     "ios": {
       "icon": "./assets/icon.png",
       "supportsTablet": true,
-      "bundleIdentifier": "com.ipiavare.app"
+      "bundleIdentifier": "com.ipiavare.ios"
     },
     "android": {
       "icon": "./assets/icon.png",
@@ -19,7 +19,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#008CFF"
       },
-      "package": "com.ipiavare.app"
+      "package": "com.ipiavare.android"
     },
     "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
@@ -32,7 +32,8 @@
         "origin": false
       },
       "googleClientId": "520104571386-k3t9hp4e1fod8i4s1u538d4ekmnljj6j.apps.googleusercontent.com",
-      "googleRedirectUri": "http://localhost:8081/+expo-auth-session",
+      "googleAndroidClientId": "520104571386-k3t9hp4e1fod8i4s1u538d4ekmnljj6j.apps.googleusercontent.com",
+      "googleIosClientId": "520104571386-9mab6sjfvl3840hiju094f6b4k54netl.apps.googleusercontent.com",
       "eas": {
         "projectId": "df12c7ac-c627-42c1-839a-f17f05dd38cc"
       }

@@ -15,50 +15,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { useAuth } from '../../src/hooks';
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const { loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const extra = Constants.expoConfig?.extra;
-  const clientId = extra?.googleClientId || '';
-  
-  const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'ipiavare',
-    path: '+expo-auth-session',
-  });
-
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId,
-    redirectUri,
-    scopes: ['openid', 'profile', 'email'],
-    responseType: 'id_token',
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = 
-        response.params.id_token || 
-        response.params.idToken || 
-        response.authentication?.idToken;
-      
-      if (idToken) {
-        handleGoogleLogin(idToken);
-      } else {
-        setError('Token não encontrado na resposta.');
-      }
-    } else if (response?.type === 'error') {
-      setError('Login com Google cancelado ou falhou.');
-    }
-  }, [response]);
 
   const handleGoogleLogin = useCallback(async (idToken: string) => {
     setLoading(true);
@@ -80,11 +44,23 @@ export default function LoginScreen() {
   const handleGooglePress = useCallback(async () => {
     setError('');
     try {
-      await promptAsync();
-    } catch {
-      setError('Não foi possível iniciar o login com Google.');
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const response = await GoogleSignin.signIn();
+      const idToken = response.data?.idToken;
+
+      if (idToken) {
+        await handleGoogleLogin(idToken);
+      } else {
+        setError('Token não encontrado na resposta do Google.');
+      }
+    } catch (err: any) {
+      if (err?.code === '-5') {
+        setError('Login com Google cancelado.');
+      } else {
+        setError('Não foi possível iniciar o login com Google.');
+      }
     }
-  }, [promptAsync]);
+  }, [handleGoogleLogin]);
 
   // Animations
   const logoScale = useSharedValue(0);
