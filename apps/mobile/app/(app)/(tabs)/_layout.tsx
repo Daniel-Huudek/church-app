@@ -46,9 +46,9 @@ function Drawer({ navigation, visible, onClose }: { navigation: any; visible: bo
   if (!visible) return null;
 
   return (
-    <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 100 }}>
+    <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 100, backgroundColor: isDark ? '#000' : '#fff' }}>
       <TouchableOpacity 
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} 
+        style={{ flex: 1, backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)' }} 
         onPress={onClose}
         activeOpacity={1}
       />
@@ -283,8 +283,9 @@ function MyTabBar({ state, navigation }: any) {
 }
 
 export default function TabLayout() {
+  const { isDark } = useColorScheme();
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? '#0A0A0F' : '#FFFFFF' }}>
       <Tabs
         tabBarPosition="bottom"
         tabBar={(props) => <MyTabBar {...props} />}
