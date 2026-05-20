@@ -6,6 +6,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/notification-service/package.json ./apps/notification-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/types/package.json ./packages/types/
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
 
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
