@@ -375,15 +375,7 @@ export default function MemberDetailScreen() {
                 </View>
               )}
               <View className="flex-1">
-                <Button
-                  variant="secondary"
-                  size="md"
-                  fullWidth
-                  leftIcon={<MessageIcon />}
-                  onPress={() => router.push(`/(app)/(tabs)/chat?memberId=${id}`)}
-                >
-                  Mensagem
-                </Button>
+                
               </View>
               <View className="flex-1">
                 <Button

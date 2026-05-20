@@ -1,308 +1,237 @@
-import { View, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, TextInput, Image, Alert } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '../../../../src/hooks/useColorScheme';
 import { useAuth } from '../../../../src/hooks/useAuth';
 import { prayersService } from '../../../../src/services/prayers';
-import type { Prayer, PrayerCategory, PrayerFilter } from '../../../../src/types';
-import { PrayerCard } from '../../../../src/features/prayers/components/PrayerCard';
-import { Header, Skeleton, EmptyState, Chip, Tabs } from '../../../../src/components/ui';
-import { FadeIn } from '../../../../src/components/animations';
+import type { Prayer } from '../../../../src/types';
 
-
-const FEED_TABS = [
-  { key: 'feed', label: 'Feed' },
-  { key: 'urgent', label: 'Urgentes' },
-  { key: 'mine', label: 'Meus Pedidos' },
+const tabs = [
+  { key: 'feed', label: 'Pedidos' },
+  { key: 'mine', label: 'Meus' },
 ];
 
-const PAGE_SIZE = 20;
+function PrayerCard({ prayer, onPress }: { prayer: Prayer; onPress: () => void }) {
+  const { isDark } = useColorScheme();
+  const { user } = useAuth();
+  const [local, setLocal] = useState(() => ({
+    liked: prayer.reactions?.some(r => r.type === 'AMEN' && r.userId === user?.id) ?? false,
+    count: prayer.reactions?.filter(r => r.type === 'AMEN').length ?? 0,
+  }));
 
-function PlusIcon() {
-  return <Text className="text-2xl text-white">+</Text>;
-}
+  useEffect(() => {
+    setLocal({
+      liked: prayer.reactions?.some(r => r.type === 'AMEN' && r.userId === user?.id) ?? false,
+      count: prayer.reactions?.filter(r => r.type === 'AMEN').length ?? 0,
+    });
+  }, [prayer.reactions, user?.id]);
 
-function PrayerSkeleton() {
+  const handleLike = async () => {
+    try {
+      await prayersService.toggleReaction(prayer.id, 'AMEN');
+      setLocal(prev => ({
+        liked: !prev.liked,
+        count: prev.liked ? prev.count - 1 : prev.count + 1,
+      }));
+    } catch (e: any) {
+      Alert.alert('Erro', e?.response?.data?.message || e?.message || 'Erro ao reagir');
+    }
+  };
+
   return (
-    <View className="px-4 mt-2">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <View key={i} className="mb-4 rounded-2xl p-4" style={{ backgroundColor: '#1A1A2E' }}>
-          <View className="flex-row items-center mb-3">
-            <Skeleton variant="circular" width={36} height={36} />
-            <View className="flex-1 ml-2.5">
-              <Skeleton variant="text" width="40%" height={12} className="mb-1" />
-              <Skeleton variant="text" width="25%" height={10} />
-            </View>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={[styles.card, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+      <View style={styles.cardHeader}>
+        <View style={styles.author}>
+          <View style={[styles.avatar, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+            <Text style={styles.avatarText}>{prayer.authorName?.charAt(0) || '?'}</Text>
           </View>
-          <Skeleton variant="text" width="80%" height={16} className="mb-2" />
-          <Skeleton variant="text" width="100%" height={12} className="mb-1" />
-          <Skeleton variant="text" width="100%" height={12} className="mb-3" />
-          <View className="flex-row gap-2">
-            <Skeleton variant="rectangular" width={70} height={28} className="rounded-full" />
-            <Skeleton variant="rectangular" width={70} height={28} className="rounded-full" />
-            <Skeleton variant="rectangular" width={70} height={28} className="rounded-full" />
+          <View>
+            <Text style={[styles.authorName, { color: isDark ? '#F9FAFB' : '#111827' }]}>{prayer.authorName}</Text>
+            <Text style={[styles.postedAt, { color: isDark ? '#6B7280' : '#9CA3AF' }]}>
+              {new Date(prayer.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
+            </Text>
           </View>
         </View>
-      ))}
-    </View>
+        {prayer.isUrgent && (
+          <View style={styles.urgentBadge}>
+            <Text style={styles.urgentText}>⚠️ Urgente</Text>
+          </View>
+        )}
+      </View>
+
+      <Text style={[styles.content, { color: isDark ? '#E5E5E5' : '#374151' }]} numberOfLines={4}>
+        {prayer.content}
+      </Text>
+
+      {prayer.categoryName && (
+        <View style={[styles.categoryBadge, { backgroundColor: isDark ? '#8B5CF620' : '#8B5CF610' }]}>
+          <Text style={styles.categoryText}>{prayer.categoryName}</Text>
+        </View>
+      )}
+
+      <View style={[styles.cardFooter, { borderTopColor: isDark ? '#1F2937' : '#F3F4F6' }]}>
+        <TouchableOpacity onPress={handleLike} style={styles.actionBtn}>
+          <Text style={styles.actionIcon}>{local.liked ? '❤️' : '🤍'}</Text>
+          <Text style={[styles.actionText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>{local.count}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn}>
+          <Text style={styles.actionIcon}>💬</Text>
+          <Text style={[styles.actionText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+            {prayer.commentsCount || 0}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
   );
 }
 
 export default function PrayerFeedScreen() {
-  const { isDark, colors: themeColors } = useColorScheme();
+  const { isDark } = useColorScheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-
   const [prayers, setPrayers] = useState<Prayer[]>([]);
-  const [categories, setCategories] = useState<PrayerCategory[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState('feed');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    prayersService.getCategories()
-      .then(setCategories)
-      .catch(() => {});
-  }, []);
-
-  const filters = useMemo((): PrayerFilter => {
-    const f: PrayerFilter = { page, limit: PAGE_SIZE, sortBy: 'recent' };
-    if (activeCategory) f.categoryId = activeCategory;
-    if (activeTab === 'urgent') f.isUrgent = true;
-    if (activeTab === 'mine' && user) f.authorId = user.id;
-    return f;
-  }, [page, activeCategory, activeTab, user]);
-
-  const loadPrayers = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-      setPage(1);
-    } else if (page === 1) {
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
-    }
-
+  const loadPrayers = useCallback(async () => {
     try {
-      const currentPage = isRefresh ? 1 : page;
       let res;
-
-      if (activeTab === 'urgent') {
-        res = await prayersService.getUrgent(currentPage, PAGE_SIZE);
-      } else if (activeTab === 'mine') {
-        res = await prayersService.getMy(currentPage, PAGE_SIZE);
+      if (activeTab === 'mine') {
+        res = await prayersService.getMy(1, 50);
       } else {
-        res = await prayersService.list({ ...filters, page: currentPage });
+        res = await prayersService.list({ limit: 50, sortBy: 'recent' });
       }
-
-      const list = res.data.data || [];
-      if (isRefresh || currentPage === 1) {
-        setPrayers(list);
-      } else {
-        setPrayers((prev) => [...prev, ...list]);
-      }
-      setHasMore(list.length >= PAGE_SIZE);
-    } catch {
-      // handled
-    } finally {
+      setPrayers(res.data || []);
+    } catch {} finally {
       setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
     }
-  }, [page, filters, activeTab]);
+  }, [activeTab]);
 
-  useEffect(() => {
-    loadPrayers();
-  }, [page]);
+  useEffect(() => { loadPrayers(); }, [loadPrayers]);
 
-  const handleRefresh = useCallback(() => {
-    loadPrayers(true);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadPrayers();
+    setRefreshing(false);
   }, [loadPrayers]);
 
-  const handleEndReached = useCallback(() => {
-    if (!loadingMore && hasMore && !loading) {
-      setPage((p) => p + 1);
-    }
-  }, [loadingMore, hasMore, loading]);
-
-  const handleTabChange = useCallback((key: string) => {
-    setActiveTab(key);
-    setActiveCategory(null);
-    setPage(1);
-  }, []);
-
-  const handleCategoryChange = useCallback((catId: string | null) => {
-    setActiveCategory(catId);
-    setPage(1);
-  }, []);
-
-  const handleReact = useCallback(async (prayerId: string, type: string) => {
-    try {
-      await prayersService.toggleReaction(prayerId, type as any);
-      setPrayers((prev) =>
-        prev.map((p) => {
-          if (p.id !== prayerId) return p;
-          const hasReaction = p.reactions?.some((r) => r.type === type);
-          return {
-            ...p,
-            reactions: hasReaction
-              ? (p.reactions?.filter((r) => r.type !== type) || [])
-              : [...(p.reactions || []), { id: '', prayerId, memberId: user?.id || '', memberName: user?.name || '', type: type as any, createdAt: new Date().toISOString() }],
-          };
-        })
-      );
-    } catch {
-      // handled
-    }
-  }, [user]);
-
-  const handleCreate = useCallback(() => {
-    router.push('/(app)/(tabs)/prayers/create');
-  }, []);
-
-  const renderPrayer = useCallback(
-    ({ item, index }: { item: Prayer; index: number }) => (
-      <FadeIn direction="up" delay={index * 60} distance={15}>
-        <PrayerCard
-          prayer={item}
-          index={index}
-          onPress={() => router.push(`/(app)/(tabs)/prayers/${item.id}`)}
-          onReact={(type) => handleReact(item.id, type)}
-        />
-      </FadeIn>
-    ),
-    [handleReact]
+  const filteredPrayers = prayers.filter(p => 
+    search === '' || 
+    p.content?.toLowerCase().includes(search.toLowerCase()) ||
+    p.authorName?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const renderListHeader = useMemo(() => {
-    if (categories.length === 0) return null;
-    return (
-      <View className="px-4 mb-4">
-        <FlatList
-          horizontal
-          data={[{ id: null, name: 'Todas' } as any, ...categories]}
-          keyExtractor={(item) => item.id || 'all'}
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <Chip
-              label={item.name}
-              selected={activeCategory === item.id}
-              onPress={() => handleCategoryChange(item.id)}
-              className="mr-2"
-              size="sm"
-            />
-          )}
-        />
-      </View>
-    );
-  }, [categories, activeCategory, handleCategoryChange]);
-
-  if (loading && page === 1) {
-    return (
-      <View className="flex-1" style={{ backgroundColor: isDark ? '#0A0A0F' : '#F9FAFB' }}>
-        <Header title="Pedidos de Oração" largeTitle />
-        <View className="px-4 mb-4">
-          <View className="flex-row border-b" style={{ borderColor: isDark ? '#1F2937' : '#E5E7EB' }}>
-            {FEED_TABS.map((tab) => (
-              <View key={tab.key} className="px-4 py-3">
-                <Skeleton variant="text" width={60} height={14} />
-              </View>
-            ))}
-          </View>
-        </View>
-        <View className="px-4 mb-4">
-          <FlatList
-            horizontal
-            data={[1, 2, 3, 4]}
-            keyExtractor={(i) => String(i)}
-            showsHorizontalScrollIndicator={false}
-            renderItem={() => <Skeleton variant="rectangular" width={70} height={28} className="mr-2 rounded-full" />}
-          />
-        </View>
-        <PrayerSkeleton />
-      </View>
-    );
-  }
+  const feedCount = prayers.length;
+  const mineCount = prayers.filter(p => p.authorId === user?.id).length;
 
   return (
-    <View className="flex-1" style={{ backgroundColor: isDark ? '#0A0A0F' : '#F9FAFB' }}>
-      <Header title="Pedidos de Oração" largeTitle />
+    <View style={[styles.container, { backgroundColor: isDark ? '#0A0A0F' : '#F8FAFC' }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+        <Text style={[styles.title, { color: isDark ? '#F9FAFB' : '#111827' }]}>Orações</Text>
+        <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+          {prayers.length} pedidos registrados
+        </Text>
+      </View>
 
-      <Tabs tabs={FEED_TABS} activeTab={activeTab} onTabChange={handleTabChange} />
+      <View style={[styles.searchBox, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Buscar pedidos..."
+          placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+          style={[styles.searchInput, { color: isDark ? '#F9FAFB' : '#111827' }]}
+        />
+      </View>
+
+      <View style={styles.tabs}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            onPress={() => setActiveTab(tab.key)}
+            style={[styles.tab, activeTab === tab.key && styles.tabActive]}
+          >
+            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
+              {tab.label} ({tab.key === 'feed' ? feedCount : mineCount})
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <FlatList
-        data={prayers}
-        renderItem={renderPrayer}
+        data={filteredPrayers}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          paddingTop: 16,
-          paddingHorizontal: 16,
-          paddingBottom: 100,
-        }}
-        ListHeaderComponent={renderListHeader}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
-            progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
+        }
+        renderItem={({ item }) => (
+          <PrayerCard
+            prayer={item}
+            onPress={() => router.push(`/(app)/(tabs)/prayers/${item.id}`)}
           />
-        }
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.3}
-        ListFooterComponent={
-          loadingMore ? (
-            <View className="py-4 items-center">
-              <ActivityIndicator color={isDark ? '#A78BFA' : '#7C3AED'} />
-            </View>
-          ) : null
-        }
+        )}
         ListEmptyComponent={
-          !loading ? (
-            <EmptyState
-              icon={<Text className="text-5xl">🙏</Text>}
-              title={
-                activeTab === 'urgent'
-                  ? 'Nenhum pedido urgente'
-                  : activeTab === 'mine'
-                  ? 'Você ainda não fez pedidos'
-                  : 'Nenhum pedido de oração'
-              }
-              subtitle={
-                activeTab === 'mine'
-                  ? 'Compartilhe seus pedidos de oração com a igreja.'
-                  : 'Quando alguém compartilhar um pedido, ele aparecerá aqui.'
-              }
-              actionLabel="Criar pedido"
-              onAction={handleCreate}
-            />
-          ) : null
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>🙏</Text>
+            <Text style={[styles.emptyTitle, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+              {activeTab === 'mine' ? 'Você ainda não fez pedidos' : 'Nenhum pedido de oração'}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+              Compartilhe seus pedidos com a igreja
+            </Text>
+          </View>
         }
       />
 
       <TouchableOpacity
-        onPress={handleCreate}
-        activeOpacity={0.8}
-        className="absolute w-14 h-14 rounded-full items-center justify-center"
-        style={{
-          backgroundColor: '#7C3AED',
-          bottom: insets.bottom + 24,
-          right: 20,
-          shadowColor: '#7C3AED',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4,
-          shadowRadius: 8,
-          elevation: 6,
-        }}
+        onPress={() => router.push('/(app)/(tabs)/prayers/create')}
+        style={[styles.fab, { bottom: insets.bottom + 20 }]}
       >
-        <PlusIcon />
+        <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingBottom: 8 },
+  title: { fontSize: 32, fontWeight: 'bold' },
+  subtitle: { fontSize: 14, marginTop: 4 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 16, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 15 },
+  tabs: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 8 },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: '#1A1A2E' },
+  tabActive: { backgroundColor: '#8B5CF6' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#9CA3AF' },
+  tabTextActive: { color: '#FFFFFF' },
+  list: { paddingHorizontal: 20, paddingBottom: 100 },
+  card: { borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  author: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  avatarText: { fontSize: 16, fontWeight: 'bold', color: '#8B5CF6' },
+  authorName: { fontSize: 14, fontWeight: '600' },
+  postedAt: { fontSize: 12, marginTop: 2 },
+  urgentBadge: { backgroundColor: '#EF444420', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  urgentText: { fontSize: 12, color: '#EF4444', fontWeight: '600' },
+  content: { fontSize: 15, lineHeight: 22, marginBottom: 12 },
+  categoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  categoryText: { fontSize: 12, color: '#8B5CF6', fontWeight: '600' },
+  cardFooter: { flexDirection: 'row', paddingTop: 12, borderTopWidth: 1, gap: 20 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  actionIcon: { fontSize: 18 },
+  actionText: { fontSize: 13 },
+  empty: { alignItems: 'center', paddingTop: 60 },
+  emptyIcon: { fontSize: 48 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', marginTop: 16 },
+  emptySubtitle: { fontSize: 14, marginTop: 4 },
+  fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
+  fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '300' },
+});

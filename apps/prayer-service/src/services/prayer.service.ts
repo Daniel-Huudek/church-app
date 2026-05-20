@@ -17,6 +17,7 @@ export class PrayerService {
         skip, take: limit, where,
         include: {
           category: true,
+          reactions: true,
           _count: { select: { comments: true, reactions: true, intercessors: true } },
         },
         orderBy: [{ isUrgent: 'desc' }, { createdAt: 'desc' }],
@@ -32,7 +33,7 @@ export class PrayerService {
     const [data, total] = await Promise.all([
       this.prisma.prayerRequest.findMany({
         skip, take: limit, where,
-        include: { category: true, _count: { select: { comments: true, reactions: true, intercessors: true } } },
+        include: { category: true, reactions: true, _count: { select: { comments: true, reactions: true, intercessors: true } } },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.prayerRequest.count({ where }),

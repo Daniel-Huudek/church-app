@@ -1,12 +1,14 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import Constants from 'expo-constants';
 import { getAccessToken, getRefreshToken, setAccessToken, setRefreshToken, clearTokens } from '../utils/storage';
+import { router } from 'expo-router';
 
 interface FailedRequest {
   resolve: (token: string) => void;
   reject: (error: unknown) => void;
 }
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
+const API_URL = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -84,7 +86,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await clearTokens();
-        window.location.href = '/login';
+        router.replace('/(auth)/login');
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

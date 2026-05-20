@@ -1,197 +1,219 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '../../../src/hooks/useColorScheme';
+import { useAuth } from '../../../src/hooks/useAuth';
 import { schedulesService } from '../../../src/services/schedules';
-import { Header, Skeleton, EmptyState, Button } from '../../../src/components/ui';
-import { FadeIn } from '../../../src/components/animations';
-import { ScheduleCard } from '../../../src/features/schedules/components/ScheduleCard';
-import { ScheduleFilter } from '../../../src/features/schedules/components/ScheduleFilter';
-import type { Schedule, ScheduleStatus, ScheduleFilter as ScheduleFilterType } from '../../../src/types';
+import type { Schedule, ScheduleStatus } from '../../../src/types';
+
+const statusConfig: Record<ScheduleStatus, { label: string; color: string; bg: string }> = {
+  AGENDADO: { label: 'Agendado', color: '#3B82F6', bg: '#3B82F615' },
+  CONFIRMADO: { label: 'Confirmado', color: '#10B981', bg: '#10B98115' },
+  EM_ANDAMENTO: { label: 'Em Andamento', color: '#8B5CF6', bg: '#8B5CF615' },
+  CONCLUIDO: { label: 'Concluído', color: '#6B7280', bg: '#6B728015' },
+  CANCELADO: { label: 'Cancelado', color: '#EF4444', bg: '#EF444415' },
+};
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatTime(start: string, end: string): string {
+  const fmt = (t: string) => t.substring(0, 5);
+  return `${fmt(start)} - ${fmt(end)}`;
+}
+
+function ScheduleItem({ schedule, onPress }: { schedule: Schedule; onPress: () => void }) {
+  const { isDark } = useColorScheme();
+  const config = statusConfig[schedule.status];
+  const confirmed = schedule.positions?.filter(p => p.status === 'CONFIRMADO').length || 0;
+  const total = schedule.positions?.length || 0;
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={[styles.card, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardDate}>
+          <Text style={[styles.cardDay, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+            {new Date(schedule.date).getDate()}
+          </Text>
+          <Text style={[styles.cardMonth, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+            {new Date(schedule.date).toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase()}
+          </Text>
+        </View>
+        <View style={[styles.statusBadge, { backgroundColor: config.bg }]}>
+          <Text style={[styles.statusText, { color: config.color }]}>{config.label}</Text>
+        </View>
+      </View>
+
+      <Text style={[styles.cardTime, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+        {formatTime(schedule.startTime, schedule.endTime)}
+      </Text>
+
+      {schedule.eventName && (
+        <Text style={[styles.cardEvent, { color: isDark ? '#F9FAFB' : '#111827' }]} numberOfLines={1}>
+          {schedule.eventName}
+        </Text>
+      )}
+
+      {schedule.ministryName && (
+        <View style={[styles.ministryTag, { backgroundColor: isDark ? '#8B5CF620' : '#8B5CF610' }]}>
+          <Text style={[styles.ministryText, { color: '#8B5CF6' }]}>{schedule.ministryName}</Text>
+        </View>
+      )}
+
+      {total > 0 && (
+        <View style={[styles.cardFooter, { borderTopColor: isDark ? '#1F2937' : '#F3F4F6' }]}>
+          <Text style={[styles.confirmedText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+            {confirmed}/{total} confirmados
+          </Text>
+          <View style={styles.avatars}>
+            {schedule.positions?.slice(0, 3).map((pos, i) => (
+              <View key={pos.id} style={[styles.avatar, { marginLeft: i > 0 ? -8 : 0 }]}>
+                <Text style={styles.avatarText}>{pos.memberName?.charAt(0) || '?'}</Text>
+              </View>
+            ))}
+            {total > 3 && (
+              <View style={[styles.moreAvatars, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]}>
+                <Text style={[styles.moreText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>+{total - 3}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 export default function Schedules() {
   const router = useRouter();
   const { isDark } = useColorScheme();
+  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [showMine, setShowMine] = useState(true);
-  const [filters, setFilters] = useState<ScheduleFilterType>({});
+  const [activeTab, setActiveTab] = useState<'mine' | 'all'>('mine');
 
-  const loadSchedules = useCallback(async (pageNum: number = 1, append: boolean = false) => {
+  const loadSchedules = useCallback(async () => {
     try {
-      const response = await schedulesService.getAll({
-        ...filters,
-        page: pageNum,
-        limit: 20,
-      });
-      if (append) {
-        setSchedules(prev => [...prev, ...response.data]);
-      } else {
-        setSchedules(response.data);
-      }
-      setTotalPages(response.totalPages);
+      const res = await schedulesService.getAll({ limit: 50 });
+      setSchedules(res.data);
     } catch (error) {
       console.error('Error loading schedules:', error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  }, [filters]);
+  }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    setPage(1);
-    loadSchedules(1);
-  }, [loadSchedules]);
+  useEffect(() => { loadSchedules(); }, [loadSchedules]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setPage(1);
-    await loadSchedules(1);
+    await loadSchedules();
     setRefreshing(false);
   }, [loadSchedules]);
 
-  const loadMore = useCallback(() => {
-    if (loadingMore || page >= totalPages) return;
-    setLoadingMore(true);
-    const nextPage = page + 1;
-    setPage(nextPage);
-    loadSchedules(nextPage, true);
-  }, [page, totalPages, loadingMore, loadSchedules]);
+  const filteredSchedules = activeTab === 'mine' 
+    ? schedules.filter(s => s.positions?.some(p => p.memberId === user?.id))
+    : schedules;
 
-  const handleFilterChange = useCallback((newFilters: ScheduleFilterType) => {
-    setFilters(newFilters);
-  }, []);
-
-  const renderSkeleton = () => (
-    <View className="flex-1 px-4 pt-20" style={{ backgroundColor: isDark ? '#0A0A0F' : '#FFFFFF' }}>
-      <Skeleton variant="text" width="50%" height={28} className="mb-6" />
-      <Skeleton variant="card" height={120} className="mb-3" />
-      <Skeleton variant="card" height={120} className="mb-3" />
-      <Skeleton variant="card" height={120} className="mb-3" />
-    </View>
-  );
-
-  if (loading) {
-    return renderSkeleton();
-  }
+  const upcomingCount = schedules.filter(s => s.status === 'AGENDADO' || s.status === 'CONFIRMADO').length;
+  const myCount = schedules.filter(s => s.positions?.some(p => p.memberId === user?.id)).length;
 
   return (
-    <View className="flex-1" style={{ backgroundColor: isDark ? '#0A0A0F' : '#FFFFFF' }}>
-      <Header
-        title="Minhas Escalas"
-        largeTitle
-      />
-
-      <View className="px-6 mb-4">
-        <View
-          className="flex-row rounded-full p-1"
-          style={{
-            backgroundColor: isDark ? '#1A1A2E' : '#F3F4F6',
-          }}
-        >
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setShowMine(true)}
-            className={`flex-1 py-2.5 px-4 rounded-full items-center ${
-              showMine ? (isDark ? 'bg-purple-600' : 'bg-purple-600') : ''
-            }`}
-          >
-            <Text
-              className={`text-sm font-semibold ${
-                showMine ? 'text-white' : isDark ? 'text-neutral-400' : 'text-neutral-600'
-              }`}
-            >
-              Minhas
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setShowMine(false)}
-            className={`flex-1 py-2.5 px-4 rounded-full items-center ${
-              !showMine ? (isDark ? 'bg-purple-600' : 'bg-purple-600') : ''
-            }`}
-          >
-            <Text
-              className={`text-sm font-semibold ${
-                !showMine ? 'text-white' : isDark ? 'text-neutral-400' : 'text-neutral-600'
-              }`}
-            >
-              Todas
-            </Text>
-          </TouchableOpacity>
-        </View>
+    <View style={[styles.container, { backgroundColor: isDark ? '#0A0A0F' : '#F8FAFC' }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+        <Text style={[styles.title, { color: isDark ? '#F9FAFB' : '#111827' }]}>Escalas</Text>
+        <Text style={[styles.subtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+          {upcomingCount} agendas próximas
+        </Text>
       </View>
 
-      <ScheduleFilter filters={filters} onChange={handleFilterChange} />
+      <View style={styles.tabs}>
+        <TouchableOpacity onPress={() => setActiveTab('mine')} style={[styles.tab, activeTab === 'mine' && styles.tabActive]}>
+          <Text style={[styles.tabText, activeTab === 'mine' && styles.tabTextActive]}>
+            Minhas ({myCount})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveTab('all')} style={[styles.tab, activeTab === 'all' && styles.tabActive]}>
+          <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>
+            Todas ({schedules.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
-        data={schedules}
+        data={filteredSchedules}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: 100,
-        }}
+        contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <ScheduleCard
-            schedule={item}
-            index={index}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
+        }
+        renderItem={({ item }) => (
+          <ScheduleItem 
+            schedule={item} 
             onPress={() => router.push(`/(app)/(tabs)/schedule-detail?id=${item.id}`)}
           />
         )}
         ListEmptyComponent={
-          <FadeIn direction="up" distance={20}>
-            <EmptyState
-              icon={<Text className="text-5xl">📋</Text>}
-              title="Nenhuma escala"
-              subtitle={showMine ? 'Você não está escalado para nenhum evento' : 'Nenhuma escala encontrada'}
-            />
-          </FadeIn>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={isDark ? '#A78BFA' : '#7C3AED'}
-            colors={['#7C3AED']}
-            progressBackgroundColor={isDark ? '#1A1A2E' : '#FFFFFF'}
-          />
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          loadingMore ? (
-            <View className="py-4 items-center">
-              <View className="flex-row gap-2">
-                <Skeleton variant="text" width={120} height={16} />
-              </View>
-            </View>
-          ) : null
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>📋</Text>
+            <Text style={[styles.emptyTitle, { color: isDark ? '#F9FAFB' : '#111827' }]}>
+              Nenhuma escala
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+              {activeTab === 'mine' ? 'Você não está escalado' : 'Nenhuma escala encontrada'}
+            </Text>
+          </View>
         }
       />
 
-      <View className="absolute bottom-8 right-6">
-        <TouchableOpacity
-          activeOpacity={0.8}
-          className="w-14 h-14 rounded-2xl items-center justify-center"
-          style={{
-            backgroundColor: '#7C3AED',
-            shadowColor: '#7C3AED',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4,
-            shadowRadius: 8,
-            elevation: 6,
-          }}
-          onPress={() => {}}
-        >
-          <Text className="text-2xl text-white font-bold">+</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        onPress={() => router.push('/(app)/(tabs)/schedule-create')}
+        style={[styles.fab, { bottom: insets.bottom + 20 }]}
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingBottom: 16 },
+  title: { fontSize: 32, fontWeight: 'bold' },
+  subtitle: { fontSize: 14, marginTop: 4 },
+  tabs: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 8 },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', backgroundColor: '#1A1A2E' },
+  tabActive: { backgroundColor: '#8B5CF6' },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
+  tabTextActive: { color: '#FFFFFF' },
+  list: { paddingHorizontal: 20, paddingBottom: 100 },
+  card: { borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  cardDate: { alignItems: 'center' },
+  cardDay: { fontSize: 24, fontWeight: 'bold' },
+  cardMonth: { fontSize: 11, fontWeight: '600' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusText: { fontSize: 12, fontWeight: '600' },
+  cardTime: { fontSize: 13, marginBottom: 8 },
+  cardEvent: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  ministryTag: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginBottom: 8 },
+  ministryText: { fontSize: 12, fontWeight: '600' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1 },
+  confirmedText: { fontSize: 12 },
+  avatars: { flexDirection: 'row' },
+  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 12, fontWeight: 'bold', color: '#FFFFFF' },
+  moreAvatars: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
+  moreText: { fontSize: 10, fontWeight: '600' },
+  empty: { alignItems: 'center', paddingTop: 60 },
+  emptyIcon: { fontSize: 48 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', marginTop: 16 },
+  emptySubtitle: { fontSize: 14, marginTop: 4 },
+  fab: { position: 'absolute', right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
+  fabText: { fontSize: 28, color: '#FFFFFF', fontWeight: '300' },
+});

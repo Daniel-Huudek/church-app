@@ -1,4 +1,4 @@
-import { PrismaClient, User, Role, Permission } from '@prisma/client';
+import { PrismaClient, User, Role, Permission as PrismaPermission } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AppError, UnauthorizedError, ConflictError } from '../shared';
@@ -58,6 +58,22 @@ export class AuthService {
 
     if (!payload) throw new AppError('Invalid Google token', 400);
 
+    return this.findOrCreateGoogleUser(payload);
+  }
+
+  async handleGoogleIdToken(idToken: string) {
+    const { OAuth2Client } = await import('google-auth-library');
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+
+    if (!payload) throw new AppError('Invalid Google token', 400);
+
+    return this.findOrCreateGoogleUser(payload);
+  }
+
+  private async findOrCreateGoogleUser(payload: { sub: string; email?: string; name?: string; picture?: string }) {
     let user = await this.prisma.user.findUnique({ where: { googleId: payload.sub } });
 
     if (!user) {
@@ -100,5 +116,78 @@ export class AuthService {
     await this.prisma.refreshToken.create({ data: { userId: user.id, token: refreshTokenValue, expiresAt } });
 
     return { success: true, data: { accessToken, refreshToken: refreshTokenValue, user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar } } };
+  }
+
+  async setUserPermissions(userId: string, permissions: string[]) {
+    const validPermissions = permissions.filter(p => 
+      ['users_read', 'users_write', 'users_delete', 'members_read', 'members_write', 'members_delete', 
+       'events_read', 'events_write', 'events_delete', 'prayers_read', 'prayers_write', 'prayers_delete',
+       'finance_read', 'finance_write', 'finance_delete'].includes(p)
+    ) as PrismaPermission[];
+    
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { permissions: validPermissions },
+    });
+    return user;
+  }
+
+  async getUserPermissions(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError('User not found', 404);
+    return user.permissions;
+  }
+
+  async getAllUsers() {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        permissions: true,
+        avatar: true,
+        createdAt: true,
+      },
+    });
+    return users;
+  }
+
+  async getUserById(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        permissions: true,
+        avatar: true,
+        createdAt: true,
+      },
+    });
+    if (!user) throw new AppError('User not found', 404);
+    return user;
+  }
+
+  async updateUserRole(userId: string, role: string) {
+    const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'MEMBRO', 'VISITANTE'];
+    if (!validRoles.includes(role)) {
+      throw new AppError('Invalid role', 400);
+    }
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: role as any },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        permissions: true,
+        avatar: true,
+        createdAt: true,
+      },
+    });
+    return user;
   }
 }

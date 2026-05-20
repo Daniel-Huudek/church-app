@@ -28,6 +28,11 @@ export default function AppLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
       <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="events/create" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="events/edit" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="users/index" options={{ headerShown: false }} />
+      <Stack.Screen name="users/edit" options={{ presentation: 'modal', headerShown: false }} />
     </Stack>
   );
 }

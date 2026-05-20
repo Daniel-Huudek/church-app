@@ -1,12 +1,16 @@
 export interface Prayer {
   id: string;
   title: string;
-  description: string;
+  content: string;
+  description?: string;
   category: PrayerCategory;
+  categoryName?: string;
   isUrgent: boolean;
   isAnswered: boolean;
   isAnonymous: boolean;
   isFavorite?: boolean;
+  commentsCount: number;
+  reactionsCount: number;
   intercessionCount: number;
   authorId: string;
   authorName: string;
@@ -43,20 +47,19 @@ export interface PrayerComment {
 export interface PrayerReaction {
   id: string;
   prayerId: string;
-  memberId: string;
-  memberName: string;
+  userId: string;
+  memberId?: string;
   type: PrayerReactionType;
   createdAt: string;
 }
 
-export type PrayerReactionType = 'ORANDO' | 'AMEM' | 'GRATO' | 'FORCA' | 'FE' | 'PAZ';
+export type PrayerReactionType = 'PRAYING' | 'AMEN' | 'THANKS';
 
 export interface PrayerIntercessor {
   id: string;
   prayerId: string;
-  memberId: string;
-  memberName: string;
-  memberAvatar?: string;
+  userId: string;
+  memberId?: string;
   createdAt: string;
 }
 

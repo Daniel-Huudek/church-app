@@ -125,3 +125,19 @@ export async function clearAll(): Promise<void> {
     removeItem(TOKEN_KEYS.USER),
   ]);
 }
+
+const FAB_POSITION_KEY = '@church_app_fab_position';
+
+export async function getFabPosition(): Promise<{ x: number; y: number } | null> {
+  const data = await getItem(FAB_POSITION_KEY);
+  if (!data) return null;
+  try {
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+export async function setFabPosition(position: { x: number; y: number }): Promise<void> {
+  return setItem(FAB_POSITION_KEY, JSON.stringify(position));
+}
