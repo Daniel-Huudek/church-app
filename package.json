@@ -16,6 +16,14 @@
     "docker:down": "docker-compose down",
     "prepare": "husky install"
   },
+  "pnpm": {
+    "overrides": {
+      "metro": "0.81.5"
+    }
+  },
+  "dependencies": {
+    "metro-runtime": "0.81.5"
+  },
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",
     "@commitlint/config-conventional": "^18.6.0",

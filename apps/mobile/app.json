@@ -7,9 +7,7 @@
     "userInterfaceStyle": "automatic",
     "scheme": "ipiavare",
     "icon": "./assets/icon.png",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "icon": "./assets/icon.png",
       "supportsTablet": true,
@@ -23,10 +21,7 @@
       },
       "package": "com.ipiavare.app"
     },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store"
-    ],
+    "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     },
@@ -36,7 +31,7 @@
         "entry": "./app/_layout.tsx",
         "origin": false
       },
-      "googleClientId": "520104571386-bfmr77vb7rggo5qc2643jiaopk11m920.apps.googleusercontent.com",
+      "googleClientId": "520104571386-k3t9hp4e1fod8i4s1u538d4ekmnljj6j.apps.googleusercontent.com",
       "googleRedirectUri": "http://localhost:8081/+expo-auth-session",
       "eas": {
         "projectId": "df12c7ac-c627-42c1-839a-f17f05dd38cc"
