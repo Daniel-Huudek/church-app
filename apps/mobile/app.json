@@ -31,9 +31,9 @@
         "entry": "./app/_layout.tsx",
         "origin": false
       },
-      "googleClientId": "520104571386-k3t9hp4e1fod8i4s1u538d4ekmnljj6j.apps.googleusercontent.com",
-      "googleAndroidClientId": "520104571386-k3t9hp4e1fod8i4s1u538d4ekmnljj6j.apps.googleusercontent.com",
-      "googleIosClientId": "520104571386-9mab6sjfvl3840hiju094f6b4k54netl.apps.googleusercontent.com",
+      "googleClientId": "520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com",
+      "googleAndroidClientId": "520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com",
+      "googleIosClientId": "520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com",
       "eas": {
         "projectId": "df12c7ac-c627-42c1-839a-f17f05dd38cc"
       }
