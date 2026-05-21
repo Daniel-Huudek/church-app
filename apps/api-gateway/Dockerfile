@@ -17,4 +17,5 @@ RUN chmod +x start.sh
 
 EXPOSE 3030
 
+EXPOSE 3030
 CMD ["./start.sh"]
