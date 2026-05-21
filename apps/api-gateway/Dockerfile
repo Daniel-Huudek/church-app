@@ -12,6 +12,6 @@ RUN npm install -g pnpm && pnpm install
 COPY apps/api-gateway/src ./src
 COPY apps/api-gateway/package.json ./
 
-EXPOSE 3000
+EXPOSE 3030
 
 CMD ["npx", "--no-install", "tsx", "src/index.ts"]
