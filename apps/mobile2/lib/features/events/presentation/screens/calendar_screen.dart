@@ -1,150 +1,263 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/widgets/app_card.dart';
-import '../../../../shared/widgets/app_badge.dart';
-import '../../../../core/config/theme/app_spacing.dart';
-import '../../../../core/config/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../shared/widgets/event_card.dart';
 
-class CalendarScreen extends ConsumerWidget {
+class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<CalendarScreen> createState() => _CalendarScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Eventos'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Month selector
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+class _CalendarScreenState extends State<CalendarScreen> {
+  late int _currentYear;
+  late int _currentMonth;
+  final _events = <Map<String, dynamic>>[];
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _currentYear = now.year;
+    _currentMonth = now.month + 1;
+  }
+
+  String _getMonthName(int year, int month) {
+    final months = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    return '${months[month - 1]} de $year';
+  }
+
+  void _changeMonth(int delta) {
+    setState(() {
+      _currentMonth += delta;
+      if (_currentMonth > 12) {
+        _currentMonth = 1;
+        _currentYear++;
+      } else if (_currentMonth < 1) {
+        _currentMonth = 12;
+        _currentYear--;
+      }
+    });
+  }
+
+  List<_EventSection> _groupByDate(List<Map<String, dynamic>> events) {
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    for (final event in events) {
+      final date = event['date'] as String? ?? '';
+      grouped.putIfAbsent(date, () => []).add(event);
+    }
+    final sortedKeys = grouped.keys.toList()..sort();
+    return sortedKeys.map((date) {
+      final d = DateTime.tryParse(date);
+      final title = d != null
+          ? '${_weekdayName(d.weekday)}, ${d.day} de ${_monthName(d.month)}'
+          : date;
+      return _EventSection(title: title, events: grouped[date]!);
+    }).toList();
+  }
+
+  String _weekdayName(int wd) {
+    const names = [
+      'segunda-feira', 'terça-feira', 'quarta-feira',
+      'quinta-feira', 'sexta-feira', 'sábado', 'domingo'
+    ];
+    return names[wd - 1];
+  }
+
+  String _monthName(int m) {
+    const names = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    return names[m - 1];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sections = _groupByDate(_events);
+    final canCreate = true;
+
+    return Container(
+      color: isDark ? const Color(0xFF0A0A0F) : Colors.white,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () {},
+                // Header
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(24, 20, 24, 16),
+                  child: Text(
+                    'Agenda',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                Text(
-                  'Maio 2026',
-                  style: Theme.of(context).textTheme.titleLarge,
+
+                // Month picker
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1A1A2E)
+                        : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => _changeMonth(-1),
+                        child: const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Text(
+                            '‹',
+                            style: TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        _getMonthName(_currentYear, _currentMonth),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _changeMonth(1),
+                        child: const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Text(
+                            '›',
+                            style: TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () {},
+                const SizedBox(height: 16),
+
+                // Events list
+                Expanded(
+                  child: _events.isEmpty
+                      ? _buildEmpty(isDark)
+                      : RefreshIndicator(
+                          onRefresh: () async {},
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                            itemCount: sections.length,
+                            itemBuilder: (context, sectionIndex) {
+                              final section = sections[sectionIndex];
+                              return Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8),
+                                    child: Text(
+                                      section.title.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? const Color(0xFF9CA3AF)
+                                            : const Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                  ),
+                                  ...section.events.map((event) =>
+                                      EventCard(
+                                        event: event,
+                                        onPress: () => context.go(
+                                            '/calendar/${event['id']}'),
+                                      )),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
                 ),
               ],
             ),
-          ),
-          // Day headers
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-                  .map((day) => SizedBox(
-                        width: 36,
-                        child: Text(
-                          day,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          // Calendar grid
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: List.generate(35, (index) {
-                final day = index + 1;
-                final isToday = day == 21;
-                return SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isToday ? AppColors.primary : null,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$day',
-                          style: TextStyle(
-                            color: isToday ? Colors.white : null,
-                            fontWeight: isToday ? FontWeight.bold : null,
-                          ),
-                        ),
-                      ),
-                    ),
+
+            // FAB
+            if (canCreate)
+              Positioned(
+                right: 20,
+                bottom: 20,
+                child: FloatingActionButton(
+                  onPressed: () => context.push('/calendar/create'),
+                  backgroundColor: const Color(0xFF008CFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          // Events list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              itemCount: 3,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: AppCard(
-                    onTap: () {},
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Culto de Domingo',
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              const SizedBox(height: AppSpacing.xxs),
-                              Text(
-                                '19:00 - Igreja',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const AppBadge(label: 'Culto'),
-                      ],
-                    ),
+                  child: Image.asset(
+                    'assets/images/add.png',
+                    width: 24,
+                    height: 24,
+                    color: Colors.white,
                   ),
-                );
-              },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmpty(bool isDark) {
+    return RefreshIndicator(
+      onRefresh: () async {},
+      child: ListView(
+        children: [
+          const SizedBox(height: 40),
+          Center(
+            child: Column(
+              children: [
+                const Text('📅', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 16),
+                Text(
+                  'Nenhum evento',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? const Color(0xFFF9FAFB)
+                        : const Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Não há eventos para este período',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF6B7280),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _EventSection {
+  final String title;
+  final List<Map<String, dynamic>> events;
+
+  const _EventSection({required this.title, required this.events});
 }

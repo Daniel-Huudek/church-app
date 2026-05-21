@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'auth_interceptor.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient();
@@ -20,6 +21,7 @@ class ApiClient {
         },
       ),
     );
+    _dio.interceptors.add(AuthInterceptor(() => _dio));
   }
 
   String get _baseUrl =>

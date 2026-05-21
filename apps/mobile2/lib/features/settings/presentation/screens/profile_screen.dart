@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/widgets/app_card.dart';
-import '../../../../shared/widgets/app_avatar.dart';
-import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/providers/theme_provider.dart';
-import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  _RoleData _roleConfig(String key) {
+    switch (key) {
+      case 'ADMINISTRADOR': return const _RoleData('Administrador', Color(0xFFEF4444), '👑');
+      case 'PASTOR': return const _RoleData('Pastor', Color(0xFF008CFF), '✝️');
+      case 'FINANCEIRO': return const _RoleData('Financeiro', Color(0xFF3B82F6), '💰');
+      case 'LIDER': return const _RoleData('Líder', Color(0xFFF59E0B), '⭐');
+      case 'VISITANTE': return const _RoleData('Visitante', Color(0xFF6B7280), '👋');
+      default: return const _RoleData('Membro', Color(0xFF10B981), '🙂');
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,148 +26,582 @@ class ProfileScreen extends ConsumerWidget {
     final user = authState.user;
     final isDark = themeState.isDark;
 
+    final bgColor = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
+    final cardBg = isDark ? const Color(0xFF1A1A2E) : Colors.white;
+    final textPrimary =
+        isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
+    final textSecondary =
+        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final borderColor =
+        isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
+
+    final name = user?.name ?? 'Usuário';
+    final initials = name
+        .split(' ')
+        .where((s) => s.isNotEmpty)
+        .take(2)
+        .map((s) => s[0])
+        .join()
+        .toUpperCase();
+    final roleKey = user?.role ?? 'MEMBRO';
+    final _roleData = _roleConfig(roleKey);
+
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            children: [
-              // User info
-              const SizedBox(height: AppSpacing.xl),
-              AppAvatar(
-                name: user?.name ?? 'Usuário',
-                imageUrl: user?.avatar,
-                size: 80,
-                showBorder: true,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                user?.name ?? 'Usuário',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              Text(
-                user?.email ?? '',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
-                    ),
-              ),
-              const SizedBox(height: AppSpacing.xl2),
-
-              // Menu items
-              _MenuItem(
-                icon: Icons.person_outline,
-                label: 'Editar Perfil',
-                onTap: () {},
-              ),
-              _MenuItem(
-                icon: Icons.settings_outlined,
-                label: 'Configurações',
-                onTap: () {},
-              ),
-              _MenuItem(
-                icon: Icons.notifications_outlined,
-                label: 'Notificações',
-                onTap: () {},
-              ),
-              _MenuItem(
-                icon: Icons.calendar_today,
-                label: 'Minhas Escalas',
-                onTap: () {},
-              ),
-              _MenuItem(
-                icon: Icons.event,
-                label: 'Meus Eventos',
-                onTap: () {},
-              ),
-              _MenuItem(
-                icon: Icons.menu_book,
-                label: 'Minhas Orações',
-                onTap: () {},
-              ),
-
-              const Divider(height: AppSpacing.xl2),
-
-              // Theme toggle
-              _MenuItem(
-                icon: isDark ? Icons.light_mode : Icons.dark_mode,
-                label: isDark ? 'Modo Claro' : 'Modo Escuro',
-                trailing: Switch(
-                  value: isDark,
-                  onChanged: (_) =>
-                      ref.read(themeProvider.notifier).toggleTheme(),
-                ),
-                onTap: () => ref.read(themeProvider.notifier).toggleTheme(),
-              ),
-
-              const Divider(height: AppSpacing.xl2),
-
-              // Logout
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await ref.read(authProvider.notifier).logout();
-                    if (context.mounted) {
-                      context.go('/login');
-                    }
-                  },
-                  icon: const Icon(Icons.logout, color: AppColors.error),
-                  label: const Text(
-                    'Sair',
-                    style: TextStyle(color: AppColors.error),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.error),
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      body: Container(
+        color: bgColor,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  height: 180,
+                  color: const Color(0xFF008CFF),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        bottom: -50,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: cardBg,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: user?.avatar != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(46),
+                                    child: Image.network(
+                                      user!.avatar!,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          _avatarCircle(initials),
+                                    ),
+                                  )
+                                : _avatarCircle(initials),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xl2),
-            ],
+
+                const SizedBox(height: 60),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      // Name + Email + Role
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              name,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              user?.email ?? '',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _roleData.color.withValues(alpha: 0.13),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(_roleData.icon),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _roleData.label,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: _roleData.color,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Phone
+                      if (user?.phone != null)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF3B82F6)
+                                      .withValues(alpha: 0.13),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Center(child: Text('📱')),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Telefone',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: textSecondary,
+                                    ),
+                                  ),
+                                  Text(
+                                    user!.phone!,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: textPrimary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Stats
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Estatísticas',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              _StatCard(
+                                icon: '📅',
+                                value: '0',
+                                label: 'Escalas',
+                                color: const Color(0xFF008CFF),
+                                cardBg: cardBg,
+                                textSecondary: textSecondary,
+                              ),
+                              const SizedBox(width: 10),
+                              _StatCard(
+                                icon: '🎉',
+                                value: '0',
+                                label: 'Eventos',
+                                color: const Color(0xFF3B82F6),
+                                cardBg: cardBg,
+                                textSecondary: textSecondary,
+                              ),
+                              const SizedBox(width: 10),
+                              _StatCard(
+                                icon: '🙏',
+                                value: '0',
+                                label: 'Orações',
+                                color: const Color(0xFF10B981),
+                                cardBg: cardBg,
+                                textSecondary: textSecondary,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Ministries
+                      if (user?.ministries != null &&
+                          (user!.ministries as List).isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ministérios',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: (user.ministries as List<String>)
+                                  .map((m) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: cardBg,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: borderColor,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          m,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: textPrimary,
+                                          ),
+                                        ),
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
+                        ),
+                      if (user?.ministries != null &&
+                          (user!.ministries as List).isNotEmpty)
+                        const SizedBox(height: 20),
+
+                      // Menu
+                      _MenuSection(
+                        title: 'Menu',
+                        cardBg: cardBg,
+                        textPrimary: textPrimary,
+                        textSecondary: textSecondary,
+                        borderColor: borderColor,
+                        items: [
+                          _MenuItemData(
+                            icon: '👤',
+                            label: 'Editar Perfil',
+                            color: const Color(0xFF008CFF),
+                          ),
+                          _MenuItemData(
+                            icon: '⚙️',
+                            label: 'Configurações',
+                            color: const Color(0xFF3B82F6),
+                          ),
+                          _MenuItemData(
+                            icon: '🔔',
+                            label: 'Notificações',
+                            color: const Color(0xFFF59E0B),
+                          ),
+                          _MenuItemData(
+                            icon: '📅',
+                            label: 'Minhas Escalas',
+                            color: const Color(0xFF10B981),
+                          ),
+                          _MenuItemData(
+                            icon: '🎉',
+                            label: 'Meus Eventos',
+                            color: const Color(0xFFEC4899),
+                          ),
+                          _MenuItemData(
+                            icon: '🙏',
+                            label: 'Minhas Orações',
+                            color: const Color(0xFF06B6D4),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Preferences
+                      _MenuSection(
+                        title: 'Preferências',
+                        cardBg: cardBg,
+                        textPrimary: textPrimary,
+                        textSecondary: textSecondary,
+                        borderColor: borderColor,
+                        items: [
+                          _MenuItemData(
+                            icon: isDark ? '🌙' : '☀️',
+                            label: 'Tema',
+                            color: isDark
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF6366F1),
+                            trailing: Text(
+                              isDark ? 'Escuro' : 'Claro',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF008CFF),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                        onItemTap: (index) {
+                          ref.read(themeProvider.notifier).toggleTheme();
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Logout
+                      GestureDetector(
+                        onTap: () async {
+                          await ref.read(authProvider.notifier).logout();
+                          if (context.mounted) {
+                            context.go('/login');
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withValues(alpha: 0.13),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('🚪', style: TextStyle(fontSize: 18)),
+                              SizedBox(width: 8),
+                              Text(
+                                'Sair da Conta',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFFEF4444),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _avatarCircle(String initials) {
+    return Container(
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFF008CFF),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: const TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
       ),
     );
   }
 }
 
-class _MenuItem extends StatelessWidget {
-  final IconData icon;
+class _RoleData {
   final String label;
-  final VoidCallback onTap;
-  final Widget? trailing;
+  final Color color;
+  final String icon;
 
-  const _MenuItem({
+  const _RoleData(this.label, this.color, this.icon);
+}
+
+class _StatCard extends StatelessWidget {
+  final String icon;
+  final String value;
+  final String label;
+  final Color color;
+  final Color cardBg;
+  final Color textSecondary;
+
+  const _StatCard({
     required this.icon,
+    required this.value,
     required this.label,
-    required this.onTap,
-    this.trailing,
+    required this.color,
+    required this.cardBg,
+    required this.textSecondary,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AppCard(
-        onTap: onTap,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Icon(icon, size: 22),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(label, style: Theme.of(context).textTheme.bodyLarge),
+            Text(icon, style: const TextStyle(fontSize: 24)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
-            trailing ??
-                const Icon(Icons.chevron_right, size: 20),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: textSecondary),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MenuItemData {
+  final String icon;
+  final String label;
+  final Color color;
+  final Widget? trailing;
+
+  const _MenuItemData({
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.trailing,
+  });
+}
+
+class _MenuSection extends StatelessWidget {
+  final String title;
+  final Color cardBg;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color borderColor;
+  final List<_MenuItemData> items;
+  final void Function(int index)? onItemTap;
+
+  const _MenuSection({
+    required this.title,
+    required this.cardBg,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.borderColor,
+    required this.items,
+    this.onItemTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+              return GestureDetector(
+                onTap: onItemTap != null ? () => onItemTap!(index) : null,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: index < items.length - 1
+                        ? Border(
+                            bottom: BorderSide(color: borderColor, width: 1),
+                          )
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: item.color.withValues(alpha: 0.13),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            item.icon,
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (item.trailing != null) ...[
+                        item.trailing!,
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        '›',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
     );
   }
 }

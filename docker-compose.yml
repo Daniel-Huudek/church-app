@@ -6,6 +6,12 @@ services:
     container_name: church-app-api-gateway
     ports:
       - "3030:3030"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway.rule=Host(`api.ipiavare.com.br`)"
+      - "traefik.http.routers.api-gateway.entrypoints=websecure"
+      - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api-gateway.loadbalancer.server.port=3030"
     environment:
       - NODE_ENV=production
       - PORT=3030
@@ -21,23 +27,23 @@ services:
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
     depends_on:
       auth-service:
-        condition: service_started
+        condition: service_healthy
       member-service:
-        condition: service_started
+        condition: service_healthy
       schedule-service:
-        condition: service_started
+        condition: service_healthy
       event-service:
-        condition: service_started
+        condition: service_healthy
       notification-service:
-        condition: service_started
+        condition: service_healthy
       prayer-service:
-        condition: service_started
+        condition: service_healthy
       financial-service:
-        condition: service_started
+        condition: service_healthy
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -58,7 +64,7 @@ services:
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3000/auth/google/callback}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3030/auth/google/callback}
     depends_on:
       postgres-auth:
         condition: service_healthy

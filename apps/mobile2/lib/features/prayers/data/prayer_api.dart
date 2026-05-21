@@ -16,49 +16,81 @@ class PrayerApi {
       ApiConfig.prayers,
       queryParameters: params,
     );
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>? ?? data as List<dynamic>;
-    return list.map((e) => PrayerModel.fromJson(e as Map<String, dynamic>)).toList();
+    final list = _parseList(response.data);
+    return list.map((e) => PrayerModel.fromJson(e)).toList();
+  }
+
+  List<Map<String, dynamic>> _parseList(dynamic data) {
+    if (data is List) {
+      return data.cast<Map<String, dynamic>>();
+    }
+    if (data is Map<String, dynamic>) {
+      var inner = data['data'];
+      if (inner is Map) {
+        inner = inner['data'];
+      }
+      if (inner is List) return inner.cast<Map<String, dynamic>>();
+      if (inner == null) return [];
+    }
+    throw FormatException('Tipo inesperado: ${data.runtimeType}, valor: $data');
+  }
+
+  Map<String, dynamic> _parseItem(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      if (data.containsKey('success') && data.containsKey('data')) {
+        final inner = data['data'];
+        if (inner is Map<String, dynamic>) {
+          if (inner.containsKey('data') && inner['data'] is Map) {
+            return inner['data'] as Map<String, dynamic>;
+          }
+          return inner;
+        }
+      }
+      return data;
+    }
+    throw FormatException('Unexpected response format: $data');
   }
 
   Future<List<PrayerModel>> getMy() async {
     final response = await _client.get(ApiConfig.prayersMy);
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>? ?? data as List<dynamic>;
-    return list.map((e) => PrayerModel.fromJson(e as Map<String, dynamic>)).toList();
+    final list = _parseList(response.data);
+    return list.map((e) => PrayerModel.fromJson(e)).toList();
   }
 
   Future<List<PrayerModel>> getUrgent() async {
     final response = await _client.get(ApiConfig.prayersUrgent);
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>? ?? data as List<dynamic>;
-    return list.map((e) => PrayerModel.fromJson(e as Map<String, dynamic>)).toList();
+    final list = _parseList(response.data);
+    return list.map((e) => PrayerModel.fromJson(e)).toList();
   }
 
   Future<PrayerModel> getById(String id) async {
     final response = await _client.get('${ApiConfig.prayers}/$id');
-    final data = response.data as Map<String, dynamic>;
-    final prayer = data['data'] as Map<String, dynamic>;
-    return PrayerModel.fromJson(prayer);
+    final item = _parseItem(response.data);
+    return PrayerModel.fromJson(item);
   }
 
   Future<PrayerModel> create(Map<String, dynamic> data) async {
     final response = await _client.post(ApiConfig.prayers, data: data);
-    final result = response.data as Map<String, dynamic>;
-    return PrayerModel.fromJson(result['data'] as Map<String, dynamic>);
+    final item = _parseItem(response.data);
+    return PrayerModel.fromJson(item);
   }
 
   Future<void> delete(String id) async {
     await _client.delete('${ApiConfig.prayers}/$id');
   }
 
+  Future<List<PrayerComment>> getComments(String prayerId) async {
+    final response = await _client.get(
+      '${ApiConfig.prayers}/$prayerId/comments',
+    );
+    final list = _parseList(response.data);
+    return list.map((e) => PrayerComment.fromJson(e)).toList();
+  }
+
   Future<List<PrayerCategory>> getCategories() async {
     final response = await _client.get(ApiConfig.prayersCategories);
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>;
-    return list
-        .map((e) => PrayerCategory.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final list = _parseList(response.data);
+    return list.map((e) => PrayerCategory.fromJson(e)).toList();
   }
 
   Future<PrayerComment> addComment(String prayerId, String content) async {
@@ -66,9 +98,8 @@ class PrayerApi {
       '${ApiConfig.prayers}/$prayerId/comments',
       data: {'content': content},
     );
-    return PrayerComment.fromJson(
-        (response.data as Map<String, dynamic>)['data']
-            as Map<String, dynamic>);
+    final item = _parseItem(response.data);
+    return PrayerComment.fromJson(item);
   }
 
   Future<void> toggleReaction(String prayerId, String type) async {

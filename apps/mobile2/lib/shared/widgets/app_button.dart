@@ -21,6 +21,10 @@ class AppButton extends StatelessWidget {
     this.icon,
   });
 
+  static const _pillShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusFull)),
+  );
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -44,6 +48,7 @@ class AppButton extends StatelessWidget {
       width: fullWidth ? double.infinity : null,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(shape: _pillShape),
         child: _buildChild(),
       ),
     );
@@ -58,6 +63,7 @@ class AppButton extends StatelessWidget {
           side: BorderSide(
             color: isDark ? AppColors.primary400 : AppColors.primary,
           ),
+          shape: _pillShape,
         ),
         child: _buildChild(),
       ),
@@ -65,9 +71,15 @@ class AppButton extends StatelessWidget {
   }
 
   Widget _buildGhost(BuildContext context) {
-    return TextButton(
-      onPressed: isLoading ? null : onPressed,
-      child: _buildChild(),
+    return SizedBox(
+      width: fullWidth ? double.infinity : null,
+      child: TextButton(
+        onPressed: isLoading ? null : onPressed,
+        style: TextButton.styleFrom(
+          shape: _pillShape,
+        ),
+        child: _buildChild(),
+      ),
     );
   }
 
@@ -76,6 +88,7 @@ class AppButton extends StatelessWidget {
       width: fullWidth ? double.infinity : null,
       child: OutlinedButton(
         onPressed: isLoading ? null : onPressed,
+        style: OutlinedButton.styleFrom(shape: _pillShape),
         child: _buildChild(),
       ),
     );
@@ -88,6 +101,7 @@ class AppButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.error,
+          shape: _pillShape,
         ),
         child: _buildChild(),
       ),

@@ -79,8 +79,8 @@ class AppTheme {
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusFull)),
           ),
           textStyle: AppTypography.button,
         ),
@@ -93,8 +93,8 @@ class AppTheme {
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusFull)),
           ),
         ),
       ),
@@ -197,8 +197,8 @@ class AppTheme {
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusFull)),
           ),
           textStyle: AppTypography.button,
         ),
@@ -211,8 +211,8 @@ class AppTheme {
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusFull)),
           ),
         ),
       ),
