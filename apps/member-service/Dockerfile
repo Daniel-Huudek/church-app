@@ -1,5 +1,5 @@
 FROM node:20-alpine
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl wget
 WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml ./
