@@ -136,7 +136,7 @@ class AppTheme {
         error: AppColors.error,
       ),
       scaffoldBackgroundColor: AppColors.darkBg,
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         displayLarge: AppTypography.displayLarge.copyWith(color: AppColors.darkText),
         displayMedium: AppTypography.displayMedium.copyWith(color: AppColors.darkText),
         displaySmall: AppTypography.displaySmall.copyWith(color: AppColors.darkText),

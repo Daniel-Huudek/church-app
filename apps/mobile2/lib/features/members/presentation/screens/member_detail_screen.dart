@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_header.dart';
-import '../../../shared/widgets/app_avatar.dart';
-import '../../../shared/widgets/app_badge.dart';
-import '../../../core/config/theme/app_spacing.dart';
-import '../../../core/config/theme/app_colors.dart';
-import '../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/app_header.dart';
+import '../../../../shared/widgets/app_avatar.dart';
+import '../../../../shared/widgets/app_badge.dart';
+import '../../../../core/config/theme/app_spacing.dart';
+import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/utils/formatters.dart';
 
 class MemberDetailScreen extends ConsumerWidget {
   final String id;
@@ -142,7 +142,7 @@ class MemberDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing._2xl),
+              const SizedBox(height: AppSpacing.xl2),
             ],
           ),
         ),

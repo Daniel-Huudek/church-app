@@ -7,11 +7,11 @@ class AppSpacing {
   static const double md = 12;
   static const double lg = 16;
   static const double xl = 20;
-  static const double _2xl = 24;
-  static const double _3xl = 32;
-  static const double _4xl = 40;
-  static const double _5xl = 48;
-  static const double _6xl = 64;
+  static const double xl2 = 24;
+  static const double xl3 = 32;
+  static const double xl4 = 40;
+  static const double xl5 = 48;
+  static const double xl6 = 64;
 
   // Border radius
   static const double radiusXs = 4;

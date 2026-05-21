@@ -1,44 +1,45 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/constants.dart';
 
 class SecureStorage {
   SecureStorage._();
 
-  static const _storage = FlutterSecureStorage();
+  static Future<SharedPreferences> get _prefs async =>
+      SharedPreferences.getInstance();
 
   static Future<void> setAccessToken(String token) async {
-    await _storage.write(key: AppConstants.accessTokenKey, value: token);
+    await (await _prefs).setString(AppConstants.accessTokenKey, token);
   }
 
   static Future<String?> getAccessToken() async {
-    return await _storage.read(key: AppConstants.accessTokenKey);
+    return (await _prefs).getString(AppConstants.accessTokenKey);
   }
 
   static Future<void> setRefreshToken(String token) async {
-    await _storage.write(key: AppConstants.refreshTokenKey, value: token);
+    await (await _prefs).setString(AppConstants.refreshTokenKey, token);
   }
 
   static Future<String?> getRefreshToken() async {
-    return await _storage.read(key: AppConstants.refreshTokenKey);
+    return (await _prefs).getString(AppConstants.refreshTokenKey);
   }
 
   static Future<void> setUser(String userJson) async {
-    await _storage.write(key: AppConstants.userKey, value: userJson);
+    await (await _prefs).setString(AppConstants.userKey, userJson);
   }
 
   static Future<String?> getUser() async {
-    return await _storage.read(key: AppConstants.userKey);
+    return (await _prefs).getString(AppConstants.userKey);
   }
 
   static Future<void> setThemeMode(String mode) async {
-    await _storage.write(key: AppConstants.themeKey, value: mode);
+    await (await _prefs).setString(AppConstants.themeKey, mode);
   }
 
   static Future<String?> getThemeMode() async {
-    return await _storage.read(key: AppConstants.themeKey);
+    return (await _prefs).getString(AppConstants.themeKey);
   }
 
   static Future<void> clearAll() async {
-    await _storage.deleteAll();
+    await (await _prefs).clear();
   }
 }

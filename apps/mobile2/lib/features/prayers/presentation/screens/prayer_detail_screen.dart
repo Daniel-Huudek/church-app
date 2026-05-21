@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_header.dart';
-import '../../../core/config/theme/app_spacing.dart';
-import '../../../core/config/theme/app_colors.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/app_header.dart';
+import '../../../../core/config/theme/app_spacing.dart';
+import '../../../../core/config/theme/app_colors.dart';
 
 class PrayerDetailScreen extends ConsumerWidget {
   final String id;

@@ -24,12 +24,12 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/google', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { idToken } = request.body as { idToken: string };
-    if (!idToken) {
-      return reply.status(400).send({ success: false, message: 'idToken not provided' });
+    const { token } = request.body as { token: string };
+    if (!token) {
+      return reply.status(400).send({ success: false, message: 'Token not provided' });
     }
     try {
-      const data = await authClient.post('/auth/google', { idToken });
+      const data = await authClient.post('/auth/google', { token });
       return reply.send(data);
     } catch (error: any) {
       return reply.status(error.statusCode || 500).send({

@@ -7,7 +7,7 @@ import { UnauthorizedError, BadRequestError } from '../shared';
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
 const registerSchema = z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6) });
 const googleCallbackSchema = z.object({ code: z.string() });
-const googleIdTokenSchema = z.object({ idToken: z.string() });
+const googleTokenSchema = z.object({ token: z.string() });
 const refreshSchema = z.object({ refreshToken: z.string() });
 const permissionsSchema = z.object({ permissions: z.array(z.string()) });
 
@@ -33,8 +33,8 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/google', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { idToken } = validate(googleIdTokenSchema, request.body);
-    const result = await authService.handleGoogleIdToken(idToken);
+    const { token } = validate(googleTokenSchema, request.body);
+    const result = await authService.handleGoogleToken(token);
     return reply.send(result);
   });
 

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_avatar.dart';
-import '../../../shared/widgets/app_badge.dart';
-import '../../../shared/widgets/app_empty_state.dart';
-import '../../../shared/widgets/app_tabs.dart';
-import '../../core/utils/formatters.dart';
-import '../../core/config/theme/app_spacing.dart';
-import '../../core/config/theme/app_colors.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/app_avatar.dart';
+import '../../../../shared/widgets/app_badge.dart';
+import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_tabs.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../../core/config/theme/app_spacing.dart';
+import '../../../../core/config/theme/app_colors.dart';
 
 class PrayerFeedScreen extends ConsumerStatefulWidget {
   const PrayerFeedScreen({super.key});

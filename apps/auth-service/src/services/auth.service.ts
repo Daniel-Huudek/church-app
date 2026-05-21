@@ -61,16 +61,20 @@ export class AuthService {
     return this.findOrCreateGoogleUser(payload);
   }
 
-  async handleGoogleIdToken(idToken: string) {
-    const { OAuth2Client } = await import('google-auth-library');
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-    const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
-    const payload = ticket.getPayload();
-
-    if (!payload) throw new AppError('Invalid Google token', 400);
-
-    return this.findOrCreateGoogleUser(payload);
+  async handleGoogleToken(token: string) {
+    try {
+      const { OAuth2Client } = await import('google-auth-library');
+      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
+      const payload = ticket.getPayload();
+      if (!payload) throw new Error();
+      return this.findOrCreateGoogleUser(payload);
+    } catch {
+      const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+      if (!response.ok) throw new AppError('Invalid Google token', 400);
+      const userInfo = await response.json() as { sub: string; email: string; name: string };
+      return this.findOrCreateGoogleUser({ sub: userInfo.sub, email: userInfo.email, name: userInfo.name });
+    }
   }
 
   private async findOrCreateGoogleUser(payload: { sub: string; email?: string; name?: string; picture?: string }) {
@@ -115,7 +119,7 @@ export class AuthService {
 
     await this.prisma.refreshToken.create({ data: { userId: user.id, token: refreshTokenValue, expiresAt } });
 
-    return { success: true, data: { accessToken, refreshToken: refreshTokenValue, user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar } } };
+    return { success: true, data: { accessToken, refreshToken: refreshTokenValue, user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar, permissions: user.permissions, createdAt: user.createdAt, updatedAt: user.updatedAt } } };
   }
 
   async setUserPermissions(userId: string, permissions: string[]) {

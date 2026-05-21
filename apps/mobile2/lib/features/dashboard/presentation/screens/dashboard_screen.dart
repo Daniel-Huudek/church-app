@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_avatar.dart';
-import '../../../shared/widgets/animated/slide_up.dart';
-import '../../../shared/providers/auth_provider.dart';
-import '../../../core/config/theme/app_colors.dart';
-import '../../../core/config/theme/app_spacing.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/app_avatar.dart';
+import '../../../../shared/widgets/animated/slide_up.dart';
+import '../../../../shared/providers/auth_provider.dart';
+import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/config/theme/app_spacing.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -76,7 +76,7 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing._2xl),
+              const SizedBox(height: AppSpacing.xl2),
 
               // Stats cards
               SlideUp(
@@ -128,7 +128,7 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing._2xl),
+              const SizedBox(height: AppSpacing.xl2),
 
               // Quick actions
               Text(
@@ -162,7 +162,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing._2xl),
+              const SizedBox(height: AppSpacing.xl2),
 
               // Recent section
               Text(

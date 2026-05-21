@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_badge.dart';
-import '../../../shared/widgets/app_tabs.dart';
-import '../../../shared/widgets/app_empty_state.dart';
-import '../../../core/config/theme/app_spacing.dart';
-import '../../../core/config/theme/app_colors.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/app_badge.dart';
+import '../../../../shared/widgets/app_tabs.dart';
+import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../core/config/theme/app_spacing.dart';
+import '../../../../core/config/theme/app_colors.dart';
 
 class ScheduleListScreen extends ConsumerStatefulWidget {
   const ScheduleListScreen({super.key});

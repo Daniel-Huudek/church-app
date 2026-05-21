@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_avatar.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/providers/auth_provider.dart';
-import '../../../shared/providers/theme_provider.dart';
-import '../../../core/config/theme/app_spacing.dart';
-import '../../../core/config/theme/app_colors.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/app_avatar.dart';
+import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/providers/theme_provider.dart';
+import '../../../../core/config/theme/app_spacing.dart';
+import '../../../../core/config/theme/app_colors.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -46,7 +46,7 @@ class ProfileScreen extends ConsumerWidget {
                           : AppColors.lightTextSecondary,
                     ),
               ),
-              const SizedBox(height: AppSpacing._2xl),
+              const SizedBox(height: AppSpacing.xl2),
 
               // Menu items
               _MenuItem(
@@ -80,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
                 onTap: () {},
               ),
 
-              const Divider(height: AppSpacing._2xl),
+              const Divider(height: AppSpacing.xl2),
 
               // Theme toggle
               _MenuItem(
@@ -94,7 +94,7 @@ class ProfileScreen extends ConsumerWidget {
                 onTap: () => ref.read(themeProvider.notifier).toggleTheme(),
               ),
 
-              const Divider(height: AppSpacing._2xl),
+              const Divider(height: AppSpacing.xl2),
 
               // Logout
               SizedBox(
@@ -117,7 +117,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing._2xl),
+              const SizedBox(height: AppSpacing.xl2),
             ],
           ),
         ),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../shared/providers/auth_provider.dart';
-import '../../../shared/widgets/animated/fade_in.dart';
-import '../../../core/config/theme/app_colors.dart';
-import '../../../core/config/theme/app_spacing.dart';
+import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/widgets/animated/fade_in.dart';
+import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/config/theme/app_spacing.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -88,13 +88,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     ],
                   ),
                   child: const Icon(
-                    Icons.cross,
+                    Icons.church,
                     size: 50,
                     color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing._3xl),
+              const SizedBox(height: AppSpacing.xl3),
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Column(

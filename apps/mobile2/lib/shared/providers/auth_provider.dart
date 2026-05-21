@@ -61,14 +61,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> loginWithGoogle(String idToken) async {
+  Future<void> loginWithGoogle(String token) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final response = await _apiClient.post(
         '/auth/google',
-        data: {'idToken': idToken},
+        data: {'token': token},
       );
-      final data = response.data as Map<String, dynamic>;
+      final rawData = response.data as Map<String, dynamic>;
+      final data = rawData['data'] as Map<String, dynamic>;
       final accessToken = data['accessToken'] as String;
       final refreshToken = data['refreshToken'] as String;
       final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
@@ -98,7 +99,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         '/auth/login',
         data: {'email': email, 'password': password},
       );
-      final data = response.data as Map<String, dynamic>;
+      final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
       final accessToken = data['accessToken'] as String;
       final refreshToken = data['refreshToken'] as String;
       final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
@@ -128,7 +129,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         '/auth/register',
         data: {'name': name, 'email': email, 'password': password},
       );
-      final data = response.data as Map<String, dynamic>;
+      final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
       final accessToken = data['accessToken'] as String;
       final refreshToken = data['refreshToken'] as String;
       final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);

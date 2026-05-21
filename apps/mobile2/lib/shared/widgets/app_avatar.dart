@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/config/theme/app_colors.dart';
-import '../../core/config/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
 
 class AppAvatar extends StatelessWidget {
@@ -22,13 +21,23 @@ class AppAvatar extends StatelessWidget {
     final initials = Formatters.getInitials(name);
 
     if (imageUrl != null) {
-      return CircleAvatar(
-        radius: size / 2,
-        backgroundImage: NetworkImage(imageUrl!),
-        backgroundColor: AppColors.primary100,
+      return ClipOval(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Image.network(
+            imageUrl!,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildFallback(initials),
+          ),
+        ),
       );
     }
 
+    return _buildFallback(initials);
+  }
+
+  Widget _buildFallback(String initials) {
     return Container(
       width: size,
       height: size,
