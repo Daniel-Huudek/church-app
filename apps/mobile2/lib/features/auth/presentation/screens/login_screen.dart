@@ -16,10 +16,7 @@ class LoginScreen extends ConsumerWidget {
             defaultValue:
                 '520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com',
           )
-        : const String.fromEnvironment(
-            'GOOGLE_ANDROID_CLIENT_ID',
-            defaultValue: '520104571386-rj97vjvga26d4q7entg8c34hdgh4lpev.apps.googleusercontent.com',
-          ),
+        : null,
     serverClientId: kIsWeb
         ? null
         : const String.fromEnvironment(
