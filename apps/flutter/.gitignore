@@ -3,6 +3,7 @@ build/
 .dart_tool/
 .packages
 .pub/
+pubspec.lock
 
 # Android
 android/.gradle/
@@ -27,11 +28,6 @@ ios/Runner/GoogleService-Info.plist
 *.iml
 *.swp
 *.swo
-
-# Desktop
-linux/
-macos/
-windows/
 
 # OS
 .DS_Store

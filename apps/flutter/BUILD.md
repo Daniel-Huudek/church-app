@@ -1,7 +1,7 @@
 # IPI Avaré — Build do APK
 
 ```bash
-cd apps/flutter
+cd apps/mobile2
 ```
 
 ---
