@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SongKey {
+  C Cm C7 Cm7 Cs Csm D Dm D7 Dm7 Eb Ebm
+  E Em E7 Em7 F Fm F7 Fm7 Fs Fsm G Gm
+  G7 Gm7 Ab Abm A Am A7 Am7 Bb Bbm B Bm B7 Bm7
+}
+
+model Song {
+  id         String   @id @default(uuid())
+  title      String
+  artist     String?
+  key        SongKey?
+  bpm        Int?
+  duration   Int?
+  lyrics     String?
+  chords     String?
+  capo       Int?
+  youtubeUrl String?
+  thumbnail  String?
+  notes      String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tags              SongTag[]
+  favorites         Favorite[]
+  playlistSongs     PlaylistSong[]
+  worshipEventSongs WorshipEventSong[]
+  histories         SongHistory[]
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String
+  color String @default("#008CFF")
+
+  songs SongTag[]
+}
+
+model SongTag {
+  songId String
+  tagId  String
+  song   Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([songId, tagId])
+}
+
+model Playlist {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdBy   String
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  songs        PlaylistSong[]
+  worshipEvent WorshipEvent?
+}
+
+model PlaylistSong {
+  id         String @id @default(uuid())
+  playlistId String
+  songId     String
+  order      Int
+  notes      String?
+  transpose  Int    @default(0)
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  song     Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId])
+  @@index([songId])
+}
+
+model WorshipEvent {
+  id            String   @id @default(uuid())
+  eventId       String   @unique
+  playlistId    String?
+  notes         String?
+  estimatedTime Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  playlist  Playlist?              @relation(fields: [playlistId], references: [id])
+  songs     WorshipEventSong[]
+  musicians WorshipEventMusician[]
+}
+
+model WorshipEventSong {
+  id             String @id @default(uuid())
+  worshipEventId String
+  songId         String
+  order          Int
+  transpose      Int    @default(0)
+  notes          String?
+
+  worshipEvent WorshipEvent @relation(fields: [worshipEventId], references: [id], onDelete: Cascade)
+  song         Song         @relation(fields: [songId], references: [id])
+
+  @@index([worshipEventId])
+}
+
+model WorshipEventMusician {
+  id             String  @id @default(uuid())
+  worshipEventId String
+  memberId       String
+  instrument     String?
+  role           String?
+  isConfirmed    Boolean @default(false)
+  isSubstituted  Boolean @default(false)
+
+  worshipEvent WorshipEvent @relation(fields: [worshipEventId], references: [id], onDelete: Cascade)
+
+  @@index([worshipEventId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  songId    String
+  createdAt DateTime @default(now())
+
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, songId])
+  @@index([userId])
+}
+
+model SongHistory {
+  id      String   @id @default(uuid())
+  songId  String
+  eventId String?
+  date    DateTime @default(now())
+
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([songId])
+  @@index([date])
+}

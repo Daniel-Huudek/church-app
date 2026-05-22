@@ -133,6 +133,14 @@ class _DrawerOverlayState extends State<_DrawerOverlay>
                     },
                   ),
                   _drawerItem(
+                    icon: '🎵',
+                    label: 'Louvor',
+                    onTap: () {
+                      context.go('/worship');
+                      widget.onClose();
+                    },
+                  ),
+                  _drawerItem(
                     icon: '📋',
                     label: 'Escalas',
                     onTap: () {

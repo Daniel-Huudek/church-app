@@ -29,6 +29,10 @@ import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_detail_screen.dart';
 import '../../features/users/presentation/screens/user_list_screen.dart';
 import '../../features/users/presentation/screens/user_edit_screen.dart';
+import '../../features/worship/presentation/screens/worship_dashboard_screen.dart';
+import '../../features/worship/presentation/screens/song_detail_screen.dart';
+import '../../features/worship/presentation/screens/playlist_detail_screen.dart';
+import '../../features/worship/presentation/screens/worship_repertory_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -187,6 +191,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'edit',
                 builder: (context, state) => const UserEditScreen(),
               ),
+            ],
+          ),
+          GoRoute(
+            path: '/worship',
+            builder: (context, state) => const WorshipDashboardScreen(),
+            routes: [
+              GoRoute(path: 'songs/:id', builder: (context, state) => SongDetailScreen(songId: state.pathParameters['id']!)),
+              GoRoute(path: 'playlists/:id', builder: (context, state) => PlaylistDetailScreen(playlistId: state.pathParameters['id']!)),
+              GoRoute(path: 'events/:id', builder: (context, state) => WorshipRepertoryScreen(eventId: state.pathParameters['id']!)),
             ],
           ),
         ],

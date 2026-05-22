@@ -175,7 +175,7 @@ export class AuthService {
   }
 
   async updateUserRole(userId: string, role: string) {
-    const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'MEMBRO', 'VISITANTE'];
+    const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'MEMBRO', 'VISITANTE'];
     if (!validRoles.includes(role)) {
       throw new AppError('Invalid role', 400);
     }

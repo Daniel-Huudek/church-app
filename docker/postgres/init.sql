@@ -5,3 +5,4 @@ CREATE DATABASE event_db;
 CREATE DATABASE notification_db;
 CREATE DATABASE prayer_db;
 CREATE DATABASE financial_db;
+CREATE DATABASE worship_db;

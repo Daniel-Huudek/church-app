@@ -1,4 +1,4 @@
-export type Role = 'ADMINISTRADOR' | 'PASTOR' | 'FINANCEIRO' | 'LIDER' | 'MEMBRO';
+export type Role = 'ADMINISTRADOR' | 'PASTOR' | 'FINANCEIRO' | 'LIDER' | 'LIDER_LOUVOR' | 'LOUVOR' | 'MEMBRO';
 
 export type Permission =
   | 'users:read'
@@ -30,7 +30,12 @@ export type Permission =
   | 'finance:audit'
   | 'finance:close'
   | 'finance:reports'
-  | 'notifications:send';
+  | 'notifications:send'
+  | 'worship:read'
+  | 'worship:write'
+  | 'worship:manage'
+  | 'playlist:manage'
+  | 'songs:manage';
 
 export interface User {
   id: string;
