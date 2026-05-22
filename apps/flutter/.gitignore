@@ -1,0 +1,43 @@
+# Flutter
+build/
+.dart_tool/
+.packages
+.pub/
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+android/app/google-services.json
+android/app/upload-keystore.jks
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/.last_build_id
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+ios/Runner/GoogleService-Info.plist
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# Desktop
+linux/
+macos/
+windows/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.local
+*.env
