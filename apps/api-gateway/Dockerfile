@@ -2,7 +2,7 @@ FROM node:20-alpine
 RUN apk add --no-cache wget
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY apps/api-gateway/package.json ./apps/api-gateway/
 COPY packages/ ./packages/
 
@@ -17,5 +17,4 @@ RUN chmod +x start.sh
 
 EXPOSE 3030
 
-EXPOSE 3030
 CMD ["./start.sh"]

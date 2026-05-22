@@ -12,7 +12,7 @@ class LoginScreen extends ConsumerWidget {
     scopes: ['email', 'profile'],
     clientId: kIsWeb
         ? const String.fromEnvironment(
-            'GOOGLE_CLIENT_ID',
+            'GOOGLE_WEB_CLIENT_ID',
             defaultValue:
                 '520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com',
           )
@@ -20,7 +20,7 @@ class LoginScreen extends ConsumerWidget {
     serverClientId: kIsWeb
         ? null
         : const String.fromEnvironment(
-            'GOOGLE_CLIENT_ID',
+            'GOOGLE_WEB_CLIENT_ID',
             defaultValue:
                 '520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com',
           ),

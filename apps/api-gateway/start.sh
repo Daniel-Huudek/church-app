@@ -1,3 +1,3 @@
 #!/bin/sh
 echo "Starting API Gateway..."
-exec tsx src/index.ts
+exec npx --no-install tsx src/index.ts

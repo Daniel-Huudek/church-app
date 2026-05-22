@@ -47,6 +47,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
   auth-service:
     build:
@@ -58,7 +61,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-auth:5432/auth_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/auth_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
@@ -66,7 +69,7 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3030/auth/google/callback}
     depends_on:
-      postgres-auth:
+      postgres-db:
         condition: service_healthy
     networks:
       - church-app-network
@@ -75,6 +78,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
   member-service:
     build:
@@ -86,10 +92,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3006
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-member:5432/member_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/member_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
-      postgres-member:
+      postgres-db:
         condition: service_healthy
     networks:
       - church-app-network
@@ -98,6 +104,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
   schedule-service:
     build:
@@ -109,10 +118,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3003
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-schedule:5432/schedule_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/schedule_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
-      postgres-schedule:
+      postgres-db:
         condition: service_healthy
     networks:
       - church-app-network
@@ -121,6 +130,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
   event-service:
     build:
@@ -132,10 +144,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3004
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-event:5432/event_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/event_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
-      postgres-event:
+      postgres-db:
         condition: service_healthy
     networks:
       - church-app-network
@@ -144,6 +156,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
   notification-service:
     build:
@@ -155,12 +170,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3005
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-notification:5432/notification_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/notification_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://evolution-api:8080}
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
     depends_on:
-      postgres-notification:
+      postgres-db:
         condition: service_healthy
     networks:
       - church-app-network
@@ -169,6 +184,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
   prayer-service:
     build:
@@ -180,10 +198,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3007
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-prayer:5432/prayer_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/prayer_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
-      postgres-prayer:
+      postgres-db:
         condition: service_healthy
     networks:
       - church-app-network
@@ -192,6 +210,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
   financial-service:
     build:
@@ -203,10 +224,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3008
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-financial:5432/financial_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/financial_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     depends_on:
-      postgres-financial:
+      postgres-db:
         condition: service_healthy
     networks:
       - church-app-network
@@ -215,135 +236,34 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
-  postgres-auth:
+  postgres-db:
     image: postgres:16-alpine
-    container_name: church-app-postgres-auth
+    container_name: church-app-postgres-db
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-church}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=auth_db
+      - POSTGRES_DB=church_app
     volumes:
-      - postgres-auth-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d auth_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d church_app"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  postgres-member:
-    image: postgres:16-alpine
-    container_name: church-app-postgres-member
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-church}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=member_db
-    volumes:
-      - postgres-member-data:/var/lib/postgresql/data
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d member_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-schedule:
-    image: postgres:16-alpine
-    container_name: church-app-postgres-schedule
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-church}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=schedule_db
-    volumes:
-      - postgres-schedule-data:/var/lib/postgresql/data
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d schedule_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-event:
-    image: postgres:16-alpine
-    container_name: church-app-postgres-event
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-church}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=event_db
-    volumes:
-      - postgres-event-data:/var/lib/postgresql/data
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d event_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-notification:
-    image: postgres:16-alpine
-    container_name: church-app-postgres-notification
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-church}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=notification_db
-    volumes:
-      - postgres-notification-data:/var/lib/postgresql/data
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d notification_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-prayer:
-    image: postgres:16-alpine
-    container_name: church-app-postgres-prayer
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-church}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=prayer_db
-    volumes:
-      - postgres-prayer-data:/var/lib/postgresql/data
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d prayer_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-financial:
-    image: postgres:16-alpine
-    container_name: church-app-postgres-financial
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-church}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
-      - POSTGRES_DB=financial_db
-    volumes:
-      - postgres-financial-data:/var/lib/postgresql/data
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d financial_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 1.0
 
 networks:
   church-app-network:
     driver: bridge
 
 volumes:
-  postgres-auth-data:
-  postgres-member-data:
-  postgres-schedule-data:
-  postgres-event-data:
-  postgres-notification-data:
-  postgres-prayer-data:
-  postgres-financial-data:
+  postgres-data:
