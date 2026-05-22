@@ -64,8 +64,9 @@ export class AuthService {
   async handleGoogleToken(token: string) {
     try {
       const { OAuth2Client } = await import('google-auth-library');
-      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-      const ticket = await client.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
+      const audiences = [process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_ANDROID_CLIENT_ID].filter(Boolean) as string[];
+      const client = new OAuth2Client(audiences[0]);
+      const ticket = await client.verifyIdToken({ idToken: token, audience: audiences });
       const payload = ticket.getPayload();
       if (!payload) throw new Error();
       return this.findOrCreateGoogleUser(payload);
