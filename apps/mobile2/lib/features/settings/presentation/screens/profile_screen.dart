@@ -44,7 +44,44 @@ class ProfileScreen extends ConsumerWidget {
         .join()
         .toUpperCase();
     final roleKey = user?.role ?? 'MEMBRO';
-    final _roleData = _roleConfig(roleKey);
+    final roleData = _roleConfig(roleKey);
+
+    final avatarSize = 80.0;
+
+    Widget _avatarCircle(String initials) {
+      return Container(
+        width: avatarSize,
+        height: avatarSize,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Color(0xFF008CFF),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          initials,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    Widget _avatar() {
+      if (user?.avatar != null) {
+        return ClipOval(
+          child: Image.network(
+            user!.avatar!,
+            width: avatarSize,
+            height: avatarSize,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _avatarCircle(initials),
+          ),
+        );
+      }
+      return _avatarCircle(initials);
+    }
 
     return Scaffold(
       body: Container(
@@ -55,51 +92,22 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 // Header
                 Container(
-                  height: 180,
+                  height: 120,
                   color: const Color(0xFF008CFF),
                   child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
                       Positioned(
-                        bottom: -50,
+                        bottom: -40,
                         left: 0,
                         right: 0,
-                        child: Center(
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: cardBg,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: user?.avatar != null
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(46),
-                                    child: Image.network(
-                                      user!.avatar!,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          _avatarCircle(initials),
-                                    ),
-                                  )
-                                : _avatarCircle(initials),
-                          ),
-                        ),
+                        child: Center(child: _avatar()),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 60),
+                const SizedBox(height: 48),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -128,24 +136,23 @@ class ProfileScreen extends ConsumerWidget {
                             const SizedBox(height: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
+                                horizontal: 12, vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: _roleData.color.withValues(alpha: 0.13),
+                                color: roleData.color.withValues(alpha: 0.13),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(_roleData.icon),
+                                  Text(roleData.icon),
                                   const SizedBox(width: 6),
                                   Text(
-                                    _roleData.label,
+                                    roleData.label,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: _roleData.color,
+                                      color: roleData.color,
                                     ),
                                   ),
                                 ],
@@ -172,8 +179,7 @@ class ProfileScreen extends ConsumerWidget {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF3B82F6)
-                                      .withValues(alpha: 0.13),
+                                  color: const Color(0xFF3B82F6).withValues(alpha: 0.13),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: const Center(child: Text('📱')),
@@ -219,30 +225,21 @@ class ProfileScreen extends ConsumerWidget {
                           Row(
                             children: [
                               _StatCard(
-                                icon: '📅',
-                                value: '0',
-                                label: 'Escalas',
+                                icon: '📅', value: '0', label: 'Escalas',
                                 color: const Color(0xFF008CFF),
-                                cardBg: cardBg,
-                                textSecondary: textSecondary,
+                                cardBg: cardBg, textSecondary: textSecondary,
                               ),
                               const SizedBox(width: 10),
                               _StatCard(
-                                icon: '🎉',
-                                value: '0',
-                                label: 'Eventos',
+                                icon: '🎉', value: '0', label: 'Eventos',
                                 color: const Color(0xFF3B82F6),
-                                cardBg: cardBg,
-                                textSecondary: textSecondary,
+                                cardBg: cardBg, textSecondary: textSecondary,
                               ),
                               const SizedBox(width: 10),
                               _StatCard(
-                                icon: '🙏',
-                                value: '0',
-                                label: 'Orações',
+                                icon: '🙏', value: '0', label: 'Orações',
                                 color: const Color(0xFF10B981),
-                                cardBg: cardBg,
-                                textSecondary: textSecondary,
+                                cardBg: cardBg, textSecondary: textSecondary,
                               ),
                             ],
                           ),
@@ -271,16 +268,12 @@ class ProfileScreen extends ConsumerWidget {
                               children: (user.ministries as List<String>)
                                   .map((m) => Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
+                                          horizontal: 12, vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
                                           color: cardBg,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color: borderColor,
-                                          ),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: borderColor),
                                         ),
                                         child: Text(
                                           m,
@@ -306,36 +299,12 @@ class ProfileScreen extends ConsumerWidget {
                         textSecondary: textSecondary,
                         borderColor: borderColor,
                         items: [
-                          _MenuItemData(
-                            icon: '👤',
-                            label: 'Editar Perfil',
-                            color: const Color(0xFF008CFF),
-                          ),
-                          _MenuItemData(
-                            icon: '⚙️',
-                            label: 'Configurações',
-                            color: const Color(0xFF3B82F6),
-                          ),
-                          _MenuItemData(
-                            icon: '🔔',
-                            label: 'Notificações',
-                            color: const Color(0xFFF59E0B),
-                          ),
-                          _MenuItemData(
-                            icon: '📅',
-                            label: 'Minhas Escalas',
-                            color: const Color(0xFF10B981),
-                          ),
-                          _MenuItemData(
-                            icon: '🎉',
-                            label: 'Meus Eventos',
-                            color: const Color(0xFFEC4899),
-                          ),
-                          _MenuItemData(
-                            icon: '🙏',
-                            label: 'Minhas Orações',
-                            color: const Color(0xFF06B6D4),
-                          ),
+                          _MenuItemData(icon: '👤', label: 'Editar Perfil', color: const Color(0xFF008CFF)),
+                          _MenuItemData(icon: '⚙️', label: 'Configurações', color: const Color(0xFF3B82F6)),
+                          _MenuItemData(icon: '🔔', label: 'Notificações', color: const Color(0xFFF59E0B)),
+                          _MenuItemData(icon: '📅', label: 'Minhas Escalas', color: const Color(0xFF10B981)),
+                          _MenuItemData(icon: '🎉', label: 'Meus Eventos', color: const Color(0xFFEC4899)),
+                          _MenuItemData(icon: '🙏', label: 'Minhas Orações', color: const Color(0xFF06B6D4)),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -351,9 +320,7 @@ class ProfileScreen extends ConsumerWidget {
                           _MenuItemData(
                             icon: isDark ? '🌙' : '☀️',
                             label: 'Tema',
-                            color: isDark
-                                ? const Color(0xFFF59E0B)
-                                : const Color(0xFF6366F1),
+                            color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
                             trailing: Text(
                               isDark ? 'Escuro' : 'Claro',
                               style: const TextStyle(
@@ -413,31 +380,12 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _avatarCircle(String initials) {
-    return Container(
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0xFF008CFF),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        initials,
-        style: const TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
 }
 
 class _RoleData {
   final String label;
   final Color color;
   final String icon;
-
   const _RoleData(this.label, this.color, this.icon);
 }
 
@@ -552,9 +500,7 @@ class _MenuSection extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     border: index < items.length - 1
-                        ? Border(
-                            bottom: BorderSide(color: borderColor, width: 1),
-                          )
+                        ? Border(bottom: BorderSide(color: borderColor, width: 1))
                         : null,
                   ),
                   child: Row(

@@ -31,13 +31,13 @@ class LoginScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      body: Container(
-        color: const Color(0xFF008CFF),
-        child: SafeArea(
+      backgroundColor: const Color(0xFF008CFF),
+      body: SafeArea(
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _AnimatedLogo(),
                 const SizedBox(height: 64),
@@ -91,7 +91,7 @@ class LoginScreen extends ConsumerWidget {
             ),
           ),
         ),
-      ),
+        ),
       bottomNavigationBar: SafeArea(
         child: _FadeSlideIn(
           delay: 800,
@@ -214,16 +214,17 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
         children: [
           Image.asset(
             'assets/images/logo.png',
-            width: 180,
-            height: 180,
+            width: 234,
+            height: 234,
           ),
           const Padding(
             padding: EdgeInsets.only(top: 6),
             child: Text(
               'Sua igreja conectada',
               style: TextStyle(
-                color: Color(0xFF9CA3AF),
-                fontSize: 15,
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
