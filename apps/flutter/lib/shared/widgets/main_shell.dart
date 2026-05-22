@@ -24,6 +24,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final user = authState.user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.darkBg : Colors.white;
+    final currentRoute = GoRouterState.of(context).matchedLocation;
 
     return Scaffold(
       body: Stack(
@@ -33,6 +34,39 @@ class _MainShellState extends ConsumerState<MainShell> {
             _DrawerOverlay(
               isDark: isDark,
               onClose: () => setState(() => _drawerVisible = false),
+            ),
+          if (user != null && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR']) && !currentRoute.startsWith('/worship'))
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () => context.go('/worship'),
+                  child: Container(
+                    width: 40,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF008CFF),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomLeft: Radius.circular(12),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          offset: const Offset(2, 0),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      '🎵',
+                      style: TextStyle(fontSize: 22),
+                    ),
+                  ),
+                ),
+              ),
             ),
         ],
       ),

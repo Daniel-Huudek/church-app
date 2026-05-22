@@ -18,6 +18,7 @@ import '../../features/schedules/presentation/screens/schedule_detail_screen.dar
 import '../../features/schedules/presentation/screens/create_schedule_screen.dart';
 import '../../features/members/presentation/screens/member_list_screen.dart';
 import '../../features/members/presentation/screens/member_detail_screen.dart';
+import '../../features/worship/presentation/screens/worship_dashboard_screen.dart';
 import '../../features/finance/presentation/screens/finance_dashboard_screen.dart';
 import '../../features/finance/presentation/screens/finance_transactions_screen.dart';
 import '../../features/finance/presentation/screens/finance_reports_screen.dart';
@@ -29,10 +30,7 @@ import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_detail_screen.dart';
 import '../../features/users/presentation/screens/user_list_screen.dart';
 import '../../features/users/presentation/screens/user_edit_screen.dart';
-import '../../features/worship/presentation/screens/worship_dashboard_screen.dart';
-import '../../features/worship/presentation/screens/song_detail_screen.dart';
-import '../../features/worship/presentation/screens/playlist_detail_screen.dart';
-import '../../features/worship/presentation/screens/worship_repertory_screen.dart';
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -65,7 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(
-          hideNav: state.matchedLocation == '/prayers/create',
+          hideNav: state.matchedLocation == '/prayers/create' || state.matchedLocation.startsWith('/worship'),
           child: child,
         ),
         routes: [
@@ -168,6 +166,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
+            path: '/worship',
+            builder: (context, state) => const WorshipDashboardScreen(),
+          ),
+          GoRoute(
             path: '/notifications',
             builder: (context, state) => const NotificationListScreen(),
           ),
@@ -193,15 +195,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          GoRoute(
-            path: '/worship',
-            builder: (context, state) => const WorshipDashboardScreen(),
-            routes: [
-              GoRoute(path: 'songs/:id', builder: (context, state) => SongDetailScreen(songId: state.pathParameters['id']!)),
-              GoRoute(path: 'playlists/:id', builder: (context, state) => PlaylistDetailScreen(playlistId: state.pathParameters['id']!)),
-              GoRoute(path: 'events/:id', builder: (context, state) => WorshipRepertoryScreen(eventId: state.pathParameters['id']!)),
-            ],
-          ),
+
         ],
       ),
     ],
