@@ -8,7 +8,7 @@ COPY packages/ ./packages/
 
 WORKDIR /app/apps/prayer-service
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install
 
 COPY apps/prayer-service/prisma ./prisma
 COPY apps/prayer-service/start.sh ./

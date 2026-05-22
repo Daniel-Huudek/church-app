@@ -8,7 +8,7 @@ COPY packages/ ./packages/
 
 WORKDIR /app/apps/api-gateway
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install
 
 COPY apps/api-gateway/start.sh ./
 COPY apps/api-gateway/src ./src

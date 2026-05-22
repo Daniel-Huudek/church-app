@@ -8,7 +8,7 @@ COPY packages/ ./packages/
 
 WORKDIR /app/apps/schedule-service
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install
 
 COPY apps/schedule-service/prisma ./prisma
 COPY apps/schedule-service/start.sh ./

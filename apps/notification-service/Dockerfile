@@ -8,7 +8,7 @@ COPY packages/ ./packages/
 
 WORKDIR /app/apps/notification-service
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install
 
 COPY apps/notification-service/prisma ./prisma
 COPY apps/notification-service/start.sh ./

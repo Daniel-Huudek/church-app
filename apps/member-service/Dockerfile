@@ -8,7 +8,7 @@ COPY packages/ ./packages/
 
 WORKDIR /app/apps/member-service
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install
 
 COPY apps/member-service/prisma ./prisma
 COPY apps/member-service/start.sh ./
