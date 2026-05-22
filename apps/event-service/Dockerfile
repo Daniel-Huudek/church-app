@@ -2,19 +2,20 @@ FROM node:20-alpine
 RUN apk add --no-cache openssl wget
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY apps/event-service/package.json ./apps/event-service/
 COPY packages/ ./packages/
 
 WORKDIR /app/apps/event-service
 
-RUN npm install -g pnpm && pnpm install
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 COPY apps/event-service/prisma ./prisma
+COPY apps/event-service/start.sh ./
 COPY apps/event-service/src ./src
-COPY apps/event-service/package.json ./
-RUN npx prisma generate
+
+RUN npx prisma generate && chmod +x start.sh
 
 EXPOSE 3004
 
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss || true && npx --no-install tsx src/index.ts"]
+CMD ["./start.sh"]
