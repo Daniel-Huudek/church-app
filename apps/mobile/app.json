@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "ipiavare",
+    "slug": "ipiavare",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "ipiavare",
+    "icon": "./assets/icon.png",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "icon": "./assets/icon.png",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ipiavare.ios"
+    },
+    "android": {
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#008CFF"
+      },
+      "package": "com.ipiavare.android"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "https://api.ipiavare.com.br",
+      "router": {
+        "entry": "./app/_layout.tsx",
+        "origin": false
+      },
+      "googleClientId": "520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com",
+      "googleAndroidClientId": "520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com",
+      "googleIosClientId": "520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com",
+      "eas": {
+        "projectId": "df12c7ac-c627-42c1-839a-f17f05dd38cc"
+      }
+    },
+    "owner": "inspeare-software-house"
+  }
+}
