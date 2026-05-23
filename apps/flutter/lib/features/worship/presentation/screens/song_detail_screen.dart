@@ -1,7 +1,7 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
@@ -188,7 +188,7 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
 
   Widget _buildYouTubeCard(Song s) {
     return GestureDetector(
-      onTap: () => html.window.open(s.youtubeUrl!, '_blank'),
+      onTap: () => launchUrl(Uri.parse(s.youtubeUrl!)),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),

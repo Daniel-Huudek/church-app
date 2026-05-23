@@ -1,8 +1,8 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../data/worship_api.dart';
@@ -392,7 +392,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
             if (song.youtubeUrl != null) ...[
               const SizedBox(width: 4),
               GestureDetector(
-                onTap: () => html.window.open(song.youtubeUrl!, '_blank'),
+                onTap: () => launchUrl(Uri.parse(song.youtubeUrl!)),
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
