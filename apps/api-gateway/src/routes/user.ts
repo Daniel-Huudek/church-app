@@ -7,7 +7,7 @@ const userUpdateSchema = z.object({ role: z.string() });
 const permissionsUpdateSchema = z.object({ permissions: z.array(z.string()) });
 
 export async function userRoutes(fastify: FastifyInstance) {
-  fastify.get('/', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.get('/', async (request: any, reply: FastifyReply) => {
     try {
       const data = await authClient.get('/auth');
       return reply.send(data);
@@ -19,7 +19,7 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     try {
       const data = await authClient.get(`/auth/${request.params.id}`);
       return reply.send(data);
@@ -31,7 +31,7 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.put('/:id', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  fastify.put('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     try {
       const body = validate(userUpdateSchema, request.body);
       const data = await authClient.put(`/auth/${request.params.id}`, body);
@@ -44,7 +44,7 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.put('/:id/permissions', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  fastify.put('/:id/permissions', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     try {
       const body = validate(permissionsUpdateSchema, request.body);
       const data = await authClient.put(`/auth/${request.params.id}/permissions`, body);
@@ -53,6 +53,42 @@ export async function userRoutes(fastify: FastifyInstance) {
       return reply.status(error.statusCode || 500).send({
         success: false,
         message: error.message || 'Failed to update permissions',
+      });
+    }
+  });
+
+  fastify.get('/roles', async (_request, reply) => {
+    try {
+      const data = await authClient.get('/auth/roles');
+      return reply.send(data);
+    } catch (error: any) {
+      return reply.status(error.statusCode || 500).send({
+        success: false,
+        message: error.message || 'Failed to fetch roles',
+      });
+    }
+  });
+
+  fastify.put('/roles/:name', async (request: FastifyRequest<{ Params: { name: string } }>, reply) => {
+    try {
+      const data = await authClient.put(`/auth/roles/${request.params.name}`, request.body);
+      return reply.send(data);
+    } catch (error: any) {
+      return reply.status(error.statusCode || 500).send({
+        success: false,
+        message: error.message || 'Failed to update role',
+      });
+    }
+  });
+
+  fastify.post('/roles/reset', async (_request, reply) => {
+    try {
+      const data = await authClient.post('/auth/roles/reset');
+      return reply.send(data);
+    } catch (error: any) {
+      return reply.status(error.statusCode || 500).send({
+        success: false,
+        message: error.message || 'Failed to reset roles',
       });
     }
   });

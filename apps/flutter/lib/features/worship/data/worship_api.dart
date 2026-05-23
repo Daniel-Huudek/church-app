@@ -25,11 +25,13 @@ class WorshipApi {
   Future<Map<String, dynamic>> duplicatePlaylist(String id) async { final r = await _client.post('/worship/playlists/$id/duplicate'); return r.data; }
   Future<void> reorderPlaylistSongs(String id, List<String> songIds) async { await _client.put('/worship/playlists/$id/songs/reorder', data: {'songIds': songIds}); }
   Future<Map<String, dynamic>?> getWorshipEventByEvent(String eventId) async { try { final r = await _client.get('/worship/worship-events/event/$eventId'); return r.data; } catch (_) { return null; } }
+  Future<Map<String, dynamic>> getWorshipEvent(String id) async { final r = await _client.get('/worship/worship-events/$id'); return r.data; }
+  Future<Map<String, dynamic>> listWorshipEvents({int page = 1, int limit = 50}) async { final r = await _client.get('/worship/worship-events', queryParameters: {'page': page, 'limit': limit}); return r.data; }
   Future<Map<String, dynamic>> createWorshipEvent(Map<String, dynamic> data) async { final r = await _client.post('/worship/worship-events', data: data); return r.data; }
   Future<void> updateWorshipEvent(String id, Map<String, dynamic> data) async { await _client.put('/worship/worship-events/$id', data: data); }
   Future<void> reorderWorshipEventSongs(String id, List<String> songIds) async { await _client.put('/worship/worship-events/$id/songs', data: {'songIds': songIds}); }
   Future<void> setWorshipEventMusicians(String id, List<Map<String, dynamic>> musicians) async { await _client.put('/worship/worship-events/$id/musicians', data: {'musicians': musicians}); }
-  Future<void> confirmMusician(String weId, String memberId) async { await _client.post('/worship/worship-events/$weId/musicians/$memberId/confirm'); }
+  Future<void> confirmMusician(String weId, String memberId, {String status = 'confirmado'}) async { await _client.post('/worship/worship-events/$weId/musicians/$memberId/confirm', data: {'status': status}); }
   Future<List<dynamic>> getFavorites() async { final r = await _client.get('/worship/favorites'); return (r.data as Map?)?['data'] as List? ?? []; }
   Future<void> addFavorite(String songId) async { await _client.post('/worship/favorites/$songId'); }
   Future<void> removeFavorite(String songId) async { await _client.delete('/worship/favorites/$songId'); }

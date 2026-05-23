@@ -78,4 +78,20 @@ export async function authRoutes(fastify: FastifyInstance) {
     const result = await authService.updateUserRole(request.params.id, role);
     return _reply.send({ success: true, data: result });
   });
+
+  fastify.get('/roles', async (_request, reply) => {
+    const result = await authService.getAllRoles();
+    return reply.send({ success: true, data: result });
+  });
+
+  fastify.put('/roles/:name', async (request: FastifyRequest<{ Params: { name: string } }>, reply) => {
+    const { permissions } = request.body as { permissions: string[] };
+    const result = await authService.updateRole(request.params.name, permissions);
+    return reply.send({ success: true, data: result });
+  });
+
+  fastify.post('/roles/reset', async (_request, reply) => {
+    const result = await authService.resetRoles();
+    return reply.send({ success: true, data: result });
+  });
 }

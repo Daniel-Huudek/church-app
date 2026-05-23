@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../core/config/theme/app_colors.dart';
 
@@ -35,36 +36,33 @@ class _MainShellState extends ConsumerState<MainShell> {
               isDark: isDark,
               onClose: () => setState(() => _drawerVisible = false),
             ),
-          if (user != null && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR']) && !currentRoute.startsWith('/worship'))
+          if (user != null && !currentRoute.startsWith('/worship') && currentRoute != '/dashboard' && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'FINANCEIRO']))
             Positioned(
               right: 0,
               top: 0,
               bottom: 0,
               child: Center(
-                child: GestureDetector(
-                  onTap: () => context.go('/worship'),
-                  child: Container(
-                    width: 40,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF008CFF),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        bottomLeft: Radius.circular(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR']))
+                      _sideButton(
+                        icon: Icons.music_note_rounded,
+                        label: 'Louvor',
+                        grad: const [Color(0xFF008CFF), Color(0xFF0066CC)],
+                        onTap: () => context.go('/worship'),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 8,
-                          offset: const Offset(2, 0),
-                        ),
-                      ],
-                    ),
-                    child: const Text(
-                      '🎵',
-                      style: TextStyle(fontSize: 22),
-                    ),
-                  ),
+                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) ...[
+                      const SizedBox(height: 10),
+                      _sideButton(
+                        icon: Icons.dashboard_rounded,
+                        label: '',
+                        grad: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                        onTap: () => context.go('/dashboard'),
+                        height: 56,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
@@ -77,6 +75,54 @@ class _MainShellState extends ConsumerState<MainShell> {
               user: user,
               onAdminTap: () => setState(() => _drawerVisible = !_drawerVisible),
             ),
+    );
+  }
+  Widget _sideButton({
+    required IconData icon,
+    required String label,
+    required List<Color> grad,
+    required VoidCallback onTap,
+    double height = 100,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: grad,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            bottomLeft: Radius.circular(16),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: grad.first.withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(4, 0),
+            ),
+          ],
+        ),
+        child: label.isEmpty
+            ? Icon(icon, color: Colors.white, size: 26)
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: Colors.white, size: 26),
+                  const SizedBox(height: 6),
+                  Text(label, style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  )),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -427,6 +473,8 @@ class _ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = user?.name as String? ?? '';
     final avatarUrl = user?.avatar as String?;
+    final updatedAt = user?.updatedAt as DateTime?;
+    final cacheKey = updatedAt?.millisecondsSinceEpoch ?? 0;
     final size = 36.0;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
@@ -438,12 +486,13 @@ class _ProfileAvatar extends StatelessWidget {
         margin: const EdgeInsets.only(left: 4),
         child: avatarUrl != null
             ? ClipOval(
-                child: Image.network(
-                  avatarUrl,
+                child: CachedNetworkImage(
+                  imageUrl: '${avatarUrl}?v=$cacheKey',
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _initialsCircle(size, initial),
+                  errorWidget: (_, __, ___) => _initialsCircle(size, initial),
+                  placeholder: (_, __) => _initialsCircle(size, initial),
                 ),
               )
             : _initialsCircle(size, initial),

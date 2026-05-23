@@ -52,7 +52,7 @@ model Song {
   id         String   @id @default(uuid())
   title      String
   artist     String?
-  key        SongKey?
+  key        String?
   bpm        Int?
   duration   Int?
   lyrics     String?

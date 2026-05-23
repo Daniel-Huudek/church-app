@@ -36,12 +36,14 @@ export async function worshipRoutes(fastify: FastifyInstance) {
   fastify.post('/playlists/:id/duplicate', async (r: FastifyRequest<{ Params: { id: string } }>) => playlistService.duplicate(r.params.id, (r as any).userId || 'system'));
   fastify.put('/playlists/:id/songs/reorder', async (r: FastifyRequest<{ Params: { id: string } }>) => { await playlistService.reorderSongs(r.params.id, validate(reorder, r.body).songIds); return { success: true }; });
 
+  fastify.get('/worship-events', async (r) => worshipEventService.list({ page: Number((r.query as any).page) || 1, limit: Number((r.query as any).limit) || 50 }));
+  fastify.get('/worship-events/:id', async (r: FastifyRequest<{ Params: { id: string } }>) => worshipEventService.getById(r.params.id));
   fastify.get('/worship-events/event/:eventId', async (r: FastifyRequest<{ Params: { eventId: string } }>) => worshipEventService.getByEvent(r.params.eventId));
   fastify.post('/worship-events', async (r, reply) => { const b = validate(weCreate, r.body); return reply.status(201).send({ success: true, data: await worshipEventService.create(b) }); });
   fastify.put('/worship-events/:id', async (r: FastifyRequest<{ Params: { id: string } }>) => worshipEventService.update(r.params.id, validate(weUpdate, r.body)));
   fastify.put('/worship-events/:id/songs', async (r: FastifyRequest<{ Params: { id: string } }>) => { await worshipEventService.reorderSongs(r.params.id, validate(reorder, r.body).songIds); return { success: true }; });
   fastify.put('/worship-events/:id/musicians', async (r: FastifyRequest<{ Params: { id: string } }>) => worshipEventService.setMusicians(r.params.id, validate(musiciansSchema, r.body).musicians));
-  fastify.post('/worship-events/:id/musicians/:memberId/confirm', async (r: FastifyRequest<{ Params: { id: string; memberId: string } }>) => { await worshipEventService.confirmMusician(r.params.id, r.params.memberId); return { success: true }; });
+  fastify.post('/worship-events/:id/musicians/:memberId/confirm', async (r: FastifyRequest<{ Params: { id: string; memberId: string } }>) => { const body = r.body as any; await worshipEventService.confirmMusician(r.params.id, r.params.memberId, body?.status ?? 'confirmado'); return { success: true }; });
 
   fastify.get('/favorites', async (r) => { const songs = await fastify.prisma.favorite.findMany({ where: { userId: (r as any).userId || '' }, include: { song: { include: { tags: { include: { tag: true } } } } }, orderBy: { createdAt: 'desc' } }); return { data: songs.map(f => f.song) }; });
   fastify.post('/favorites/:songId', async (r: FastifyRequest<{ Params: { songId: string } }>, reply) => { const f = await fastify.prisma.favorite.upsert({ where: { userId_songId: { userId: (r as any).userId || '', songId: r.params.songId } }, update: {}, create: { userId: (r as any).userId || '', songId: r.params.songId } }); return reply.status(201).send({ success: true, data: f }); });

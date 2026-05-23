@@ -4,6 +4,33 @@ import { NotFoundError } from '../shared';
 export class WorshipEventService {
   constructor(private prisma: PrismaClient) {}
 
+  async getById(id: string) {
+    const we = await this.prisma.worshipEvent.findUnique({
+      where: { id },
+      include: {
+        songs: { include: { song: true }, orderBy: { order: 'asc' } },
+        musicians: true,
+        playlist: { include: { songs: { include: { song: true }, orderBy: { order: 'asc' } } } },
+      },
+    });
+    if (!we) throw new NotFoundError('Worship event not found');
+    return we;
+  }
+
+  async list(params: { page?: number; limit?: number }) {
+    const { page = 1, limit = 50 } = params;
+    const [data, total] = await Promise.all([
+      this.prisma.worshipEvent.findMany({
+        include: { songs: { include: { song: true }, orderBy: { order: 'asc' } }, musicians: true, playlist: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.worshipEvent.count(),
+    ]);
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
   async getByEvent(eventId: string) {
     return this.prisma.worshipEvent.findUnique({ where: { eventId }, include: { songs: { include: { song: true }, orderBy: { order: 'asc' } }, musicians: true, playlist: { include: { songs: { include: { song: true }, orderBy: { order: 'asc' } } } } } });
   }
@@ -34,9 +61,14 @@ export class WorshipEventService {
     return this.prisma.worshipEventMusician.findMany({ where: { worshipEventId } });
   }
 
-  async confirmMusician(worshipEventId: string, memberId: string) {
+  async confirmMusician(worshipEventId: string, memberId: string, status: string = 'confirmado') {
     const m = await this.prisma.worshipEventMusician.findFirst({ where: { worshipEventId, memberId } });
     if (!m) throw new NotFoundError('Musician not found');
-    return this.prisma.worshipEventMusician.update({ where: { id: m.id }, data: { isConfirmed: true } });
+    const data = status === 'confirmado'
+      ? { isConfirmed: true, isSubstituted: false }
+      : status === 'indisponivel'
+        ? { isConfirmed: false, isSubstituted: true }
+        : { isConfirmed: false, isSubstituted: false };
+    return this.prisma.worshipEventMusician.update({ where: { id: m.id }, data });
   }
 }

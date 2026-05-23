@@ -46,9 +46,12 @@ class WorshipEventSong {
   factory WorshipEventSong.fromJson(Map<String, dynamic> j) => WorshipEventSong(id: j['id'], song: Song.fromJson(j['song']), order: j['order'], transpose: j['transpose'] ?? 0, notes: j['notes']);
 }
 class WorshipEventMusician {
-  final String id; final String memberId; final String? instrument; final String? role; final bool isConfirmed;
-  WorshipEventMusician({required this.id, required this.memberId, this.instrument, this.role, this.isConfirmed = false});
-  factory WorshipEventMusician.fromJson(Map<String, dynamic> j) => WorshipEventMusician(id: j['id'], memberId: j['memberId'], instrument: j['instrument'], role: j['role'], isConfirmed: j['isConfirmed'] ?? false);
+  final String id; final String memberId; final String? instrument; final String? role; final bool isConfirmed; final bool isSubstituted;
+  WorshipEventMusician({required this.id, required this.memberId, this.instrument, this.role, this.isConfirmed = false, this.isSubstituted = false});
+  factory WorshipEventMusician.fromJson(Map<String, dynamic> j) => WorshipEventMusician(
+    id: j['id'], memberId: j['memberId'], instrument: j['instrument'], role: j['role'],
+    isConfirmed: j['isConfirmed'] ?? false, isSubstituted: j['isSubstituted'] ?? false,
+  );
 }
 class TransposeResult {
   final String transposedChords; final String? originalKey; final String? newKey;
