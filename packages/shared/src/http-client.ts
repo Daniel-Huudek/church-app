@@ -89,3 +89,14 @@ export class HttpClient {
 export function createHttpClient(baseUrl: string, timeout?: number): HttpClient {
   return new HttpClient({ baseUrl, timeout });
 }
+
+export function getAuthHeader(request: { headers: Record<string, string | string[] | undefined> }): Record<string, string> {
+  const authorization = request.headers.authorization;
+  if (Array.isArray(authorization)) {
+    return { Authorization: authorization[0] };
+  }
+  if (authorization) {
+    return { Authorization: authorization };
+  }
+  return {};
+}

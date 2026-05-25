@@ -41,18 +41,30 @@ class EventListNotifier extends StateNotifier<EventListState> {
   }
 
   Future<void> create(Map<String, dynamic> data) async {
-    await _api.create(data);
-    await load();
+    try {
+      await _api.create(data);
+      await load();
+    } catch (e) {
+      state = EventListState(events: state.events, loading: false, error: 'Erro ao criar evento: $e');
+    }
   }
 
   Future<void> update(String id, Map<String, dynamic> data) async {
-    await _api.update(id, data);
-    await load();
+    try {
+      await _api.update(id, data);
+      await load();
+    } catch (e) {
+      state = EventListState(events: state.events, loading: false, error: 'Erro ao atualizar evento: $e');
+    }
   }
 
   Future<void> delete(String id) async {
-    await _api.delete(id);
-    await load();
+    try {
+      await _api.delete(id);
+      await load();
+    } catch (e) {
+      state = EventListState(events: state.events, loading: false, error: 'Erro ao excluir evento: $e');
+    }
   }
 }
 

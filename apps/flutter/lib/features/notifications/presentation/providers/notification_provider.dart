@@ -47,6 +47,8 @@ class NotificationListNotifier extends StateNotifier<NotificationListState> {
     try {
       await _api.markAllAsRead();
       await load();
-    } catch (_) {}
+    } catch (e) {
+      state = NotificationListState(notifications: state.notifications, loading: false, unreadCount: state.unreadCount, error: 'Erro ao marcar como lidas: $e');
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { notificationClient } from '../http-client';
-import { parsePagination, validate } from '@church-app/shared';
+import { parsePagination, validate, getAuthHeader } from '@church-app/shared';
 import { z } from 'zod';
 
 const notificationSchema = z.object({
@@ -66,6 +66,3 @@ export async function notificationRoutes(fastify: FastifyInstance) {
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}

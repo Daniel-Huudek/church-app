@@ -73,10 +73,23 @@ class PrayerModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'content': content,
-      };
+    'id': id,
+    'title': title,
+    'content': content,
+    'description': description,
+    'category': category,
+    'isUrgent': isUrgent,
+    'isAnswered': isAnswered,
+    'isAnonymous': isAnonymous,
+    'authorId': authorId,
+    'authorName': authorName,
+    'authorAvatar': authorAvatar,
+    'commentsCount': commentsCount,
+    'reactionsCount': reactionsCount,
+    'intercessionCount': intercessionCount,
+    'createdAt': createdAt.toIso8601String(),
+    'answeredAt': answeredAt?.toIso8601String(),
+  };
 
   PrayerModel copyWith({
     int? commentsCount,
@@ -126,6 +139,13 @@ class PrayerCategory {
       icon: json['icon'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'color': color,
+    'icon': icon,
+  };
 }
 
 class PrayerComment {
@@ -162,6 +182,16 @@ class PrayerComment {
               : DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'prayerId': prayerId,
+    'authorId': authorId,
+    'authorName': authorName,
+    'authorAvatar': authorAvatar,
+    'content': content,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }
 
 class PrayerReaction {
@@ -185,4 +215,11 @@ class PrayerReaction {
       type: json['type'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'prayerId': prayerId,
+    'userId': userId,
+    'type': type,
+  };
 }

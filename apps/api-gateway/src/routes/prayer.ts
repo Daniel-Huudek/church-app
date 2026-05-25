@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prayerClient, authClient } from '../http-client';
+import { getAuthHeader } from '@church-app/shared';
 
 async function enrichWithAuthors(data: any, authHeader: Record<string, string>): Promise<any> {
   const ids = new Set<string>();
@@ -199,6 +200,4 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}
+

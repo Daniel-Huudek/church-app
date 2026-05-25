@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eventClient } from '../http-client';
-import { parsePagination, validate } from '@church-app/shared';
+import { parsePagination, validate, getAuthHeader } from '@church-app/shared';
 import { z } from 'zod';
 
 const eventSchema = z.object({
@@ -80,6 +80,3 @@ export async function eventRoutes(fastify: FastifyInstance) {
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}

@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authClient } from '../http-client';
 import { z } from 'zod';
-import { validate } from '@church-app/shared';
+import { validate, getAuthHeader } from '@church-app/shared';
 
 const userUpdateSchema = z.object({
   role: z.string().optional(),
@@ -76,6 +76,3 @@ export async function userRoutes(fastify: FastifyInstance) {
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}

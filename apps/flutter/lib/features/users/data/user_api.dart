@@ -1,6 +1,6 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/config/api_config.dart';
-import '../domain/user_model.dart';
+import '../../../shared/models/user_model.dart';
 
 class UserApi {
   final ApiClient _client;

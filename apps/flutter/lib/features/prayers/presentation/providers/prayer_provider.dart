@@ -81,8 +81,12 @@ class PrayerFeedNotifier extends StateNotifier<PrayerListState> {
   }
 
   Future<void> create(Map<String, dynamic> data) async {
-    await _api.create(data);
-    await loadFeed();
+    try {
+      await _api.create(data);
+      await loadFeed();
+    } catch (e) {
+      state = PrayerListState(prayers: state.prayers, loading: false, error: _formatError(e));
+    }
   }
 }
 
@@ -113,7 +117,7 @@ class PrayerDetailNotifier extends StateNotifier<PrayerDetailState> {
   final String _id;
 
   PrayerDetailNotifier(this._api, this._id) : super(const PrayerDetailState()) {
-    Future(() => load());
+    load();
   }
 
   Future<void> load() async {
@@ -189,7 +193,9 @@ class PrayerDetailNotifier extends StateNotifier<PrayerDetailState> {
     try {
       await _api.toggleReaction(_id, type);
       await load();
-    } catch (_) {}
+    } catch (e) {
+      state = PrayerDetailState(prayer: state.prayer, comments: state.comments, loading: false, error: 'Erro ao reagir: $e');
+    }
   }
 
   String _formatError(Object e) {

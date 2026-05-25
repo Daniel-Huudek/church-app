@@ -1,12 +1,10 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ChatService } from '../services/chat.service.js';
 
 export async function chatRoutes(fastify: FastifyInstance) {
-  const prisma: PrismaClient = (fastify as any).prisma;
-  const chatService = new ChatService(prisma);
+  const chatService = new ChatService(fastify.prisma);
 
-  fastify.get('/', async (request: FastifyRequest, reply: any) => {
+  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const { userId } = request.query as { userId: string };
     if (!userId) return reply.status(400).send({ success: false, message: 'userId is required' });
     try {
@@ -17,7 +15,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/unread', async (request: FastifyRequest, reply: any) => {
+  fastify.get('/unread', async (request: FastifyRequest, reply: FastifyReply) => {
     const { userId } = request.query as { userId: string };
     if (!userId) return reply.status(400).send({ success: false, message: 'userId is required' });
     try {
@@ -28,7 +26,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: any) => {
+  fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const { userId } = request.query as { userId: string };
     if (!userId) return reply.status(400).send({ success: false, message: 'userId is required' });
     try {
@@ -39,7 +37,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/:id/messages', async (request: FastifyRequest<{ Params: { id: string } }>, reply: any) => {
+  fastify.get('/:id/messages', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const { userId, page = '1', limit = '50' } = request.query as Record<string, string>;
     if (!userId) return reply.status(400).send({ success: false, message: 'userId is required' });
     try {
@@ -50,7 +48,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post('/:id/messages', async (request: FastifyRequest<{ Params: { id: string } }>, reply: any) => {
+  fastify.post('/:id/messages', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const { userId, content, type } = request.body as { userId: string; content: string; type?: string };
     if (!userId || !content) return reply.status(400).send({ success: false, message: 'userId and content are required' });
     try {
@@ -61,7 +59,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post('/direct', async (request: FastifyRequest, reply: any) => {
+  fastify.post('/direct', async (request: FastifyRequest, reply: FastifyReply) => {
     const { userId, otherUserId } = request.body as { userId: string; otherUserId: string };
     if (!userId || !otherUserId) return reply.status(400).send({ success: false, message: 'userId and otherUserId are required' });
     try {
@@ -72,7 +70,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post('/:id/read', async (request: FastifyRequest<{ Params: { id: string } }>, reply: any) => {
+  fastify.post('/:id/read', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const { userId } = request.body as { userId: string };
     if (!userId) return reply.status(400).send({ success: false, message: 'userId is required' });
     try {

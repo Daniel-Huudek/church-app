@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { scheduleClient } from '../http-client';
-import { parsePagination, validate } from '@church-app/shared';
+import { parsePagination, validate, getAuthHeader } from '@church-app/shared';
 import { z } from 'zod';
 
 const scheduleSchema = z.object({
@@ -114,6 +114,3 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}

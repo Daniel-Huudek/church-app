@@ -25,6 +25,15 @@ class ChatRoomModel {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'type': type,
+    'unreadCount': unreadCount,
+    'lastMessage': lastMessage,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 }
 
 class ChatMessageModel {
@@ -56,4 +65,13 @@ class ChatMessageModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'roomId': roomId,
+    'senderId': senderId,
+    'content': content,
+    'type': type,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }

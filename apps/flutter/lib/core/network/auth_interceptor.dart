@@ -4,7 +4,7 @@ import '../utils/secure_storage.dart';
 class AuthInterceptor extends Interceptor {
   final Dio Function() _dioFactory;
   bool _isRefreshing = false;
-  final List<void Function()> _pendingRequests = [];
+  final List<({RequestOptions options, ErrorInterceptorHandler handler})> _pendingRequests = [];
 
   AuthInterceptor(this._dioFactory);
 
@@ -25,59 +25,57 @@ class AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401) {
-      if (!_isRefreshing) {
-        _isRefreshing = true;
-        try {
-          final refreshToken = await SecureStorage.getRefreshToken();
-          if (refreshToken == null) {
-            _clearAndRedirect();
-            return handler.reject(err);
-          }
+    if (err.response?.statusCode != 401) {
+      return handler.next(err);
+    }
 
-          final response = await _dioFactory().post(
-            '/auth/refresh',
-            data: {'refreshToken': refreshToken},
-          );
+    if (_isRefreshing) {
+      _pendingRequests.add((options: err.requestOptions, handler: handler));
+      return;
+    }
 
-          final newAccessToken = response.data['accessToken'];
-          final newRefreshToken = response.data['refreshToken'];
-
-          await SecureStorage.setAccessToken(newAccessToken);
-          await SecureStorage.setRefreshToken(newRefreshToken);
-
-          _isRefreshing = false;
-          _pendingRequests.forEach((cb) => cb());
-          _pendingRequests.clear();
-
-          final retryOptions = err.requestOptions;
-          retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-          final retryResponse = await _dioFactory().fetch(retryOptions);
-          return handler.resolve(retryResponse);
-        } catch (e) {
-          _isRefreshing = false;
-          _pendingRequests.clear();
-          _clearAndRedirect();
-          return handler.reject(err);
-        }
-      } else {
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (_isRefreshing) {
-          await Future(() {});
-        }
-        final token = await SecureStorage.getAccessToken();
-        if (token != null) {
-          err.requestOptions.headers['Authorization'] = 'Bearer $token';
-          final retryResponse = await _dioFactory().fetch(err.requestOptions);
-          return handler.resolve(retryResponse);
-        }
+    _isRefreshing = true;
+    try {
+      final refreshToken = await SecureStorage.getRefreshToken();
+      if (refreshToken == null) {
+        _isRefreshing = false;
         return handler.reject(err);
       }
-    }
-    return handler.next(err);
-  }
 
-  Future<void> _clearAndRedirect() async {
-    await SecureStorage.clearAll();
+      final response = await Dio().post(
+        '/auth/refresh',
+        data: {'refreshToken': refreshToken},
+        options: Options(baseUrl: err.requestOptions.baseUrl),
+      );
+
+      final newAccessToken = response.data['accessToken'] as String;
+      final newRefreshToken = response.data['refreshToken'] as String;
+
+      await SecureStorage.setAccessToken(newAccessToken);
+      await SecureStorage.setRefreshToken(newRefreshToken);
+
+      _isRefreshing = false;
+
+      final retryOptions = err.requestOptions;
+      retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+      final retryResponse = await _dioFactory().fetch(retryOptions);
+      handler.resolve(retryResponse);
+
+      for (final pending in _pendingRequests) {
+        pending.options.headers['Authorization'] = 'Bearer $newAccessToken';
+        try {
+          final response = await _dioFactory().fetch(pending.options);
+          pending.handler.resolve(response);
+        } catch (e) {
+          pending.handler.reject(e as DioException);
+        }
+      }
+      _pendingRequests.clear();
+    } catch (e) {
+      _isRefreshing = false;
+      _pendingRequests.clear();
+      await SecureStorage.clearAll();
+      handler.reject(err);
+    }
   }
 }

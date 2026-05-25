@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { chatClient } from '../http-client';
+import { getAuthHeader } from '@church-app/shared';
 
 export async function chatRoutes(fastify: FastifyInstance) {
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
@@ -70,6 +71,4 @@ export async function chatRoutes(fastify: FastifyInstance) {
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}
+

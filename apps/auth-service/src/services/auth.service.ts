@@ -1,15 +1,13 @@
 import { PrismaClient, User, Role, Permission as PrismaPermission } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { AppError, UnauthorizedError, ConflictError } from '@church-app/shared';
-import { logger } from '@church-app/shared';
-import { logger } from '@church-app/shared';
+import { AppError, UnauthorizedError, ConflictError, logger } from '@church-app/shared';
 
 interface TokenPayload {
   userId: string;
   email: string;
   role: Role;
-  permissions: Permission[];
+  permissions: PrismaPermission[];
 }
 
 export class AuthService {
@@ -112,7 +110,7 @@ export class AuthService {
   }
 
   private async generateTokens(user: User) {
-    const payload: TokenPayload = { userId: user.id, email: user.email, role: user.role, permissions: user.permissions as Permission[] };
+    const payload: TokenPayload = { userId: user.id, email: user.email, role: user.role, permissions: user.permissions as PrismaPermission[] };
 
     const accessToken = jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn });
     const refreshTokenValue = crypto.randomUUID();

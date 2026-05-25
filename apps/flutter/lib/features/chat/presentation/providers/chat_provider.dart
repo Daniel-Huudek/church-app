@@ -80,6 +80,8 @@ class ChatMessagesNotifier extends StateNotifier<ChatMessagesState> {
       await _api.sendMessage(_roomId, content);
       await _api.markAsRead(_roomId);
       await load();
-    } catch (_) {}
+    } catch (e) {
+      state = ChatMessagesState(messages: state.messages, loading: false, error: 'Erro ao enviar mensagem: $e');
+    }
   }
 }

@@ -27,4 +27,13 @@ class NotificationModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'type': type,
+    'recipientId': recipientId,
+    'message': message,
+    'status': status,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }

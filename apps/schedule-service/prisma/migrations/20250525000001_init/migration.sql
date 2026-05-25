@@ -1,5 +1,5 @@
 ﻿-- CreateTable
-CREATE TABLE "Schedule" (
+CREATE TABLE "schedules" (
     "id" TEXT NOT NULL,
     "eventId" TEXT NOT NULL,
     "ministryId" TEXT NOT NULL,
@@ -10,11 +10,11 @@ CREATE TABLE "Schedule" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Schedule_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "schedules_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "SchedulePosition" (
+CREATE TABLE "schedule_positions" (
     "id" TEXT NOT NULL,
     "scheduleId" TEXT NOT NULL,
     "memberId" TEXT NOT NULL,
@@ -24,24 +24,23 @@ CREATE TABLE "SchedulePosition" (
     "substitutedById" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "SchedulePosition_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "schedule_positions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE INDEX "Schedule_eventId_idx" ON "Schedule"("eventId");
+CREATE INDEX "schedules_eventId_idx" ON "schedules"("eventId");
 
 -- CreateIndex
-CREATE INDEX "Schedule_ministryId_idx" ON "Schedule"("ministryId");
+CREATE INDEX "schedules_ministryId_idx" ON "schedules"("ministryId");
 
 -- CreateIndex
-CREATE INDEX "Schedule_deletedAt_idx" ON "Schedule"("deletedAt");
+CREATE INDEX "schedules_deletedAt_idx" ON "schedules"("deletedAt");
 
 -- CreateIndex
-CREATE INDEX "SchedulePosition_memberId_idx" ON "SchedulePosition"("memberId");
+CREATE INDEX "schedule_positions_memberId_idx" ON "schedule_positions"("memberId");
 
 -- CreateIndex
-CREATE INDEX "SchedulePosition_scheduleId_idx" ON "SchedulePosition"("scheduleId");
+CREATE INDEX "schedule_positions_scheduleId_idx" ON "schedule_positions"("scheduleId");
 
 -- AddForeignKey
-ALTER TABLE "SchedulePosition" ADD CONSTRAINT "SchedulePosition_scheduleId_fkey" FOREIGN KEY ("scheduleId") REFERENCES "Schedule"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
+ALTER TABLE "schedule_positions" ADD CONSTRAINT "schedule_positions_scheduleId_fkey" FOREIGN KEY ("scheduleId") REFERENCES "schedules"("id") ON DELETE CASCADE ON UPDATE CASCADE;

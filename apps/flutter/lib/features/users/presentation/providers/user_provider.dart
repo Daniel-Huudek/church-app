@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/user_api.dart';
-import '../../domain/user_model.dart';
+import '../../../shared/models/user_model.dart';
 
 final userApiProvider = Provider<UserApi>((ref) {
   return UserApi(ref.read(apiClientProvider));
@@ -75,6 +75,8 @@ class UserDetailNotifier extends StateNotifier<UserDetailState> {
     try {
       await _api.update(_id, data);
       await load();
-    } catch (_) {}
+    } catch (e) {
+      state = UserDetailState(user: state.user, loading: false, error: 'Erro ao atualizar: $e');
+    }
   }
 }

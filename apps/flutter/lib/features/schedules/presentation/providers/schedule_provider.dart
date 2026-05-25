@@ -43,9 +43,13 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
   }
 
   Future<void> create(Map<String, dynamic> data) async {
-    await _api.create(data);
-    state = ScheduleListState(schedules: state.schedules, loading: false, created: true);
-    await load();
+    try {
+      await _api.create(data);
+      state = ScheduleListState(schedules: state.schedules, loading: false, created: true);
+      await load();
+    } catch (e) {
+      state = ScheduleListState(schedules: state.schedules, loading: false, error: e.toString());
+    }
   }
 }
 

@@ -21,7 +21,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.initState();
     final now = DateTime.now();
     _currentYear = now.year;
-    _currentMonth = now.month + 1;
+    _currentMonth = now.month;
   }
 
   String _getMonthName(int year, int month) {

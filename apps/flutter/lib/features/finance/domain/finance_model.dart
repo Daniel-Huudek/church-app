@@ -38,7 +38,7 @@ class TransactionModel {
     return TransactionModel(
       id: json['id'] as String,
       description: json['description'] as String? ?? 'Sem descrição',
-      amount: (json['value'] ?? json['amount'] as num).toDouble(),
+      amount: ((json['value'] ?? json['amount']) as num).toDouble(),
       type: json['type'] as String? ?? 'EXPENSE',
       status: json['status'] as String? ?? 'PENDENTE',
       categoryId: json['categoryId'] as String?,
@@ -56,6 +56,23 @@ class TransactionModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'description': description,
+    'value': amount,
+    'type': type,
+    'status': status,
+    'categoryId': categoryId,
+    'categoryName': categoryName,
+    'costCenterName': costCenterName,
+    'paymentMethod': paymentMethod,
+    'date': date.toIso8601String(),
+    'dueDate': dueDate?.toIso8601String(),
+    'paidAt': paidAt?.toIso8601String(),
+    'createdByName': createdByName,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }
 
 class CashFlowMonthModel {
@@ -79,6 +96,13 @@ class CashFlowMonthModel {
       balance: (json['balance'] as num?)?.toDouble() ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'month': month,
+    'revenue': revenue,
+    'expenses': expenses,
+    'balance': balance,
+  };
 }
 
 class FinanceDashboardModel {
@@ -106,4 +130,11 @@ class FinanceDashboardModel {
           [],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'balance': balance,
+    'totalRevenue': totalRevenue,
+    'totalExpenses': totalExpenses,
+    'recentTransactions': recentTransactions.map((e) => e.toJson()).toList(),
+  };
 }

@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { financialClient } from '../http-client';
+import { getAuthHeader } from '@church-app/shared';
 
 export async function financeRoutes(fastify: FastifyInstance) {
   fastify.get('/transactions', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
@@ -213,6 +214,4 @@ export async function financeRoutes(fastify: FastifyInstance) {
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}
+
