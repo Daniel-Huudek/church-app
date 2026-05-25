@@ -19,9 +19,13 @@ export function authorize(...allowedRoles: Role[]) {
       return reply.status(401).send({ success: false, message: 'Unauthorized' });
     }
 
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is not set');
+    }
+
     try {
       const token = authHeader.replace('Bearer ', '');
-      const secret = process.env.JWT_SECRET!;
       const decoded = jwt.verify(token, secret) as { userId: string; email: string; role: Role; permissions: string[] };
 
       if (!allowedRoles.includes(decoded.role)) {
