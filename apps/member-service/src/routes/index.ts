@@ -62,7 +62,7 @@ export async function memberRoutes(fastify: FastifyInstance) {
 
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const { page, limit } = parsePagination(request.query);
-    const { name, email, status, role, ministryId, birthdayMonth } = request.query as any;
+    const { name, email, status, role, ministryId, birthdayMonth } = request.query as Record<string, string | undefined>;
     const data = await service.findAll({
       page, limit, name, email, status, role, ministryId,
       birthdayMonth: birthdayMonth ? parseInt(birthdayMonth) : undefined,
@@ -71,7 +71,7 @@ export async function memberRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/search', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { q, page, limit } = request.query as any;
+    const { q, page, limit } = request.query as Record<string, string | undefined>;
     const pagination = parsePagination({ page, limit });
     const data = await service.search(q || '', pagination);
     return reply.send(data);
@@ -83,8 +83,8 @@ export async function memberRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/import', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as any;
-    const data = await service.importCsv(body.records || []);
+    const body = request.body as { records?: unknown[] };
+    const data = await service.importCsv(body?.records || []);
     return reply.status(201).send(data);
   });
 

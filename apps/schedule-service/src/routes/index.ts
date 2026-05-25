@@ -42,7 +42,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/substitute', async (request: FastifyRequest, _reply) => {
-    const { scheduleId, positionId, substituteMemberId } = request.body as any;
+    const { scheduleId, positionId, substituteMemberId } = request.body as { scheduleId?: string; positionId?: string; substituteMemberId?: string };
     return service.substitute(scheduleId, positionId, substituteMemberId);
   });
 

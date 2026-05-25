@@ -28,7 +28,7 @@ export function authorize(...allowedRoles: Role[]) {
         return reply.status(403).send({ success: false, message: 'Forbidden' });
       }
 
-      (request as any).user = decoded;
+      request.user = decoded;
     } catch (error) {
       return reply.status(401).send({ success: false, message: 'Invalid token' });
     }
@@ -36,9 +36,9 @@ export function authorize(...allowedRoles: Role[]) {
 }
 
 export function getUserId(request: FastifyRequest): string {
-  return (request as any).user?.userId;
+  return request.user?.userId;
 }
 
 export function getUserRole(request: FastifyRequest): string {
-  return (request as any).user?.role;
+  return request.user?.role;
 }

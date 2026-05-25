@@ -1,72 +1,77 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { chatClient } from '../http-client';
-import { getAuthHeader } from '@church-app/shared';
+import { getAuthHeader, validate } from '@church-app/shared';
+import { z } from 'zod';
+
+const messageSchema = z.object({ content: z.string().min(1) });
+const directChatSchema = z.object({ participantId: z.string().uuid(), message: z.string().min(1).optional() });
+const readSchema = z.object({ messageId: z.string().uuid().optional() });
 
 export async function chatRoutes(fastify: FastifyInstance) {
-  fastify.get('/', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await chatClient.get(`/chats?userId=${request.user.userId}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.get('/unread', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.get('/unread', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await chatClient.get(`/chats/unread?userId=${request.user.userId}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.get<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await chatClient.get(`/chats/${request.params.id}?userId=${request.user.userId}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.get('/:id/messages', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.get<{ Params: { id: string } }>('/:id/messages', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { page, limit } = request.query as Record<string, string>;
     try {
       const data = await chatClient.get(`/chats/${request.params.id}/messages?userId=${request.user.userId}&page=${page || 1}&limit=${limit || 50}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/:id/messages', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.post<{ Params: { id: string } }>('/:id/messages', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const body = { ...validate(messageSchema, request.body), userId: request.user.userId };
     try {
-      const body = { ...(request.body as object), userId: request.user.userId };
       const data = await chatClient.post(`/chats/${request.params.id}/messages`, body, getAuthHeader(request));
-      return reply.status(201).send(data);
+      await reply.status(201).send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/direct', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.post('/direct', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const body = { ...validate(directChatSchema, request.body), userId: request.user.userId };
     try {
-      const body = { ...(request.body as object), userId: request.user.userId };
       const data = await chatClient.post('/chats/direct', body, getAuthHeader(request));
-      return reply.status(201).send(data);
+      await reply.status(201).send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/:id/read', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.post<{ Params: { id: string } }>('/:id/read', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const body = { ...validate(readSchema, request.body), userId: request.user.userId };
     try {
-      const body = { ...(request.body as object), userId: request.user.userId };
       const data = await chatClient.post(`/chats/${request.params.id}/read`, body, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 }

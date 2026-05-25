@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: apps/api-gateway/Dockerfile
     container_name: church-app-api-gateway
+    restart: unless-stopped
     ports:
       - "3030:3030"
     labels:
@@ -59,8 +60,7 @@ services:
       context: .
       dockerfile: apps/auth-service/Dockerfile
     container_name: church-app-auth-service
-    ports:
-      - "3001"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -90,8 +90,7 @@ services:
       context: .
       dockerfile: apps/member-service/Dockerfile
     container_name: church-app-member-service
-    ports:
-      - "3006"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3006
@@ -116,8 +115,7 @@ services:
       context: .
       dockerfile: apps/schedule-service/Dockerfile
     container_name: church-app-schedule-service
-    ports:
-      - "3003"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3003
@@ -142,8 +140,7 @@ services:
       context: .
       dockerfile: apps/event-service/Dockerfile
     container_name: church-app-event-service
-    ports:
-      - "3004"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3004
@@ -168,8 +165,7 @@ services:
       context: .
       dockerfile: apps/notification-service/Dockerfile
     container_name: church-app-notification-service
-    ports:
-      - "3005"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3005
@@ -196,8 +192,7 @@ services:
       context: .
       dockerfile: apps/prayer-service/Dockerfile
     container_name: church-app-prayer-service
-    ports:
-      - "3007"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3007
@@ -222,8 +217,7 @@ services:
       context: .
       dockerfile: apps/financial-service/Dockerfile
     container_name: church-app-financial-service
-    ports:
-      - "3008"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3008
@@ -248,8 +242,7 @@ services:
       context: .
       dockerfile: apps/chat-service/Dockerfile
     container_name: church-app-chat-service
-    ports:
-      - "3002"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3002
@@ -272,6 +265,7 @@ services:
   postgres-db:
     image: postgres:16-alpine
     container_name: church-app-postgres-db
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-church}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}

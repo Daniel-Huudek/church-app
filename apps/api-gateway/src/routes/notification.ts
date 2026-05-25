@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { notificationClient } from '../http-client';
 import { parsePagination, validate, getAuthHeader } from '@church-app/shared';
 import { z } from 'zod';
@@ -17,51 +17,51 @@ const bulkNotificationSchema = z.object({
 });
 
 export async function notificationRoutes(fastify: FastifyInstance) {
-  fastify.get('/', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { page, limit } = parsePagination(request.query);
     try {
       const data = await notificationClient.get(`/notifications?page=${page}&limit=${limit}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(notificationSchema, request.body);
     try {
       const data = await notificationClient.post('/notifications', body, getAuthHeader(request));
-      return reply.status(201).send(data);
+      await reply.status(201).send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/bulk', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/bulk', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(bulkNotificationSchema, request.body);
     try {
       const data = await notificationClient.post('/notifications/bulk', body, getAuthHeader(request));
-      return reply.status(201).send(data);
+      await reply.status(201).send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/schedule-reminder/:scheduleId', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { scheduleId: string } }>, reply: FastifyReply) => {
+  fastify.post<{ Params: { scheduleId: string } }>('/schedule-reminder/:scheduleId', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await notificationClient.post(`/notifications/schedule/${request.params.scheduleId}/reminder`, {}, getAuthHeader(request));
-      return reply.status(201).send(data);
+      await reply.status(201).send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.get('/history/:recipientId', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { recipientId: string } }>, reply: FastifyReply) => {
+  fastify.get<{ Params: { recipientId: string } }>('/history/:recipientId', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await notificationClient.get(`/notifications/history/${request.params.recipientId}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 }
