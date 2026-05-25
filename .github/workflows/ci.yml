@@ -62,10 +62,9 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Audit dependencies
-        run: pnpm audit --audit-level=high || true
+        run: pnpm audit --audit-level=high
       - name: Secret scanning
         uses: gitleaks/gitleaks-action@v2
-        continue-on-error: true
 
   docker-build:
     runs-on: ubuntu-latest
