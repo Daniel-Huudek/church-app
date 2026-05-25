@@ -18,16 +18,4 @@ export const prayerClient = createHttpClient(PRAYER_SERVICE_URL);
 export const financialClient = createHttpClient(FINANCIAL_SERVICE_URL);
 export const chatClient = createHttpClient(CHAT_SERVICE_URL);
 
-export function getServiceClient(service: string) {
-  switch (service) {
-    case 'auth': return authClient;
-    case 'member': return memberClient;
-    case 'schedule': return scheduleClient;
-    case 'event': return eventClient;
-    case 'notification': return notificationClient;
-    case 'prayer': return prayerClient;
-    case 'financial': return financialClient;
-    case 'chat': return chatClient;
-    default: throw new Error(`Unknown service: ${service}`);
-  }
-}
+

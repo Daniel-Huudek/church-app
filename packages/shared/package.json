@@ -8,6 +8,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.2",
     "zod": "^3.22.4"
   }
 }

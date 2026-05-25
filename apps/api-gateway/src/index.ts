@@ -85,7 +85,7 @@ async function bootstrap() {
     });
   });
 
-  const port = Number(process.env.PORT) || 3000;
+  const port = Number(process.env.PORT) || 3030;
   await fastify.listen({ port, host: '0.0.0.0' });
 
   logger.info(`API Gateway running on port ${port}`);
