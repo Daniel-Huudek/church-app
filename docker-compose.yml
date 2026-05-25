@@ -24,7 +24,7 @@ services:
       - PRAYER_SERVICE_URL=http://prayer-service:3007
       - FINANCIAL_SERVICE_URL=http://financial-service:3008
       - CHAT_SERVICE_URL=http://chat-service:3002
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
     depends_on:
@@ -64,8 +64,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/auth_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/auth_db
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
@@ -94,8 +94,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3006
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/member_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/member_db
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -119,8 +119,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3003
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/schedule_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/schedule_db
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -144,8 +144,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3004
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/event_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/event_db
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -169,8 +169,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3005
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/notification_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/notification_db
+      - JWT_SECRET=${JWT_SECRET}
       - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://evolution-api:8080}
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
     depends_on:
@@ -196,8 +196,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3007
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/prayer_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/prayer_db
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -221,8 +221,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3008
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/financial_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/financial_db
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -246,8 +246,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3002
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/chat_db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/chat_db
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -267,8 +267,8 @@ services:
     container_name: church-app-postgres-db
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-church}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-church123}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=church_app
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -276,7 +276,7 @@ services:
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-church} -d church_app"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d church_app"]
       interval: 10s
       timeout: 5s
       retries: 5
