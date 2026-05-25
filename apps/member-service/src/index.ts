@@ -3,7 +3,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
 import { PrismaClient } from '@prisma/client';
-import { AppError, logger } from './shared/index.js';
+import { AppError, logger } from '@church-app/shared';
 import { memberRoutes, ministryRoutes } from './routes/index';
 import path from 'path';
 import { fileURLToPath } from 'url';

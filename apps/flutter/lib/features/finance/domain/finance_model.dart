@@ -58,6 +58,29 @@ class TransactionModel {
   }
 }
 
+class CashFlowMonthModel {
+  final String month;
+  final double revenue;
+  final double expenses;
+  final double balance;
+
+  const CashFlowMonthModel({
+    required this.month,
+    this.revenue = 0,
+    this.expenses = 0,
+    this.balance = 0,
+  });
+
+  factory CashFlowMonthModel.fromJson(Map<String, dynamic> json) {
+    return CashFlowMonthModel(
+      month: json['month'] as String,
+      revenue: (json['revenue'] as num?)?.toDouble() ?? 0,
+      expenses: (json['expenses'] as num?)?.toDouble() ?? 0,
+      balance: (json['balance'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
 class FinanceDashboardModel {
   final double balance;
   final double totalRevenue;

@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { memberClient } from '../http-client';
-import { parsePagination, validate } from '../shared';
+import { parsePagination, validate } from '@church-app/shared';
 import { z } from 'zod';
 
 const memberSchema = z.object({

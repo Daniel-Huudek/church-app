@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { validate, parsePagination } from '../shared';
+import { validate, parsePagination } from '@church-app/shared';
 import { z } from 'zod';
 import { MemberService } from '../services/member.service';
 

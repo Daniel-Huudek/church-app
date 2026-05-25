@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { NotFoundError } from '../shared';
+import { NotFoundError } from '@church-app/shared';
 
 export class EventService {
   constructor(private prisma: PrismaClient) {}

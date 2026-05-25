@@ -22,6 +22,7 @@ services:
       - NOTIFICATION_SERVICE_URL=http://notification-service:3005
       - PRAYER_SERVICE_URL=http://prayer-service:3007
       - FINANCIAL_SERVICE_URL=http://financial-service:3008
+      - CHAT_SERVICE_URL=http://chat-service:3002
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
@@ -39,6 +40,8 @@ services:
       prayer-service:
         condition: service_healthy
       financial-service:
+        condition: service_healthy
+      chat-service:
         condition: service_healthy
     networks:
       - church-app-network
@@ -233,6 +236,32 @@ services:
       - church-app-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: apps/chat-service/Dockerfile
+    container_name: church-app-chat-service
+    ports:
+      - "3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/chat_db
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - church-app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
       interval: 30s
       timeout: 10s
       retries: 3

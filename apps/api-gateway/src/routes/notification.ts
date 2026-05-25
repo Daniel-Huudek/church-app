@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { notificationClient } from '../http-client';
-import { parsePagination, validate } from '../shared';
+import { parsePagination, validate } from '@church-app/shared';
 import { z } from 'zod';
 
 const notificationSchema = z.object({

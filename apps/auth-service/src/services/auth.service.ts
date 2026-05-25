@@ -1,8 +1,9 @@
 import { PrismaClient, User, Role, Permission as PrismaPermission } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { AppError, UnauthorizedError, ConflictError } from '../shared';
-import { logger } from '../logger';
+import { AppError, UnauthorizedError, ConflictError } from '@church-app/shared';
+import { logger } from '@church-app/shared';
+import { logger } from '@church-app/shared';
 
 interface TokenPayload {
   userId: string;
@@ -17,7 +18,7 @@ export class AuthService {
   private refreshExpiresIn: string;
 
   constructor(private prisma: PrismaClient) {
-    this.jwtSecret = process.env.JWT_SECRET || 'default-secret';
+    this.jwtSecret = process.env.JWT_SECRET!;
     this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '15m';
     this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
   }
@@ -174,14 +175,23 @@ export class AuthService {
     return user;
   }
 
-  async updateUserRole(userId: string, role: string) {
-    const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'MEMBRO', 'VISITANTE'];
-    if (!validRoles.includes(role)) {
-      throw new AppError('Invalid role', 400);
+  async updateUser(userId: string, data: { role?: string; name?: string; email?: string; avatar?: string }) {
+    const updateData: any = {};
+    if (data.role) {
+      const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'MEMBRO', 'VISITANTE'];
+      if (!validRoles.includes(data.role)) throw new AppError('Invalid role', 400);
+      updateData.role = data.role;
     }
+    if (data.name) updateData.name = data.name;
+    if (data.email) {
+      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+      if (existing && existing.id !== userId) throw new ConflictError('Email already in use');
+      updateData.email = data.email;
+    }
+    if (data.avatar !== undefined) updateData.avatar = data.avatar;
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { role: role as any },
+      data: updateData,
       select: {
         id: true,
         email: true,

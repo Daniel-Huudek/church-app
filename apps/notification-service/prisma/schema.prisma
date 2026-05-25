@@ -17,6 +17,7 @@ model Notification {
   sentAt     DateTime?
   createdAt  DateTime          @default(now())
 
+  @@index([recipientId])
   @@map("notifications")
 }
 

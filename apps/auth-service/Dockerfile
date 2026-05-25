@@ -15,6 +15,8 @@ COPY apps/auth-service/start.sh ./
 COPY apps/auth-service/src ./src
 
 RUN npx prisma generate && chmod +x start.sh
+RUN chown -R node:node /app
+USER node
 
 EXPOSE 3001
 

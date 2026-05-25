@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { validate } from '../shared';
+import { validate } from '@church-app/shared';
 import { z } from 'zod';
 import { AuthService } from '../services/auth.service';
-import { UnauthorizedError, BadRequestError } from '../shared';
+import { UnauthorizedError, BadRequestError } from '@church-app/shared';
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
 const registerSchema = z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6) });
@@ -74,8 +74,8 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   fastify.put('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, _reply: FastifyReply) => {
-    const { role } = request.body as { role: string };
-    const result = await authService.updateUserRole(request.params.id, role);
+    const body = request.body as { role?: string; name?: string; email?: string; avatar?: string };
+    const result = await authService.updateUser(request.params.id, body);
     return _reply.send({ success: true, data: result });
   });
 }

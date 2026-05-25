@@ -1,26 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/user_provider.dart';
 
-class UserEditScreen extends StatefulWidget {
+class UserEditScreen extends ConsumerStatefulWidget {
   const UserEditScreen({super.key});
 
   @override
-  State<UserEditScreen> createState() => _UserEditScreenState();
+  ConsumerState<UserEditScreen> createState() => _UserEditScreenState();
 }
 
-class _UserEditScreenState extends State<UserEditScreen> {
+class _UserEditScreenState extends ConsumerState<UserEditScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl.text = 'Usuário';
-    _emailCtrl.text = 'usuario@email.com';
-    _phoneCtrl.text = '(11) 99999-9999';
-  }
 
   @override
   void dispose() {
@@ -30,15 +24,25 @@ class _UserEditScreenState extends State<UserEditScreen> {
     super.dispose();
   }
 
-  void _handleSave() {
+  void _handleSave() async {
     setState(() => _loading = true);
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      await ref.read(userApiProvider).update('me', {
+        'name': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Perfil atualizado!')),
+        const SnackBar(content: Text('Perfil atualizado!')),
       );
       context.pop();
-    });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
   }
 
   @override
@@ -92,8 +96,7 @@ class _UserEditScreenState extends State<UserEditScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
-                    child: Text('📷',
-                        style: TextStyle(fontSize: 32)),
+                    child: Text('📷', style: TextStyle(fontSize: 32)),
                   ),
                 ),
                 Positioned(
@@ -105,8 +108,7 @@ class _UserEditScreenState extends State<UserEditScreen> {
                       color: Color(0xFF008CFF),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.edit,
-                        color: Colors.white, size: 16),
+                    child: const Icon(Icons.edit, color: Colors.white, size: 16),
                   ),
                 ),
               ],

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/app_card.dart';
-import '../../../../shared/widgets/app_header.dart';
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/app_badge.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/utils/formatters.dart';
+import '../providers/member_provider.dart';
 
 class MemberDetailScreen extends ConsumerWidget {
   final String id;
@@ -16,6 +16,34 @@ class MemberDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final state = ref.watch(memberDetailProvider(id));
+
+    if (state.loading) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text('Carregando...', style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (state.error != null) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(child: Text('Erro: ${state.error}')),
+        ),
+      );
+    }
+
+    final member = state.member!;
 
     return Scaffold(
       body: SafeArea(
@@ -23,45 +51,73 @@ class MemberDetailScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppHeader(title: 'Membro'),
-              // Profile header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Text('← Voltar', style: TextStyle(fontSize: 16, color: AppColors.primary)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   children: [
-                    const AppAvatar(
-                      name: 'Maria Santos',
+                    AppAvatar(
+                      name: member.name,
                       size: 80,
                       showBorder: true,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Maria Santos',
+                      member.name,
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'maria@igreja.com',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isDark
-                                ? AppColors.darkTextSecondary
-                                : AppColors.lightTextSecondary,
-                          ),
-                    ),
+                    if (member.email != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        member.email!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.sm),
-                    const AppBadge(label: 'Membro'),
+                    AppBadge(label: member.role),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-
-              // Contact info
+              if (member.phone != null || member.email != null) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Text('Contato', style: Theme.of(context).textTheme.titleMedium),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: AppCard(
+                    child: Column(
+                      children: [
+                        if (member.phone != null) ...[
+                          _ContactRow(icon: Icons.phone, value: member.phone!, onTap: () {}),
+                          const Divider(),
+                        ],
+                        if (member.email != null)
+                          _ContactRow(icon: Icons.email, value: member.email!, onTap: () {}),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+              ],
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text(
-                  'Contato',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                child: Text('Informações Pessoais', style: Theme.of(context).textTheme.titleMedium),
               ),
               const SizedBox(height: AppSpacing.sm),
               Padding(
@@ -69,79 +125,44 @@ class MemberDetailScreen extends ConsumerWidget {
                 child: AppCard(
                   child: Column(
                     children: [
-                      _ContactRow(
-                        icon: Icons.phone,
-                        value: '(14) 99999-8888',
-                        onTap: () {},
-                      ),
-                      const Divider(),
-                      _ContactRow(
-                        icon: Icons.email,
-                        value: 'maria@igreja.com',
-                        onTap: () {},
-                      ),
-                      const Divider(),
-                      _ContactRow(
-                        icon: Icons.location_on,
-                        value: 'Av. Brasil, 123 - Centro',
-                        onTap: () {},
-                      ),
+                      if (member.birthDate != null)
+                        _InfoItem(label: 'Data de Nascimento', value: Formatters.formatDate(member.birthDate!)),
+                      if (member.birthDate != null) const Divider(),
+                      if (member.maritalStatus != null)
+                        _InfoItem(label: 'Estado Civil', value: member.maritalStatus!),
+                      if (member.maritalStatus != null) const Divider(),
+                      if (member.baptismDate != null)
+                        _InfoItem(label: 'Batismo', value: Formatters.formatDate(member.baptismDate!)),
+                      if (member.baptismDate != null) const Divider(),
+                      if (member.conversionDate != null)
+                        _InfoItem(label: 'Conversão', value: Formatters.formatDate(member.conversionDate!)),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Personal info
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text(
-                  'Informações Pessoais',
-                  style: Theme.of(context).textTheme.titleMedium,
+              if (member.ministries.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Text('Ministérios', style: Theme.of(context).textTheme.titleMedium),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: AppCard(
-                  child: Column(
-                    children: [
-                      _InfoItem(label: 'Data de Nascimento', value: '15/03/1990'),
-                      const Divider(),
-                      _InfoItem(label: 'Estado Civil', value: 'Casado(a)'),
-                      const Divider(),
-                      _InfoItem(label: 'Batismo', value: '12/06/2005'),
-                      const Divider(),
-                      _InfoItem(label: 'Conversão', value: '10/01/2005'),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Ministries
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text(
-                  'Ministérios',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: AppCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    child: Center(
-                      child: Text(
-                        'Nenhum ministério',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                const SizedBox(height: AppSpacing.sm),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: AppCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: member.ministries
+                            .map((m) => AppBadge(label: m, variant: AppBadgeVariant.info))
+                            .toList(),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
               const SizedBox(height: AppSpacing.xl2),
             ],
           ),
@@ -156,11 +177,7 @@ class _ContactRow extends StatelessWidget {
   final String value;
   final VoidCallback onTap;
 
-  const _ContactRow({
-    required this.icon,
-    required this.value,
-    required this.onTap,
-  });
+  const _ContactRow({required this.icon, required this.value, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -197,9 +214,7 @@ class _InfoItem extends StatelessWidget {
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
           ),
         ],
       ),

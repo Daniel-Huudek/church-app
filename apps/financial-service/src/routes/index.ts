@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { validate, parsePagination } from '../shared';
-import { authorize } from '../shared/rbac';
+import { validate, parsePagination, authorize } from '@church-app/shared';
 import { z } from 'zod';
 import { FinanceService } from '../services/finance.service';
 

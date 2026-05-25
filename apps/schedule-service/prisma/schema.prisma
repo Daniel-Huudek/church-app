@@ -18,13 +18,23 @@ model Schedule {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   positions   SchedulePosition[]
+
+  @@index([eventId])
+  @@index([ministryId])
+  @@index([deletedAt])
 }
 
 model SchedulePosition {
-  id         String   @id @default(uuid())
-  scheduleId String
-  memberId   String
-  position   String
-  createdAt  DateTime @default(now())
-  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  scheduleId      String
+  memberId        String
+  position        String
+  isConfirmed     Boolean  @default(false)
+  isSubstituted   Boolean  @default(false)
+  substitutedById String?
+  createdAt       DateTime @default(now())
+  schedule        Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([scheduleId])
 }

@@ -39,6 +39,7 @@ model Member {
   ministerialHistory MinisterialHistory[]
   auditLogs       AuditLog[]
 
+  @@index([ministryId])
   @@map("members")
 }
 
@@ -70,6 +71,7 @@ model Document {
 
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
+  @@index([memberId])
   @@map("documents")
 }
 
@@ -84,6 +86,7 @@ model FamilyMember {
 
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
+  @@index([memberId])
   @@map("family_members")
 }
 
@@ -99,6 +102,7 @@ model MinisterialHistory {
 
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
+  @@index([memberId])
   @@map("ministerial_histories")
 }
 
@@ -113,6 +117,7 @@ model AuditLog {
 
   member    Member   @relation(fields: [memberId], references: [id])
 
+  @@index([memberId])
   @@map("audit_logs")
 }
 

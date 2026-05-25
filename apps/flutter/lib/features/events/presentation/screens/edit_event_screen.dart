@@ -1,40 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/event_provider.dart';
 
-class EditEventScreen extends StatefulWidget {
+class EditEventScreen extends ConsumerStatefulWidget {
   final String id;
   const EditEventScreen({super.key, required this.id});
 
   @override
-  State<EditEventScreen> createState() => _EditEventScreenState();
+  ConsumerState<EditEventScreen> createState() => _EditEventScreenState();
 }
 
-class _EditEventScreenState extends State<EditEventScreen> {
+class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
   final _timeCtrl = TextEditingController();
   final _locCtrl = TextEditingController();
   bool _saving = false;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadEvent();
-  }
-
-  void _loadEvent() {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      _titleCtrl.text = 'Evento Exemplo';
-      _dateCtrl.text = '21/05/2026';
-      _timeCtrl.text = '19:00';
-      _locCtrl.text = 'Igreja';
-      _descCtrl.text = 'Descrição do evento...';
-      setState(() => _loading = false);
-    });
-  }
 
   @override
   void dispose() {
@@ -46,15 +29,28 @@ class _EditEventScreenState extends State<EditEventScreen> {
     super.dispose();
   }
 
-  void _handleSave() {
+  void _handleSave() async {
     setState(() => _saving = true);
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      await ref.read(eventListProvider.notifier).update(widget.id, {
+        'title': _titleCtrl.text.trim(),
+        'description': _descCtrl.text.trim(),
+        'date': _dateCtrl.text.trim(),
+        'startTime': _timeCtrl.text.trim(),
+        'location': _locCtrl.text.trim(),
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Evento atualizado!')),
+        const SnackBar(content: Text('Evento atualizado!')),
       );
       context.pop();
-    });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
   }
 
   @override
@@ -65,12 +61,22 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
     final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
     final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
+    final detail = ref.watch(eventDetailProvider(widget.id));
 
-    if (_loading) {
+    if (detail.loading) {
       return Scaffold(
         backgroundColor: bg,
-        body: const Center(child: Text('Carregando...')),
+        body: const Center(child: CircularProgressIndicator()),
       );
+    }
+
+    final event = detail.event;
+    if (event != null && _titleCtrl.text.isEmpty) {
+      _titleCtrl.text = event.title;
+      _dateCtrl.text = event.date.toIso8601String().substring(0, 10);
+      _timeCtrl.text = event.startTime;
+      _locCtrl.text = event.location ?? '';
+      _descCtrl.text = event.description ?? '';
     }
 
     return Scaffold(
