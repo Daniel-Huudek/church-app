@@ -51,7 +51,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
         onRefresh: () => ref.read(financeDashboardProvider.notifier).load(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
             _BalanceHeroCard(dashboard: dashboard, isDark: isDark),
             const SizedBox(height: 20),
