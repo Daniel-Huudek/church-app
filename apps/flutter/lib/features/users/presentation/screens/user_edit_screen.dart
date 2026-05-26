@@ -1,47 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/network/api_client.dart';
 import '../providers/user_provider.dart';
 
 class UserEditScreen extends ConsumerStatefulWidget {
-  const UserEditScreen({super.key});
+  final String userId;
+  const UserEditScreen({super.key, required this.userId});
 
   @override
   ConsumerState<UserEditScreen> createState() => _UserEditScreenState();
 }
 
 class _UserEditScreenState extends ConsumerState<UserEditScreen> {
-  final _nameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
   bool _loading = false;
+  bool _saving = false;
+  String _selectedRole = 'MEMBRO';
+  List<String> _selectedPermissions = [];
+  Map<String, dynamic>? _user;
 
   @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    _phoneCtrl.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadUser();
   }
 
-  void _handleSave() async {
+  Future<void> _loadUser() async {
     setState(() => _loading = true);
     try {
-      await ref.read(userApiProvider).update('me', {
-        'name': _nameCtrl.text.trim(),
-        'email': _emailCtrl.text.trim(),
+      final response = await ref.read(apiClientProvider).get('/users/${widget.userId}');
+      final data = response.data as Map<String, dynamic>;
+      final userData = data['data'] as Map<String, dynamic>? ?? data;
+      setState(() {
+        _user = userData;
+        _selectedRole = userData['role'] as String? ?? 'MEMBRO';
+        _selectedPermissions = (userData['permissions'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ?? [];
+        _loading = false;
       });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil atualizado!')),
-      );
-      context.pop();
     } catch (e) {
-      if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -50,7 +54,12 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
     try {
       await ref.read(apiClientProvider).put('/users/${widget.userId}', data: {'role': _selectedRole});
       await ref.read(apiClientProvider).put('/users/${widget.userId}/permissions', data: {'permissions': _selectedPermissions});
-      if (mounted) context.pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Usuário atualizado!')),
+        );
+        context.pop();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,6 +69,16 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  void _togglePermission(String permission) {
+    setState(() {
+      if (_selectedPermissions.contains(permission)) {
+        _selectedPermissions.remove(permission);
+      } else {
+        _selectedPermissions.add(permission);
+      }
+    });
   }
 
   @override
@@ -109,22 +128,35 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
                     child: Text('📷', style: TextStyle(fontSize: 32)),
                   ),
                 ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF008CFF),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.edit, color: Colors.white, size: 16),
-                  ),
+                const SizedBox(height: 16),
+                Text('Função: $_selectedRole',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF111827))),
+                const SizedBox(height: 16),
+                Text('Permissões',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : const Color(0xFF6B7280))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _allPermissions.map((perm) {
+                    final checked = _selectedPermissions.contains(perm);
+                    return _permChip(perm.replaceAll('_', ' '), perm, checked);
+                  }).toList(),
                 ),
               ],
             ),
     );
   }
+
+  static const _allPermissions = [
+    'users_read', 'users_write', 'users_delete',
+    'members_read', 'members_write', 'members_delete',
+    'events_read', 'events_write', 'events_delete',
+    'finance_read', 'finance_write', 'finance_reports',
+    'prayers_read', 'prayers_write',
+    'schedules_read', 'schedules_write',
+    'notifications_send',
+  ];
 
   Widget _permChip(String label, String perm, bool checked) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

@@ -9,7 +9,7 @@ import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../providers/user_provider.dart';
 
-class UserListScreen extends ConsumerStatefulWidget {
+class UserListScreen extends ConsumerWidget {
   const UserListScreen({super.key});
 
   @override
@@ -38,26 +38,17 @@ class UserListScreen extends ConsumerStatefulWidget {
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                                     child: AppCard(
-                                      onTap: () => context.push('/users/edit'),
+                                      onTap: () => context.push('/users/${user.id}/edit'),
                                       child: Row(
                                         children: [
-                                          AppAvatar(
-                                            name: user.name,
-                                            size: 44,
-                                          ),
+                                          AppAvatar(name: user.name, size: 44),
                                           const SizedBox(width: AppSpacing.md),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                  user.name,
-                                                  style: Theme.of(context).textTheme.titleSmall,
-                                                ),
-                                                Text(
-                                                  user.email,
-                                                  style: Theme.of(context).textTheme.bodySmall,
-                                                ),
+                                                Text(user.name, style: Theme.of(context).textTheme.titleSmall),
+                                                Text(user.email, style: Theme.of(context).textTheme.bodySmall),
                                               ],
                                             ),
                                           ),
@@ -75,6 +66,9 @@ class UserListScreen extends ConsumerStatefulWidget {
                               ),
                             ),
             ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -239,7 +239,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: ':id/edit',
-                builder: (context, state) => UserEditScreen(userId: state.pathParameters['id']!),
+                builder: (context, state) => UserEditScreen(userId: state.pathParameters['id'] ?? ''),
               ),
             ],
           ),
