@@ -173,7 +173,7 @@ export class FinanceService {
     return {
       success: true,
       data: {
-        balance: balanceResult,
+        balance: balanceResult.balance,
         totalIncome: incomeResult,
         totalExpense: expenseResult,
         incomeByCategory,
