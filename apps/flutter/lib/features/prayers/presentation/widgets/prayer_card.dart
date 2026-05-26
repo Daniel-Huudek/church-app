@@ -8,15 +8,23 @@ class PrayerCard extends StatefulWidget {
   final PrayerModel prayer;
   final bool isDark;
   final int index;
+  final String currentUserId;
+  final bool isAdmin;
   final VoidCallback onTap;
   final void Function(String type) onReact;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const PrayerCard({
     required this.prayer,
     required this.isDark,
     required this.index,
+    required this.currentUserId,
+    this.isAdmin = false,
     required this.onTap,
     required this.onReact,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -164,22 +172,31 @@ class _PrayerCardState extends State<PrayerCard>
                         ],
                       ),
                     ),
-                    if (p.categoryName != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF008CFF).withValues(alpha: 0.13)
-                              : const Color(0xFF008CFF).withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(p.categoryName!,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF008CFF),
-                                fontWeight: FontWeight.w600)),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (p.categoryName != null)
+                          Container(
+                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF008CFF).withValues(alpha: 0.13)
+                                  : const Color(0xFF008CFF).withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(p.categoryName!,
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF008CFF),
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        if (p.authorId == widget.currentUserId || widget.isAdmin)
+                          _actionBtn(Icons.edit_outlined, widget.onEdit),
+                        if (p.authorId == widget.currentUserId || widget.isAdmin)
+                          _actionBtn(Icons.delete_outline, widget.onDelete),
+                      ],
+                    ),
                   ],
                 ),
                 if (p.title.isNotEmpty) ...[
@@ -251,6 +268,21 @@ class _PrayerCardState extends State<PrayerCard>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _actionBtn(IconData icon, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(left: 4),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: widget.isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: const Color(0xFF6B7280)),
       ),
     );
   }

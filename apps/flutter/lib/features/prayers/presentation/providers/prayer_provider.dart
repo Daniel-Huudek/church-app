@@ -56,6 +56,24 @@ class PrayerFeedNotifier extends StateNotifier<AsyncState<List<PrayerModel>>> {
       state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
+
+  Future<void> update(String id, Map<String, dynamic> data) async {
+    try {
+      await _api.update(id, data);
+      await loadFeed();
+    } catch (e) {
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
+    }
+  }
+
+  Future<void> delete(String id) async {
+    try {
+      await _api.delete(id);
+      await loadFeed();
+    } catch (e) {
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
+    }
+  }
 }
 
 class PrayerDetailState {

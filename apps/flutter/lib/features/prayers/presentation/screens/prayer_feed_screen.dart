@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../shared/providers/auth_provider.dart';
 import '../providers/prayer_provider.dart';
 import '../../data/prayer_api.dart';
 import '../../domain/prayer_model.dart';
@@ -42,6 +43,63 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
     _load();
   }
 
+  void _editPrayer(BuildContext context, PrayerModel prayer) {
+    final titleCtrl = TextEditingController(text: prayer.title);
+    final contentCtrl = TextEditingController(text: prayer.content);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Editar Pedido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600,
+              color: Theme.of(ctx).brightness == Brightness.dark ? Colors.white : const Color(0xFF111827))),
+            const SizedBox(height: 16),
+            TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            TextField(controller: contentCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'Pedido', border: OutlineInputBorder())),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await ref.read(prayerFeedProvider.notifier).update(prayer.id, {
+                  'title': titleCtrl.text.trim(),
+                  'content': contentCtrl.text.trim(),
+                });
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008CFF)),
+              child: const Text('Salvar', style: TextStyle(color: Colors.white)),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deletePrayer(BuildContext context, PrayerModel prayer, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir pedido'),
+        content: Text('Tem certeza que deseja excluir "${prayer.title}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Excluir', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await ref.read(prayerFeedProvider.notifier).delete(prayer.id);
+    }
+  }
+
   List<PrayerModel> _filtered(List<PrayerModel> prayers) {
     final q = _searchCtrl.text.toLowerCase().trim();
     if (q.isEmpty) return prayers;
@@ -58,6 +116,7 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
     final state = ref.watch(prayerFeedProvider);
     final list = _filtered(state.data);
     final feedCount = state.data.length;
+    final user = ref.watch(authProvider).user;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC),
@@ -190,10 +249,14 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
                               prayer: list[index],
                               isDark: isDark,
                               index: index,
+                              currentUserId: user?.id ?? '',
+                              isAdmin: user?.role == 'ADMINISTRADOR',
                               onTap: () => context.push('/prayers/${list[index].id}'),
                               onReact: (type) {
                                 ref.read(prayerApiProvider).toggleReaction(list[index].id, type);
                               },
+                              onEdit: () => _editPrayer(context, list[index]),
+                              onDelete: () => _deletePrayer(context, list[index], ref),
                             ),
                           ),
                         ),

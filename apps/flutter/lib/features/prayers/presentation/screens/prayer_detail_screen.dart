@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/utils/error_helper.dart';
 import '../providers/prayer_provider.dart';
 import '../../domain/prayer_model.dart';
 
@@ -21,6 +22,65 @@ class _PrayerDetailScreenState extends ConsumerState<PrayerDetailScreen> {
   void dispose() {
     _commentCtrl.dispose();
     super.dispose();
+  }
+
+  void _editPrayer(BuildContext context, PrayerModel prayer) {
+    final titleCtrl = TextEditingController(text: prayer.title);
+    final contentCtrl = TextEditingController(text: prayer.content);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Editar Pedido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600,
+              color: Theme.of(ctx).brightness == Brightness.dark ? Colors.white : const Color(0xFF111827))),
+            const SizedBox(height: 16),
+            TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            TextField(controller: contentCtrl, maxLines: 3, decoration: const InputDecoration(labelText: 'Pedido', border: OutlineInputBorder())),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                await ref.read(prayerApiProvider).update(prayer.id, {
+                  'title': titleCtrl.text.trim(),
+                  'content': contentCtrl.text.trim(),
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+                ref.invalidate(prayerDetailProvider(prayer.id));
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008CFF)),
+              child: const Text('Salvar', style: TextStyle(color: Colors.white)),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deletePrayer(BuildContext context, PrayerModel prayer) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir pedido'),
+        content: Text('Tem certeza que deseja excluir "${prayer.title}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Excluir', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await ref.read(prayerFeedProvider.notifier).delete(prayer.id);
+      if (mounted) context.pop();
+    }
   }
 
   @override
@@ -66,6 +126,35 @@ class _PrayerDetailScreenState extends ConsumerState<PrayerDetailScreen> {
                                         style: TextStyle(fontSize: 28))),
                               ),
                             ),
+                            const Spacer(),
+                            if (p != null && (p.authorId == ref.read(authProvider).user?.id || ref.read(authProvider).user?.role == 'ADMINISTRADOR'))
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _editPrayer(context, p),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF008CFF).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.edit_outlined, color: Color(0xFF008CFF), size: 20),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => _deletePrayer(context, p),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                                    ),
+                                  ),
+                                ],
+                              ),
                           ],
                         ),
                       ),
