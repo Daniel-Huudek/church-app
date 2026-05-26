@@ -34,11 +34,17 @@ class TransactionModel {
   bool get isIncome => type == 'RECEITA' || type == 'INCOME';
   bool get isExpense => type == 'DESPESA' || type == 'EXPENSE';
 
+  static double _toDouble(dynamic val) {
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0;
+    return 0;
+  }
+
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['id'] as String,
       description: json['description'] as String? ?? 'Sem descrição',
-      amount: ((json['value'] ?? json['amount']) as num).toDouble(),
+      amount: _toDouble(json['value'] ?? json['amount']),
       type: json['type'] as String? ?? 'EXPENSE',
       status: json['status'] as String? ?? 'PENDENTE',
       categoryId: json['categoryId'] as String?,

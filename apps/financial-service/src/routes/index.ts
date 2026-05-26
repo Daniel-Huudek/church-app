@@ -28,7 +28,7 @@ const transactionSchema = z.object({
   paymentDate: z.string().optional(),
   categoryId: z.string().uuid().optional(),
   costCenterId: z.string().uuid().optional(),
-  status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED']).default('PENDING'),
+  status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED']).default('CONFIRMED'),
   paymentMethod: z.string().optional(),
   isRecurring: z.boolean().default(false),
   recurrenceRule: z.string().optional(),
