@@ -73,6 +73,24 @@ class FinanceDashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'income',
+            backgroundColor: const Color(0xFF10B981),
+            onPressed: () => context.push('/finance/create/INCOME'),
+            child: const Icon(Icons.trending_up_rounded, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            heroTag: 'expense',
+            backgroundColor: const Color(0xFFEF4444),
+            onPressed: () => context.push('/finance/create/EXPENSE'),
+            child: const Icon(Icons.trending_down_rounded, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 
