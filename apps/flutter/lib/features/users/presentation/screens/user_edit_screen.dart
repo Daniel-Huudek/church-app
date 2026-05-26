@@ -45,55 +45,65 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
     }
   }
 
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await ref.read(apiClientProvider).put('/users/${widget.userId}', data: {'role': _selectedRole});
+      await ref.read(apiClientProvider).put('/users/${widget.userId}/permissions', data: {'permissions': _selectedPermissions});
+      if (mounted) context.pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
-    final card = isDark ? const Color(0xFF1A1A2E) : Colors.white;
-    final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
-        leading: GestureDetector(
-          onTap: () => context.pop(),
-          child: const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text('←', style: TextStyle(fontSize: 24)),
+        scrolledUnderElevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF008CFF).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF008CFF), size: 24),
+            onPressed: () => context.pop(),
           ),
         ),
-        title: Text('Editar Perfil',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: t1)),
+        title: Text(_user?['name'] as String? ?? 'Editar',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF111827))),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: _handleSave,
-              child: Text(_loading ? 'Salvando...' : 'Salvar',
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF008CFF))),
-            ),
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: Text(_saving ? 'Salvando...' : 'Salvar',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF008CFF))),
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Center(
-            child: Stack(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(20),
               children: [
                 Container(
-                  width: 96,
-                  height: 96,
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF008CFF).withOpacity(0.2),
-                    shape: BoxShape.circle,
+                    color: isDark ? const Color(0xFF161622) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFF3F4F6)),
                   ),
                   child: const Center(
                     child: Text('📷', style: TextStyle(fontSize: 32)),
@@ -113,43 +123,34 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 32),
-          _field('Nome', _nameCtrl, 'Seu nome', t1, t2, card, border),
-          const SizedBox(height: 20),
-          _field('Email', _emailCtrl, 'seu@email.com', t1, t2, card, border),
-          const SizedBox(height: 20),
-          _field('Telefone', _phoneCtrl, '(11) 99999-9999', t1, t2, card, border),
-        ],
-      ),
     );
   }
 
-  Widget _field(String label, TextEditingController ctrl, String hint,
-      Color t1, Color t2, Color card, Color border) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 14, color: t2)),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: card,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: border),
-          ),
-          child: TextField(
-            controller: ctrl,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: t2),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
-            ),
-            style: TextStyle(fontSize: 16, color: t1),
+  Widget _permChip(String label, String perm, bool checked) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () => _togglePermission(perm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: checked ? const Color(0xFF008CFF) : (isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF9FAFB)),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: checked ? const Color(0xFF008CFF) : (isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB)),
           ),
         ),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (checked)
+              const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+            if (checked) const SizedBox(width: 4),
+            Text(label,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                color: checked ? Colors.white : (isDark ? Colors.white : const Color(0xFF111827)))),
+          ],
+        ),
+      ),
     );
   }
 }

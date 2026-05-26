@@ -114,6 +114,7 @@ class LoginScreen extends ConsumerWidget {
   Future<void> _handleGoogleSignIn(
       BuildContext context, WidgetRef ref) async {
     try {
+      await _googleSignIn.signOut();
       final account = await _googleSignIn.signIn();
       if (account == null) return;
 

@@ -6,6 +6,8 @@ class AuthInterceptor extends Interceptor {
   bool _isRefreshing = false;
   final List<({RequestOptions options, ErrorInterceptorHandler handler})> _pendingRequests = [];
 
+  static void Function()? onSessionExpired;
+
   AuthInterceptor(this._dioFactory);
 
   @override

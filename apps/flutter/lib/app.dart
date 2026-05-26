@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/config/theme/app_theme.dart';
+import 'core/network/auth_interceptor.dart';
 import 'core/router/app_router.dart';
+import 'shared/providers/auth_provider.dart';
 import 'shared/providers/theme_provider.dart';
 
 class App extends ConsumerWidget {
@@ -11,6 +13,10 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeState = ref.watch(themeProvider);
+
+    AuthInterceptor.onSessionExpired = () {
+      ref.read(authProvider.notifier).clearSession();
+    };
 
     return MaterialApp.router(
       title: 'IPI Avaré',

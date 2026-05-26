@@ -9,7 +9,7 @@ import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../providers/user_provider.dart';
 
-class UserListScreen extends ConsumerWidget {
+class UserListScreen extends ConsumerStatefulWidget {
   const UserListScreen({super.key});
 
   @override
@@ -75,9 +75,6 @@ class UserListScreen extends ConsumerWidget {
                               ),
                             ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

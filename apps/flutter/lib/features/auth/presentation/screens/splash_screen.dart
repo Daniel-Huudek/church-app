@@ -170,15 +170,15 @@ class _DecorativeCircleState extends State<DecorativeCircle>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) => Opacity(
-        opacity: _opacityAnim.value,
-        child: Transform.scale(scale: _scaleAnim.value, child: child),
-      ),
-      child: Positioned(
-        left: widget.left,
-        top: widget.top,
+    return Positioned(
+      left: widget.left,
+      top: widget.top,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) => Opacity(
+          opacity: _opacityAnim.value,
+          child: Transform.scale(scale: _scaleAnim.value, child: child),
+        ),
         child: Container(
           width: widget.size,
           height: widget.size,

@@ -7,6 +7,7 @@ const EVENT_SERVICE_URL = process.env.EVENT_SERVICE_URL || 'http://event-service
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3005';
 const PRAYER_SERVICE_URL = process.env.PRAYER_SERVICE_URL || 'http://prayer-service:3007';
 const FINANCIAL_SERVICE_URL = process.env.FINANCIAL_SERVICE_URL || 'http://financial-service:3008';
+const WORSHIP_SERVICE_URL = process.env.WORSHIP_SERVICE_URL || 'http://worship-service:3010';
 const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || 'http://chat-service:3002';
 
 export const authClient = createHttpClient(AUTH_SERVICE_URL);
@@ -16,6 +17,21 @@ export const eventClient = createHttpClient(EVENT_SERVICE_URL);
 export const notificationClient = createHttpClient(NOTIFICATION_SERVICE_URL);
 export const prayerClient = createHttpClient(PRAYER_SERVICE_URL);
 export const financialClient = createHttpClient(FINANCIAL_SERVICE_URL);
+export const worshipClient = createHttpClient(WORSHIP_SERVICE_URL);
+
+export function getServiceClient(service: string) {
+  switch (service) {
+    case 'auth': return authClient;
+    case 'member': return memberClient;
+    case 'schedule': return scheduleClient;
+    case 'event': return eventClient;
+    case 'notification': return notificationClient;
+    case 'prayer': return prayerClient;
+    case 'financial': return financialClient;
+    case 'worship': return worshipClient;
+    default: throw new Error(`Unknown service: ${service}`);
+  }
+}
 export const chatClient = createHttpClient(CHAT_SERVICE_URL);
 
 
