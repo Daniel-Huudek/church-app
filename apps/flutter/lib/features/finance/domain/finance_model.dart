@@ -34,11 +34,17 @@ class TransactionModel {
   bool get isIncome => type == 'RECEITA' || type == 'INCOME';
   bool get isExpense => type == 'DESPESA' || type == 'EXPENSE';
 
+  static double _toDouble(dynamic val) {
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0;
+    return 0;
+  }
+
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['id'] as String,
       description: json['description'] as String? ?? 'Sem descrição',
-      amount: ((json['value'] ?? json['amount']) as num).toDouble(),
+      amount: _toDouble(json['value'] ?? json['amount']),
       type: json['type'] as String? ?? 'EXPENSE',
       status: json['status'] as String? ?? 'PENDENTE',
       categoryId: json['categoryId'] as String?,
@@ -107,34 +113,44 @@ class CashFlowMonthModel {
 
 class FinanceDashboardModel {
   final double balance;
-  final double totalRevenue;
-  final double totalExpenses;
-  final List<TransactionModel> recentTransactions;
+  final double totalIncome;
+  final double totalExpense;
+  final List<Map<String, dynamic>> incomeByCategory;
+  final List<Map<String, dynamic>> expenseByCategory;
+  final List<Map<String, dynamic>> monthlyHistory;
 
   const FinanceDashboardModel({
     this.balance = 0,
-    this.totalRevenue = 0,
-    this.totalExpenses = 0,
-    this.recentTransactions = const [],
+    this.totalIncome = 0,
+    this.totalExpense = 0,
+    this.incomeByCategory = const [],
+    this.expenseByCategory = const [],
+    this.monthlyHistory = const [],
   });
 
   factory FinanceDashboardModel.fromJson(Map<String, dynamic> json) {
     return FinanceDashboardModel(
       balance: (json['balance'] as num?)?.toDouble() ?? 0,
-      totalRevenue: (json['totalRevenue'] as num?)?.toDouble() ?? 0,
-      totalExpenses: (json['totalExpenses'] as num?)?.toDouble() ?? 0,
-      recentTransactions: (json['recentTransactions'] as List<dynamic>?)
-              ?.map((e) =>
-                  TransactionModel.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+      totalIncome: (json['totalIncome'] as num?)?.toDouble() ?? 0,
+      totalExpense: (json['totalExpense'] as num?)?.toDouble() ?? 0,
+      incomeByCategory: (json['incomeByCategory'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>)
+              .toList() ?? [],
+      expenseByCategory: (json['expenseByCategory'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>)
+              .toList() ?? [],
+      monthlyHistory: (json['monthlyHistory'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>)
+              .toList() ?? [],
     );
   }
 
   Map<String, dynamic> toJson() => {
     'balance': balance,
-    'totalRevenue': totalRevenue,
-    'totalExpenses': totalExpenses,
-    'recentTransactions': recentTransactions.map((e) => e.toJson()).toList(),
+    'totalIncome': totalIncome,
+    'totalExpense': totalExpense,
+    'incomeByCategory': incomeByCategory,
+    'expenseByCategory': expenseByCategory,
+    'monthlyHistory': monthlyHistory,
   };
 }

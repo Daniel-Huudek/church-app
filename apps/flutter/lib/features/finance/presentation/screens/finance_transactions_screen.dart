@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/utils/formatters.dart';
 import '../providers/finance_provider.dart';
 
@@ -10,11 +11,11 @@ class FinanceTransactionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
-    final card = isDark ? const Color(0xFF1A1A2E) : Colors.white;
-    final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final card = isDark ? AppColors.darkCard : Colors.white;
+    final t1 = isDark ? AppColors.darkText : AppColors.lightText;
+    final t2 = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final state = ref.watch(transactionListProvider);
 
     return Scaffold(
@@ -22,22 +23,33 @@ class FinanceTransactionsScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
-        leading: GestureDetector(
-          onTap: () => context.pop(),
-          child: const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text('←', style: TextStyle(fontSize: 24)),
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: GestureDetector(
+            onTap: () {
+              ref.invalidate(financeDashboardProvider);
+              context.pop();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.arrow_back_rounded, size: 22,
+                color: isDark ? AppColors.darkText : AppColors.lightText),
+            ),
           ),
         ),
-        title: Text('Transações',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: t1)),
+        title: Text('Lançamentos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: t1)),
       ),
       body: state.loading
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
-              ? Center(child: Text('Erro: ${state.error}'))
+              ? Center(child: Text('Erro: ${state.error}', style: TextStyle(color: AppColors.error)))
               : state.data.isEmpty
-                  ? Center(child: Text('Nenhuma transação', style: TextStyle(color: t2)))
+                  ? Center(child: Text('Nenhum lançamento', style: TextStyle(color: t2)))
                   : RefreshIndicator(
                       onRefresh: () => ref.read(transactionListProvider.notifier).load(),
                       child: ListView.separated(
@@ -48,25 +60,21 @@ class FinanceTransactionsScreen extends ConsumerWidget {
                           final t = state.data[i];
                           final isIncome = t.isIncome;
                           return Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: card,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(color: border),
                             ),
                             child: Row(
                               children: [
                                 Container(
-                                  width: 44,
-                                  height: 44,
+                                  width: 44, height: 44,
                                   decoration: BoxDecoration(
-                                    color: (isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                                        .withOpacity(0.1),
+                                    color: (isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Center(
-                                    child: Text(isIncome ? '💰' : '💳', style: const TextStyle(fontSize: 20)),
-                                  ),
+                                  child: Center(child: Text(isIncome ? '💰' : '💳', style: const TextStyle(fontSize: 20))),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -83,10 +91,35 @@ class FinanceTransactionsScreen extends ConsumerWidget {
                                 ),
                                 Text(
                                   '${isIncome ? '+' : '-'} ${Formatters.formatCurrency(t.amount)}',
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
                                       color: isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444)),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Excluir'),
+                                        content: Text('Excluir "${t.description}"?'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                                          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Excluir', style: TextStyle(color: Colors.red))),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      await ref.read(transactionListProvider.notifier).delete(t.id);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                                  ),
                                 ),
                               ],
                             ),

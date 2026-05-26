@@ -6,9 +6,9 @@ import { z } from 'zod';
 const transactionSchema = z.object({
   type: z.enum(['INCOME', 'EXPENSE', 'TITHE', 'OFFERING']),
   value: z.number().positive(),
-  description: z.string().min(1),
+  description: z.string().optional(),
   date: z.string(),
-  categoryId: z.string().uuid(),
+  categoryId: z.string().uuid().optional(),
   costCenterId: z.string().uuid().optional(),
   paymentMethod: z.string().optional(),
   notes: z.string().optional(),

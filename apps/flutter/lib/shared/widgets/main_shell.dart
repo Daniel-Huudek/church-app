@@ -36,7 +36,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               isDark: isDark,
               onClose: () => setState(() => _drawerVisible = false),
             ),
-          if (user != null && !currentRoute.startsWith('/worship') && currentRoute != '/dashboard' && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'FINANCEIRO']))
+          if (user != null && !currentRoute.startsWith('/worship') && !currentRoute.startsWith('/finance') && currentRoute != '/dashboard' && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'FINANCEIRO']))
             Positioned(
               right: 0,
               top: 0,

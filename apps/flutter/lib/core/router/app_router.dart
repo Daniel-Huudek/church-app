@@ -29,6 +29,7 @@ import '../../features/finance/presentation/screens/finance_dashboard_screen.dar
 import '../../features/finance/presentation/screens/finance_transactions_screen.dart';
 import '../../features/finance/presentation/screens/finance_reports_screen.dart';
 import '../../features/finance/presentation/screens/finance_cash_flow_screen.dart';
+import '../../features/finance/presentation/screens/create_transaction_screen.dart';
 import '../../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../../features/settings/presentation/screens/profile_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -75,7 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(
-          hideNav: state.matchedLocation == '/prayers/create' || state.matchedLocation.startsWith('/worship'),
+          hideNav: state.matchedLocation == '/prayers/create' || state.matchedLocation.startsWith('/worship') || state.matchedLocation.startsWith('/finance'),
           child: child,
         ),
         routes: [
@@ -178,6 +179,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'cash-flow',
                 builder: (context, state) => const FinanceCashFlowScreen(),
+              ),
+              GoRoute(
+                path: 'create/:type',
+                builder: (context, state) => CreateTransactionScreen(
+                  initialType: state.pathParameters['type'] ?? 'INCOME',
+                ),
               ),
             ],
           ),
