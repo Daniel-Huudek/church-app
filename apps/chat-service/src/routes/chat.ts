@@ -4,6 +4,17 @@ import { ChatService } from '../services/chat.service.js';
 export async function chatRoutes(fastify: FastifyInstance) {
   const chatService = new ChatService(fastify.prisma);
 
+  fastify.post('/ministry', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { ministry, userId } = request.body as { ministry: string; userId: string };
+    if (!ministry || !userId) return reply.status(400).send({ success: false, message: 'ministry and userId are required' });
+    try {
+      const room = await chatService.findOrCreateMinistryRoom(ministry, userId);
+      return reply.send({ success: true, data: room });
+    } catch (error: any) {
+      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+    }
+  });
+
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const { userId } = request.query as { userId: string };
     if (!userId) return reply.status(400).send({ success: false, message: 'userId is required' });

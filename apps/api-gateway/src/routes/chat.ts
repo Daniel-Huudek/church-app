@@ -8,6 +8,16 @@ const directChatSchema = z.object({ participantId: z.string().uuid(), message: z
 const readSchema = z.object({ messageId: z.string().uuid().optional() });
 
 export async function chatRoutes(fastify: FastifyInstance) {
+  fastify.post('/ministry', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const body = { ...request.body as any, userId: request.user.userId };
+    try {
+      const data = await chatClient.post('/chats/ministry', body, getAuthHeader(request));
+      await reply.send(data);
+    } catch (error: any) {
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+    }
+  });
+
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await chatClient.get(`/chats?userId=${request.user.userId}`, getAuthHeader(request));

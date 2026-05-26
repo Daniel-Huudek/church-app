@@ -61,4 +61,10 @@ class ChatApi {
     final data = response.data as Map<String, dynamic>;
     return (data['data'] as Map<String, dynamic>)['unread'] as int? ?? 0;
   }
+
+  Future<ChatRoomModel> findOrCreateMinistryRoom(String ministry) async {
+    final response = await _client.post('${ApiConfig.chats}/ministry', data: {'ministry': ministry});
+    final data = response.data as Map<String, dynamic>;
+    return ChatRoomModel.fromJson(data['data'] as Map<String, dynamic>);
+  }
 }

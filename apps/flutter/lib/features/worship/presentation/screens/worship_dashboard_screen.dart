@@ -5,6 +5,7 @@ import '../../../../shared/providers/auth_provider.dart';
 import '../widgets/worship_tab_item.dart';
 import '../widgets/scale_page.dart';
 import '../widgets/repertorio_page.dart';
+import '../widgets/mensagem_page.dart';
 
 class WorshipDashboardScreen extends ConsumerStatefulWidget {
   const WorshipDashboardScreen({super.key});
@@ -36,7 +37,7 @@ class _WorshipDashboardScreenState extends ConsumerState<WorshipDashboardScreen>
         children: [
           ScalePage(isDark: isDark, scaleTab: _scaleTab, onTabChanged: (v) => setState(() => _scaleTab = v), canCreate: canCreate),
           RepertorioPage(isDark: isDark, repertorioTab: _repertorioTab, onTabChanged: (v) => setState(() => _repertorioTab = v), canCreate: canCreate),
-          const Center(child: Text('Mensagem', style: TextStyle(fontSize: 18))),
+          MensagemPage(isDark: isDark, canCreate: canCreate),
         ],
       ),
       bottomNavigationBar: SafeArea(

@@ -105,4 +105,31 @@ export class ChatService {
     });
     return result._sum.unreadCount ?? 0;
   }
+
+  async findOrCreateMinistryRoom(ministry: string, userId: string) {
+    let room = await this.prisma.chatRoom.findFirst({
+      where: { name: ministry, type: 'MINISTRY', deletedAt: null },
+      include: { members: true },
+    });
+    if (!room) {
+      room = await this.prisma.chatRoom.create({
+        data: {
+          name: ministry,
+          type: 'MINISTRY',
+          members: {
+            create: { userId, unreadCount: 0 },
+          },
+        },
+        include: { members: true },
+      });
+    } else {
+      const isMember = room.members.some(m => m.userId === userId);
+      if (!isMember) {
+        await this.prisma.chatRoomMember.create({
+          data: { roomId: room.id, userId, unreadCount: 0 },
+        });
+      }
+    }
+    return room;
+  }
 }
