@@ -51,6 +51,15 @@ class TransactionListNotifier extends StateNotifier<AsyncState<List<TransactionM
       state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
+
+  Future<void> delete(String id) async {
+    try {
+      await _api.deleteTransaction(id);
+      await load();
+    } catch (e) {
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
+    }
+  }
 }
 
 final cashFlowProvider = StateNotifierProvider.autoDispose<CashFlowNotifier, AsyncState<List<CashFlowMonthModel>>>((ref) {

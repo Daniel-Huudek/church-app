@@ -45,7 +45,7 @@ export class FinanceService {
       this.prisma.transaction.findMany({
         skip, take: limit, where,
         include: { category: true, costCenter: true, attachments: true },
-        orderBy: { date: 'desc' },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       }),
       this.prisma.transaction.count({ where }),
     ]);

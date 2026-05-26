@@ -3,20 +3,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../data/finance_api.dart';
 import '../providers/finance_provider.dart';
 
-class FinanceDashboardScreen extends ConsumerWidget {
+class FinanceDashboardScreen extends ConsumerStatefulWidget {
   const FinanceDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FinanceDashboardScreen> createState() => _FinanceDashboardScreenState();
+}
+
+class _FinanceDashboardScreenState extends ConsumerState<FinanceDashboardScreen> {
+  int _tabIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(financeDashboardProvider);
 
     if (state.loading) {
       return Scaffold(
         backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-        appBar: _buildAppBar(context, isDark),
+        appBar: _buildAppBar(isDark),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -24,7 +32,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
     if (state.error != null) {
       return Scaffold(
         backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-        appBar: _buildAppBar(context, isDark),
+        appBar: _buildAppBar(isDark),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -46,61 +54,31 @@ class FinanceDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-      appBar: _buildAppBar(context, isDark),
+      appBar: _buildAppBar(isDark),
       body: RefreshIndicator(
         onRefresh: () => ref.read(financeDashboardProvider.notifier).load(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
           children: [
             _BalanceHeroCard(dashboard: dashboard, isDark: isDark),
             const SizedBox(height: 20),
             _IncomeExpenseRow(dashboard: dashboard, isDark: isDark),
-            const SizedBox(height: 24),
-            _SectionHeader(title: 'Histórico Mensal', isDark: isDark),
-            const SizedBox(height: 12),
-            if (dashboard.monthlyHistory.isEmpty)
-              _EmptyState(isDark: isDark)
+            const SizedBox(height: 20),
+            _TabBar(index: _tabIndex, onChanged: (v) => setState(() => _tabIndex = v), isDark: isDark),
+            const SizedBox(height: 16),
+            if (_tabIndex == 0)
+              _DailyView(dashboard: dashboard, isDark: isDark)
             else
-              ...dashboard.monthlyHistory.asMap().entries.map((e) => _MonthTile(
-                index: e.key,
-                month: e.value['month'] as String? ?? '',
-                income: (e.value['income'] as num?)?.toDouble() ?? 0,
-                expense: (e.value['expense'] as num?)?.toDouble() ?? 0,
-                balance: (e.value['balance'] as num?)?.toDouble() ?? 0,
-                isDark: isDark,
-              )),
+              _MonthlyView(dashboard: dashboard, isDark: isDark),
           ],
         ),
       ),
-      floatingActionButton: Stack(
-        children: [
-          Positioned(
-            bottom: 16,
-            left: 16,
-            child: FloatingActionButton(
-              heroTag: 'income',
-              backgroundColor: const Color(0xFF10B981),
-              onPressed: () => context.push('/finance/create/INCOME'),
-              child: const Icon(Icons.add_rounded, color: Colors.white),
-            ),
-          ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              heroTag: 'expense',
-              backgroundColor: const Color(0xFFEF4444),
-              onPressed: () => context.push('/finance/create/EXPENSE'),
-              child: const Icon(Icons.remove_rounded, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+      bottomNavigationBar: _bottomBar(isDark),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, bool isDark) {
+  PreferredSizeWidget _buildAppBar(bool isDark) {
     return AppBar(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
       elevation: 0,
@@ -110,11 +88,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
         child: GestureDetector(
           onTap: () {
             if (context.mounted) {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/');
-              }
+              if (context.canPop()) context.pop(); else context.go('/');
             }
           },
           child: Container(
@@ -133,9 +107,255 @@ class FinanceDashboardScreen extends ConsumerWidget {
         color: isDark ? AppColors.darkText : AppColors.lightText,
       )),
       centerTitle: false,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () => context.push('/finance/transactions'),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.receipt_long_rounded, size: 22,
+                color: isDark ? AppColors.darkText : AppColors.lightText),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _bottomBar(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBg : AppColors.lightBg,
+        border: Border(top: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.push('/finance/create/EXPENSE'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.remove_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 6),
+                      Text('Despesa', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.push('/finance/create/INCOME'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 6),
+                      Text('Receita', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
+
+// ---- Tab Bar ----
+class _TabBar extends StatelessWidget {
+  final int index;
+  final ValueChanged<int> onChanged;
+  final bool isDark;
+
+  const _TabBar({required this.index, required this.onChanged, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+      ),
+      child: Row(
+        children: ['Diário', 'Mensal'].asMap().entries.map((e) => Expanded(
+          child: GestureDetector(
+            onTap: () => onChanged(e.key),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: index == e.key
+                    ? const Color(0xFF10B981)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(e.value,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w700,
+                  color: index == e.key ? Colors.white : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                ),
+              ),
+            ),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+}
+
+// ---- Daily View ----
+class _DailyView extends ConsumerWidget {
+  final dynamic dashboard;
+  final bool isDark;
+
+  const _DailyView({required this.dashboard, required this.isDark});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t2 = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    final txState = ref.watch(transactionListProvider);
+
+    if (txState.loading) {
+      return const Center(child: Padding(
+        padding: EdgeInsets.all(24), child: CircularProgressIndicator(),
+      ));
+    }
+
+    if (txState.error != null) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text('Erro ao carregar transações', style: TextStyle(color: t2)),
+      );
+    }
+
+    final transactions = txState.data;
+    if (transactions.isEmpty) {
+      return _EmptyState(isDark: isDark, message: 'Nenhuma transação');
+    }
+    return Column(
+      children: transactions.map((t) => _TransactionTile(
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        date: t.date,
+        isDark: isDark,
+      )).toList(),
+    );
+  }
+}
+
+class _TransactionTile extends StatelessWidget {
+  final String description;
+  final double amount;
+  final String type;
+  final DateTime date;
+  final bool isDark;
+
+  const _TransactionTile({required this.description, required this.amount, required this.type, required this.date, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final isIncome = type == 'INCOME' || type == 'TITHE' || type == 'OFFERING';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4, height: 40,
+            decoration: BoxDecoration(
+              color: isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(description, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15,
+                  color: isDark ? AppColors.darkText : AppColors.lightText)),
+                const SizedBox(height: 2),
+                Text(Formatters.formatDate(date), style: TextStyle(fontSize: 12,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+              ],
+            ),
+          ),
+          Text(
+            '${isIncome ? '+' : '-'} ${Formatters.formatCurrency(amount)}',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15,
+              color: isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---- Monthly View ----
+class _MonthlyView extends StatelessWidget {
+  final dynamic dashboard;
+  final bool isDark;
+
+  const _MonthlyView({required this.dashboard, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final list = dashboard.monthlyHistory;
+    if (list is! List || list.isEmpty) {
+      return _EmptyState(isDark: isDark, message: 'Nenhum dado mensal');
+    }
+    return Column(
+      children: [
+        for (int i = 0; i < list.length; i++)
+          _MonthTile(
+            index: i,
+            month: list[i]['month']?.toString() ?? '',
+            income: (list[i]['income'] is num ? (list[i]['income'] as num).toDouble() : double.tryParse(list[i]['income']?.toString() ?? '') ?? 0),
+            expense: (list[i]['expense'] is num ? (list[i]['expense'] as num).toDouble() : double.tryParse(list[i]['expense']?.toString() ?? '') ?? 0),
+            balance: (list[i]['balance'] is num ? (list[i]['balance'] as num).toDouble() : double.tryParse(list[i]['balance']?.toString() ?? '') ?? 0),
+            isDark: isDark,
+          ),
+      ],
+    );
+  }
+}
+
+// ---- Shared Widgets ----
 
 class _BalanceHeroCard extends StatelessWidget {
   final dynamic dashboard;
@@ -175,37 +395,23 @@ class _BalanceHeroCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                  color: Colors.white, size: 22,
-                ),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+                child: Icon(isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded, color: Colors.white, size: 22),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  isPositive ? 'POSITIVO' : 'NEGATIVO',
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
-                ),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
+                child: Text(isPositive ? 'POSITIVO' : 'NEGATIVO',
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          Text('Saldo Atual',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w500)),
+          Text('Saldo Atual', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
-          Text(
-            Formatters.formatCurrency(balance),
-            style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w800),
-          ),
+          Text(Formatters.formatCurrency(balance),
+            style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -248,14 +454,8 @@ class _IncomeExpenseRow extends StatelessWidget {
               height: 8,
               child: Row(
                 children: [
-                  Flexible(
-                    flex: (incomePct * 100).round().clamp(1, 99),
-                    child: Container(color: const Color(0xFF10B981)),
-                  ),
-                  Flexible(
-                    flex: ((1 - incomePct) * 100).round().clamp(1, 99),
-                    child: Container(color: const Color(0xFFEF4444)),
-                  ),
+                  Flexible(flex: (incomePct * 100).round().clamp(1, 99), child: Container(color: const Color(0xFF10B981))),
+                  Flexible(flex: ((1 - incomePct) * 100).round().clamp(1, 99), child: Container(color: const Color(0xFFEF4444))),
                 ],
               ),
             ),
@@ -284,16 +484,13 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
+      ],
     );
   }
 }
@@ -320,22 +517,28 @@ class _LegendDot extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
+class _EmptyState extends StatelessWidget {
   final bool isDark;
+  final String message;
 
-  const _SectionHeader({required this.title, required this.isDark});
+  const _EmptyState({required this.isDark, this.message = 'Nenhum dado mensal ainda'});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(title,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.darkText : AppColors.lightText)),
-        const SizedBox(width: 12),
-        Expanded(child: Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.bar_chart_rounded, size: 40, color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary),
+          const SizedBox(height: 12),
+          Text(message, style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+        ],
+      ),
     );
   }
 }
@@ -348,10 +551,7 @@ class _MonthTile extends StatelessWidget {
   final double balance;
   final bool isDark;
 
-  const _MonthTile({
-    required this.index, required this.month, required this.income,
-    required this.expense, required this.balance, required this.isDark,
-  });
+  const _MonthTile({required this.index, required this.month, required this.income, required this.expense, required this.balance, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -374,8 +574,7 @@ class _MonthTile extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 80,
-                  child: Text(month, style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600,
+                  child: Text(month, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
                     color: isDark ? AppColors.darkText : AppColors.lightText)),
                 ),
                 const Spacer(),
@@ -408,10 +607,7 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SizedBox(
-          width: 60,
-          child: Text(label, style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
-        ),
+        SizedBox(width: 60, child: Text(label, style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary))),
         const SizedBox(width: 8),
         Expanded(
           child: ClipRRect(
@@ -428,39 +624,9 @@ class _Bar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-          width: 80,
-          child: Text(Formatters.formatCurrency(value),
-            textAlign: TextAlign.right,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
-        ),
+        SizedBox(width: 80, child: Text(Formatters.formatCurrency(value), textAlign: TextAlign.right,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color))),
       ],
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final bool isDark;
-
-  const _EmptyState({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.bar_chart_rounded, size: 40, color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary),
-          const SizedBox(height: 12),
-          Text('Nenhum dado mensal ainda',
-            style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
-        ],
-      ),
     );
   }
 }

@@ -199,10 +199,11 @@ class _CreateTransactionScreenState extends ConsumerState<CreateTransactionScree
                 TextField(
                   controller: _descCtrl,
                   onChanged: (_) => setState(() {}),
-                  style: TextStyle(fontSize: 16, color: t1),
+                  maxLines: 2,
+                  style: TextStyle(fontSize: 18, color: t1),
                   decoration: InputDecoration(
                     hintText: 'Ex: Dízimo, Oferta, Luz...',
-                    hintStyle: TextStyle(color: t2.withValues(alpha: 0.4)),
+                    hintStyle: TextStyle(fontSize: 18, color: t2.withValues(alpha: 0.4)),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
