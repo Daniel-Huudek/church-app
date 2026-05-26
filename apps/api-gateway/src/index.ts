@@ -12,6 +12,7 @@ import { notificationRoutes } from './routes/notification';
 import { prayerRoutes } from './routes/prayer';
 import { financeRoutes } from './routes/finance';
 import { userRoutes } from './routes/user';
+import { worshipRoutes } from './routes/worship';
 import { logger } from './logger';
 
 const fastify = Fastify({
@@ -36,7 +37,7 @@ async function bootstrap() {
   await fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
     sign: {
-      expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+      expiresIn: process.env.JWT_EXPIRES_IN || '2h',
     },
   });
 
@@ -58,6 +59,7 @@ async function bootstrap() {
   await fastify.register(prayerRoutes, { prefix: '/prayers' });
   await fastify.register(financeRoutes, { prefix: '/finance' });
   await fastify.register(userRoutes, { prefix: '/users' });
+  await fastify.register(worshipRoutes, { prefix: '/worship' });
 
   fastify.setErrorHandler((error, request, reply) => {
     logger.error('Error occurred', error, { path: request.url, method: request.method });

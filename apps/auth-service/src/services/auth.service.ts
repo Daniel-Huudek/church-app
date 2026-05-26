@@ -18,7 +18,7 @@ export class AuthService {
 
   constructor(private prisma: PrismaClient) {
     this.jwtSecret = process.env.JWT_SECRET || 'default-secret';
-    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '15m';
+    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '2h';
     this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
   }
 
@@ -28,7 +28,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
-      data: { name, email, password: hashedPassword, role: 'MEMBRO', permissions: [] },
+      data: { name, email, password: hashedPassword, role: 'VISITANTE', permissions: [] },
     });
 
     return this.generateTokens(user);
@@ -72,8 +72,8 @@ export class AuthService {
     } catch {
       const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
       if (!response.ok) throw new AppError('Invalid Google token', 400);
-      const userInfo = await response.json() as { sub: string; email: string; name: string };
-      return this.findOrCreateGoogleUser({ sub: userInfo.sub, email: userInfo.email, name: userInfo.name });
+      const userInfo = await response.json() as { sub: string; email: string; name: string; picture?: string };
+      return this.findOrCreateGoogleUser({ sub: userInfo.sub, email: userInfo.email, name: userInfo.name, picture: userInfo.picture });
     }
   }
 
@@ -86,9 +86,11 @@ export class AuthService {
         user = await this.prisma.user.update({ where: { id: user.id }, data: { googleId: payload.sub, avatar: payload.picture } });
       } else {
         user = await this.prisma.user.create({
-          data: { email: payload.email!, name: payload.name!, googleId: payload.sub, avatar: payload.picture, role: 'MEMBRO', permissions: [] },
+          data: { email: payload.email!, name: payload.name!, googleId: payload.sub, avatar: payload.picture, role: 'VISITANTE', permissions: [] },
         });
       }
+    } else if (payload.picture) {
+      user = await this.prisma.user.update({ where: { id: user.id }, data: { avatar: payload.picture } });
     }
 
     return this.generateTokens(user);
@@ -124,9 +126,12 @@ export class AuthService {
 
   async setUserPermissions(userId: string, permissions: string[]) {
     const validPermissions = permissions.filter(p => 
-      ['users_read', 'users_write', 'users_delete', 'members_read', 'members_write', 'members_delete', 
-       'events_read', 'events_write', 'events_delete', 'prayers_read', 'prayers_write', 'prayers_delete',
-       'finance_read', 'finance_write', 'finance_delete'].includes(p)
+      ['users_read','users_write','users_delete','members_read','members_write','members_delete',
+       'members_export','members_import','ministries_read','ministries_write','ministries_delete',
+       'schedules_read','schedules_write','schedules_delete','events_read','events_write','events_delete',
+       'prayers_read','prayers_write','prayers_delete','prayers_comment','prayers_react',
+       'finance_read','finance_write','finance_delete','finance_export','finance_audit','finance_close',
+       'finance_reports','notifications_send'].includes(p)
     ) as PrismaPermission[];
     
     const user = await this.prisma.user.update({
@@ -175,7 +180,7 @@ export class AuthService {
   }
 
   async updateUserRole(userId: string, role: string) {
-    const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'MEMBRO', 'VISITANTE'];
+    const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'MEMBRO', 'VISITANTE'];
     if (!validRoles.includes(role)) {
       throw new AppError('Invalid role', 400);
     }
@@ -193,5 +198,43 @@ export class AuthService {
       },
     });
     return user;
+  }
+
+  async getAllRoles() {
+    const roles = await this.prisma.roleConfig.findMany({ orderBy: { name: 'asc' } });
+    if (roles.length === 0) {
+      return this._seedDefaultRoles();
+    }
+    return roles;
+  }
+
+  async updateRole(name: string, permissions: string[]) {
+    return this.prisma.roleConfig.upsert({
+      where: { name },
+      update: { permissions: permissions as any },
+      create: { name, permissions: permissions as any },
+    });
+  }
+
+  async resetRoles() {
+    await this.prisma.roleConfig.deleteMany();
+    return this._seedDefaultRoles();
+  }
+
+  private async _seedDefaultRoles() {
+    const defaults: { name: string; perms: string[] }[] = [
+      { name: 'ADMINISTRADOR', perms: ['users_write','users_delete','members_write','members_delete','events_write','events_delete','prayers_write','prayers_delete','finance_write','finance_delete'] },
+      { name: 'PASTOR', perms: ['users_write','users_delete','members_write','members_delete','events_write','events_delete','prayers_write','prayers_delete','finance_write','finance_delete'] },
+      { name: 'FINANCEIRO', perms: ['finance_write','finance_delete'] },
+      { name: 'LIDER', perms: ['members_write','members_delete','events_write','events_delete','prayers_write','prayers_delete'] },
+      { name: 'LIDER_LOUVOR', perms: ['events_write','events_delete'] },
+      { name: 'LOUVOR', perms: [] },
+      { name: 'MEMBRO', perms: ['prayers_write','prayers_delete'] },
+      { name: 'VISITANTE', perms: [] },
+    ];
+    for (const r of defaults) {
+      await this.prisma.roleConfig.create({ data: { name: r.name, permissions: r.perms as any } });
+    }
+    return this.prisma.roleConfig.findMany({ orderBy: { name: 'asc' } });
   }
 }

@@ -6,6 +6,7 @@ import '../../shared/widgets/main_shell.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/dashboard/presentation/screens/admin_dashboard_screen.dart';
 import '../../features/prayers/presentation/screens/prayer_feed_screen.dart';
 import '../../features/prayers/presentation/screens/prayer_detail_screen.dart';
 import '../../features/prayers/presentation/screens/create_prayer_screen.dart';
@@ -18,6 +19,12 @@ import '../../features/schedules/presentation/screens/schedule_detail_screen.dar
 import '../../features/schedules/presentation/screens/create_schedule_screen.dart';
 import '../../features/members/presentation/screens/member_list_screen.dart';
 import '../../features/members/presentation/screens/member_detail_screen.dart';
+import '../../features/worship/presentation/screens/worship_dashboard_screen.dart';
+import '../../features/worship/presentation/screens/create_scale_screen.dart';
+import '../../features/worship/presentation/screens/scale_detail_screen.dart';
+import '../../features/worship/presentation/screens/create_repertorio_screen.dart';
+import '../../features/worship/presentation/screens/song_detail_screen.dart';
+import '../../features/worship/presentation/screens/edit_song_screen.dart';
 import '../../features/finance/presentation/screens/finance_dashboard_screen.dart';
 import '../../features/finance/presentation/screens/finance_transactions_screen.dart';
 import '../../features/finance/presentation/screens/finance_reports_screen.dart';
@@ -29,6 +36,8 @@ import '../../features/chat/presentation/screens/chat_list_screen.dart';
 import '../../features/chat/presentation/screens/chat_detail_screen.dart';
 import '../../features/users/presentation/screens/user_list_screen.dart';
 import '../../features/users/presentation/screens/user_edit_screen.dart';
+import '../../features/users/presentation/screens/role_manager_screen.dart';
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -37,16 +46,21 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     redirect: (context, state) {
       final isAuthenticated = authState.isAuthenticated;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/splash';
+      final user = authState.user;
+      final location = state.matchedLocation;
+      final isAuthRoute = location == '/login' || location == '/splash';
 
       if (isAuthenticated && isAuthRoute) {
         return '/';
       }
-      if (!isAuthenticated &&
-          !isAuthRoute &&
-          state.matchedLocation != '/splash') {
+      if (!isAuthenticated && !isAuthRoute && location != '/splash') {
         return '/login';
+      }
+      if (isAuthenticated && user != null) {
+        final adminRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'];
+        if ((location == '/dashboard' || location.startsWith('/users')) && !user.hasAnyRole(adminRoles)) {
+          return '/';
+        }
       }
       return null;
     },
@@ -61,13 +75,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(
-          hideNav: state.matchedLocation == '/prayers/create',
+          hideNav: state.matchedLocation == '/prayers/create' || state.matchedLocation.startsWith('/worship'),
           child: child,
         ),
         routes: [
           GoRoute(
             path: '/',
             builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/dashboard',
+            builder: (context, state) => const AdminDashboardScreen(),
           ),
           GoRoute(
             path: '/prayers',
@@ -164,6 +182,38 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
+            path: '/worship',
+            builder: (context, state) => const WorshipDashboardScreen(),
+            routes: [
+              GoRoute(
+                path: 'scale/create',
+                builder: (context, state) => const CreateScaleScreen(),
+              ),
+              GoRoute(
+                path: 'scale/:id/edit',
+                builder: (context, state) => CreateScaleScreen(scaleId: state.pathParameters['id']!),
+              ),
+              GoRoute(
+                path: 'scale/:id',
+                builder: (context, state) => ScaleDetailScreen(id: state.pathParameters['id']!),
+              ),
+              GoRoute(
+                path: 'repertorio/create',
+                builder: (context, state) => const CreateRepertorioScreen(),
+              ),
+              GoRoute(
+                path: 'songs/:id',
+                builder: (context, state) => SongDetailScreen(songId: state.pathParameters['id']!),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => EditSongScreen(songId: state.pathParameters['id']!),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
             path: '/notifications',
             builder: (context, state) => const NotificationListScreen(),
           ),
@@ -184,11 +234,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const UserListScreen(),
             routes: [
               GoRoute(
-                path: 'edit',
-                builder: (context, state) => const UserEditScreen(),
+                path: 'roles',
+                builder: (context, state) => const RoleManagerScreen(),
+              ),
+              GoRoute(
+                path: ':id/edit',
+                builder: (context, state) => UserEditScreen(userId: state.pathParameters['id']!),
               ),
             ],
           ),
+
         ],
       ),
     ],

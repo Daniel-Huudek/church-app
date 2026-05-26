@@ -18,7 +18,7 @@ async function bootstrap() {
   await fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'default-secret-change-me',
     sign: {
-      expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+      expiresIn: process.env.JWT_EXPIRES_IN || '2h',
     },
   });
 

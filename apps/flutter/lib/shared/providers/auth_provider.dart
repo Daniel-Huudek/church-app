@@ -156,6 +156,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _apiClient.post('/auth/logout');
     } catch (_) {}
+    await _clearLocalAuth();
+  }
+
+  Future<void> clearSession() async {
+    await _clearLocalAuth();
+  }
+
+  Future<void> _clearLocalAuth() async {
     await SecureStorage.clearAll();
     _apiClient.clearAuthToken();
     state = const AuthState(isLoading: false);

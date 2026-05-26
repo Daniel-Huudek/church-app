@@ -6,6 +6,8 @@ class AuthInterceptor extends Interceptor {
   bool _isRefreshing = false;
   final List<void Function()> _pendingRequests = [];
 
+  static void Function()? onSessionExpired;
+
   AuthInterceptor(this._dioFactory);
 
   @override
@@ -79,5 +81,6 @@ class AuthInterceptor extends Interceptor {
 
   Future<void> _clearAndRedirect() async {
     await SecureStorage.clearAll();
+    onSessionExpired?.call();
   }
 }

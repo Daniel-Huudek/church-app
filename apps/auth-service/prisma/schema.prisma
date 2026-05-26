@@ -56,6 +56,9 @@ enum Role {
   FINANCEIRO
   LIDER
   MEMBRO
+  LOUVOR
+  LIDER_LOUVOR
+  VISITANTE
 }
 
 enum Permission {
@@ -89,4 +92,12 @@ enum Permission {
   finance_close
   finance_reports
   notifications_send
+}
+
+model RoleConfig {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  permissions String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
