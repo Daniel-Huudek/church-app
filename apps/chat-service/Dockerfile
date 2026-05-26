@@ -9,7 +9,7 @@ COPY packages/tsconfig ./packages/tsconfig
 
 WORKDIR /app/apps/chat-service
 
-RUN npm install -g pnpm && pnpm install
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 RUN pnpm --filter @church-app/shared build
 
