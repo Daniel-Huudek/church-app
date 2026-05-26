@@ -40,6 +40,7 @@ class ChatMessageModel {
   final String id;
   final String roomId;
   final String senderId;
+  final String senderName;
   final String content;
   final String type;
   final DateTime createdAt;
@@ -48,6 +49,7 @@ class ChatMessageModel {
     required this.id,
     required this.roomId,
     required this.senderId,
+    this.senderName = '',
     required this.content,
     this.type = 'TEXT',
     required this.createdAt,
@@ -60,6 +62,7 @@ class ChatMessageModel {
       id: json['id'] as String,
       roomId: json['roomId'] as String,
       senderId: json['senderId'] as String,
+      senderName: json['senderName'] as String? ?? '',
       content: json['content'] as String,
       type: json['type'] as String? ?? 'TEXT',
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -70,6 +73,7 @@ class ChatMessageModel {
     'id': id,
     'roomId': roomId,
     'senderId': senderId,
+    'senderName': senderName,
     'content': content,
     'type': type,
     'createdAt': createdAt.toIso8601String(),

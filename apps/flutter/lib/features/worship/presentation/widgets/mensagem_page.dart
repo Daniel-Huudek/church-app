@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../chat/data/chat_api.dart';
 import '../../../chat/domain/chat_models.dart';
+import '../../../users/data/user_api.dart';
 import '../../../../shared/utils/error_helper.dart';
 
 final _mensagemChatProvider = FutureProvider.autoDispose.family<ChatRoomModel, String>((ref, ministry) async {
@@ -26,19 +28,42 @@ class _MensagemPageState extends ConsumerState<MensagemPage> {
   final _scrollCtrl = ScrollController();
   List<ChatMessageModel> _messages = [];
   bool _loading = true;
+  Map<String, String> _userNames = {};
+  Timer? _pollTimer;
+  String? _roomId;
 
   @override
   void dispose() {
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
+    _pollTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _loadMessages(String roomId) async {
+    _roomId = roomId;
     try {
       final api = ChatApi(ref.read(apiClientProvider));
       final msgs = await api.getMessages(roomId, limit: 100);
-      if (mounted) setState(() { _messages = msgs; _loading = false; });
+      msgs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+      final ids = msgs.map((m) => m.senderId).toSet().where((id) => !_userNames.containsKey(id)).toList();
+      if (ids.isNotEmpty) {
+        try {
+          final userApi = UserApi(ref.read(apiClientProvider));
+          final users = await userApi.list(limit: ids.length);
+          for (final u in users) {
+            _userNames[u.id] = u.name;
+          }
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        setState(() { _messages = msgs; _loading = false; });
+        if (_scrollCtrl.hasClients) {
+          _scrollCtrl.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        }
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -50,6 +75,7 @@ class _MensagemPageState extends ConsumerState<MensagemPage> {
     _msgCtrl.clear();
     try {
       final api = ChatApi(ref.read(apiClientProvider));
+      final user = ref.read(authProvider).user;
       await api.sendMessage(roomId, text);
       await _loadMessages(roomId);
     } catch (e) {
@@ -61,6 +87,13 @@ class _MensagemPageState extends ConsumerState<MensagemPage> {
     }
   }
 
+  void _startPolling(String roomId) {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _loadMessages(roomId);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
@@ -70,9 +103,41 @@ class _MensagemPageState extends ConsumerState<MensagemPage> {
 
     return roomAsync.when(
       data: (room) {
-        if (_loading) _loadMessages(room.id);
+        if (_loading) {
+          _loadMessages(room.id);
+          _startPolling(room.id);
+        }
         return Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text('Bate-papo do Louvor',
+                      style: TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w800,
+                        color: const Color(0xFF008CFF),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => _loadMessages(room.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF008CFF).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.refresh_rounded, color: Color(0xFF008CFF), size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
@@ -83,34 +148,91 @@ class _MensagemPageState extends ConsumerState<MensagemPage> {
                         )
                       : ListView.builder(
                           controller: _scrollCtrl,
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           itemCount: _messages.length,
-                          reverse: true,
                           itemBuilder: (_, i) {
                             final msg = _messages[i];
                             final isMine = msg.senderId == userId;
-                            return Align(
-                              alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isMine
-                                      ? const Color(0xFF008CFF)
-                                      : (isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF3F4F6)),
-                                  borderRadius: BorderRadius.circular(20).copyWith(
-                                    bottomRight: isMine ? const Radius.circular(4) : null,
-                                    bottomLeft: !isMine ? const Radius.circular(4) : null,
+                            final senderName = msg.senderName.isNotEmpty
+                                ? msg.senderName
+                                : _userNames[msg.senderId] ?? '...';
+                            final showHeader = i == 0 || _messages[i - 1].senderId != msg.senderId;
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Column(
+                                crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                children: [
+                                  if (showHeader && !isMine) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 44, bottom: 4),
+                                      child: Text(senderName,
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                                          color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                                      ),
+                                    ),
+                                  ],
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      if (!isMine && showHeader)
+                                        Container(
+                                          width: 32, height: 32,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF008CFF).withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              senderName.isNotEmpty ? senderName[0].toUpperCase() : '?',
+                                              style: const TextStyle(
+                                                color: Color(0xFF008CFF), fontWeight: FontWeight.w700, fontSize: 14),
+                                            ),
+                                          ),
+                                        ),
+                                      if (!isMine && showHeader) const SizedBox(width: 8),
+                                      if (!isMine && !showHeader) const SizedBox(width: 40),
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: isMine
+                                                ? const Color(0xFF008CFF)
+                                                : (isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF3F4F6)),
+                                            borderRadius: BorderRadius.circular(20).copyWith(
+                                              bottomRight: isMine ? const Radius.circular(4) : null,
+                                              bottomLeft: !isMine ? const Radius.circular(4) : null,
+                                            ),
+                                          ),
+                                          constraints: BoxConstraints(
+                                            maxWidth: MediaQuery.of(context).size.width * 0.65,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                msg.content,
+                                                style: TextStyle(
+                                                  color: isMine ? Colors.white : (isDark ? Colors.white : const Color(0xFF111827)),
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                _formatTime(msg.createdAt),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: isMine ? Colors.white70 : (isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-                                child: Text(
-                                  msg.content,
-                                  style: TextStyle(
-                                    color: isMine ? Colors.white : (isDark ? Colors.white : const Color(0xFF111827)),
-                                    fontSize: 15,
-                                  ),
-                                ),
+                                ],
                               ),
                             );
                           },
@@ -171,5 +293,14 @@ class _MensagemPageState extends ConsumerState<MensagemPage> {
           style: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF))),
       ),
     );
+  }
+
+  String _formatTime(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'agora';
+    if (diff.inHours < 1) return 'há ${diff.inMinutes}min';
+    if (diff.inDays < 1) return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
