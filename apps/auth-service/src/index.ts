@@ -3,7 +3,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import { PrismaClient } from '@prisma/client';
-import { AppError, logger } from './shared/index.js';
+import { AppError, logger } from '@church-app/shared';
 import { authRoutes } from './routes/auth';
 
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ async function bootstrap() {
   await fastify.register(cors, { origin: true, credentials: true });
 
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET || 'default-secret-change-me',
+    secret: process.env.JWT_SECRET!,
     sign: {
       expiresIn: process.env.JWT_EXPIRES_IN || '2h',
     },
@@ -25,15 +25,6 @@ async function bootstrap() {
   fastify.decorate('prisma', prisma);
 
   fastify.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
-
-  fastify.get('/seed-admin', async () => {
-    try {
-      await seedAdminUser();
-      return { success: true, message: 'Admin user created/verified' };
-    } catch (error: any) {
-      return { success: false, message: error.message };
-    }
-  });
 
   await fastify.register(authRoutes, { prefix: '/auth' });
 

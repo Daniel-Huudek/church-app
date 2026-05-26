@@ -37,6 +37,29 @@ class EventModel {
     required this.createdAt,
   });
 
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'description': description,
+    'type': type,
+    'date': date.toIso8601String(),
+    'startTime': startTime,
+    'endTime': endTime,
+    'location': location,
+    'address': address,
+    'ministryId': ministryId,
+    'organizerId': organizerId,
+  };
+
+  Map<String, dynamic> toEventCardMap() => {
+    'id': id,
+    'type': type,
+    'title': title,
+    'date': date.toIso8601String(),
+    'time': startTime,
+    'location': location ?? '',
+    'participants': List.generate(participants, (_) => <String, dynamic>{}),
+  };
+
   factory EventModel.fromJson(Map<String, dynamic> json) {
     return EventModel(
       id: json['id'] as String,

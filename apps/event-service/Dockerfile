@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22-alpine
 RUN apk add --no-cache openssl wget
 WORKDIR /app
 
@@ -15,6 +15,8 @@ COPY apps/event-service/start.sh ./
 COPY apps/event-service/src ./src
 
 RUN npx prisma generate && chmod +x start.sh
+RUN chown -R node:node /app
+USER node
 
 EXPOSE 3004
 

@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { validate, parsePagination } from '../shared';
+import { validate, parsePagination } from '@church-app/shared';
 import { z } from 'zod';
 import { PrayerService } from '../services/prayer.service';
 
@@ -34,7 +34,7 @@ export async function prayerRoutes(fastify: FastifyInstance) {
 
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const { page, limit } = parsePagination(request.query);
-    const { categoryId, isUrgent } = request.query as any;
+    const { categoryId, isUrgent } = request.query as Record<string, string | undefined>;
     const data = await service.findAll({
       page, limit, categoryId,
       isUrgent: isUrgent === 'true' ? true : isUrgent === 'false' ? false : undefined,
@@ -43,9 +43,9 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/my', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, page, limit } = request.query as any;
+    const { userId, page, limit } = request.query as Record<string, string | undefined>;
     const pagination = parsePagination({ page, limit });
-    const data = await service.findMyPrayers(userId, pagination);
+    const data = await service.findMyPrayers(userId ?? '', pagination);
     return reply.send(data);
   });
 
@@ -56,9 +56,9 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/favorites', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, page, limit } = request.query as any;
+    const { userId, page, limit } = request.query as Record<string, string | undefined>;
     const pagination = parsePagination({ page, limit });
-    const data = await service.getFavorites(userId, pagination);
+    const data = await service.getFavorites(userId ?? '', pagination);
     return reply.send(data);
   });
 
@@ -74,8 +74,8 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.query as any;
-    const data = await service.findById(request.params.id, userId);
+    const { userId } = request.query as Record<string, string | undefined>;
+    const data = await service.findById(request.params.id, userId ?? '');
     return reply.send(data);
   });
 
@@ -86,21 +86,21 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.put('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.query as any;
+    const { userId } = request.query as Record<string, string | undefined>;
     const body = validate(prayerSchema.partial(), request.body);
-    const data = await service.update(request.params.id, userId, body);
+    const data = await service.update(request.params.id, userId ?? '', body);
     return reply.send(data);
   });
 
   fastify.delete('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.query as any;
-    await service.delete(request.params.id, userId);
+    const { userId } = request.query as Record<string, string | undefined>;
+    await service.delete(request.params.id, userId ?? '');
     return reply.send({ success: true });
   });
 
   fastify.post('/:id/answer', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.body as any;
-    const data = await service.markAnswered(request.params.id, userId);
+    const { userId } = request.body as { userId?: string };
+    const data = await service.markAnswered(request.params.id, userId ?? '');
     return reply.send(data);
   });
 
@@ -117,8 +117,8 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/:id/intercede', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.body as any;
-    const data = await service.addIntercessor(request.params.id, userId);
+    const { userId } = request.body as { userId?: string };
+    const data = await service.addIntercessor(request.params.id, userId ?? '');
     return reply.send(data);
   });
 
@@ -128,8 +128,8 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/:id/favorite', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.body as any;
-    const data = await service.toggleFavorite(request.params.id, userId);
+    const { userId } = request.body as { userId?: string };
+    const data = await service.toggleFavorite(request.params.id, userId ?? '');
     return reply.send(data);
   });
 }

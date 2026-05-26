@@ -98,7 +98,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) => PrayerDetailScreen(
-                  id: state.pathParameters['id']!,
+                  id: state.pathParameters['id'] ?? '',
                 ),
               ),
             ],
@@ -110,13 +110,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) => EventDetailScreen(
-                  id: state.pathParameters['id']!,
+                  id: state.pathParameters['id'] ?? '',
                 ),
                 routes: [
                   GoRoute(
                     path: 'edit',
                     builder: (context, state) => EditEventScreen(
-                      id: state.pathParameters['id']!,
+                      id: state.pathParameters['id'] ?? '',
                     ),
                   ),
                 ],
@@ -142,7 +142,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) => ScheduleDetailScreen(
-                  id: state.pathParameters['id']!,
+                  id: state.pathParameters['id'] ?? '',
                 ),
               ),
               GoRoute(
@@ -158,7 +158,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) => MemberDetailScreen(
-                  id: state.pathParameters['id']!,
+                  id: state.pathParameters['id'] ?? '',
                 ),
               ),
             ],
@@ -224,7 +224,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':id',
                 builder: (context, state) => ChatDetailScreen(
-                  id: state.pathParameters['id']!,
+                  id: state.pathParameters['id'] ?? '',
                 ),
               ),
             ],

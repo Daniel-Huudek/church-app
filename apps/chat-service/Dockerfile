@@ -1,0 +1,25 @@
+FROM node:22-alpine
+RUN apk add --no-cache openssl wget
+WORKDIR /app
+
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
+COPY apps/chat-service/package.json ./apps/chat-service/
+COPY packages/ ./packages/
+
+WORKDIR /app/apps/chat-service
+
+RUN npm install -g pnpm && pnpm install
+
+RUN pnpm --filter @church-app/shared build
+
+COPY apps/chat-service/prisma ./prisma
+COPY apps/chat-service/start.sh ./
+COPY apps/chat-service/src ./src
+
+RUN npx prisma generate && chmod +x start.sh
+RUN chown -R node:node /app
+USER node
+
+EXPOSE 3002
+
+CMD ["./start.sh"]

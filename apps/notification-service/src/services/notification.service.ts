@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { logger } from '../logger';
+import { logger } from '@church-app/shared';
 
 export class NotificationService {
   private evolutionApiUrl: string;
@@ -36,10 +36,9 @@ export class NotificationService {
     }
   }
 
-  async sendBulk(body: { type: string; recipientIds: string[]; message: string }) {
-    const members = await this.prisma.member.findMany({ where: { id: { in: body.recipientIds } } });
+  async sendBulk(body: { type: string; recipients: { recipientId: string; phone: string }[]; message: string }) {
     const results = await Promise.all(
-      members.map(m => this.send({ type: body.type, recipientId: m.id, phone: m.phone, message: body.message }))
+      body.recipients.map(r => this.send({ type: body.type, recipientId: r.recipientId, phone: r.phone, message: body.message }))
     );
     return { success: true, data: { sent: results.filter(r => r.success).length, failed: results.filter(r => !r.success).length } };
   }

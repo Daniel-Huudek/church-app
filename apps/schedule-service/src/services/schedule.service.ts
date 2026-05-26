@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { NotFoundError, ConflictError } from '../shared';
+import { NotFoundError, ConflictError } from '@church-app/shared';
 
 export class ScheduleService {
   constructor(private prisma: PrismaClient) {}

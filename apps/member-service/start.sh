@@ -1,5 +1,6 @@
 #!/bin/sh
+set -e
 echo "Running database migrations..."
-npx prisma db push --skip-generate --accept-data-loss || true
+npx prisma migrate deploy
 echo "Starting application..."
 exec npx --no-install tsx src/index.ts

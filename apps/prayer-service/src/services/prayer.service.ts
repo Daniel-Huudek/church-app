@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { NotFoundError, ForbiddenError } from '../shared';
+import { NotFoundError, ForbiddenError } from '@church-app/shared';
 
 export class PrayerService {
   constructor(private prisma: PrismaClient) {}

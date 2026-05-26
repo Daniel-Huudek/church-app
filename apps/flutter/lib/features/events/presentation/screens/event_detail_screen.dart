@@ -1,41 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../providers/event_provider.dart';
 
-class EventDetailScreen extends StatefulWidget {
+class EventDetailScreen extends ConsumerWidget {
   final String id;
   const EventDetailScreen({super.key, required this.id});
 
   @override
-  State<EventDetailScreen> createState() => _EventDetailScreenState();
-}
-
-class _EventDetailScreenState extends State<EventDetailScreen> {
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      setState(() => _loading = false);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
     final card = isDark ? const Color(0xFF1A1A2E) : Colors.white;
     final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
     final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final state = ref.watch(eventDetailProvider(id));
 
-    if (_loading) {
+    if (state.loading) {
       return Scaffold(
         backgroundColor: bg,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
+
+    if (state.error != null) {
+      return Scaffold(
+        backgroundColor: bg,
+        body: Center(child: Text('Erro: ${state.error}')),
+      );
+    }
+
+    final event = state.event!;
 
     return Scaffold(
       backgroundColor: bg,
@@ -67,7 +63,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: GestureDetector(
-                    onTap: () => context.push('/calendar/${widget.id}/edit'),
+                    onTap: () => context.push('/calendar/${event.id}/edit'),
                     child: Container(
                       width: 40,
                       height: 40,
@@ -105,7 +101,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           child: const Center(child: Text('📅', style: TextStyle(fontSize: 28))),
                         ),
                         const SizedBox(height: 12),
-                        Text('Culto', style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9))),
+                        Text(event.type, style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9))),
                       ],
                     ),
                   ),
@@ -118,13 +114,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Evento Exemplo', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: t1)),
+                    Text(event.title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: t1)),
                     const SizedBox(height: 16),
-                    _infoRow('📅', DateFormat("EEEE, dd 'de' MMMM 'de' yyyy", 'pt_BR').format(DateTime.now()), t2),
+                    _infoRow('📅', DateFormat("EEEE, dd 'de' MMMM 'de' yyyy", 'pt_BR').format(event.date), t2),
                     const SizedBox(height: 12),
-                    _infoRow('⏰', '19:00', t2),
-                    const SizedBox(height: 12),
-                    _infoRow('📍', 'Igreja', t2),
+                    _infoRow('⏰', event.startTime, t2),
+                    if (event.location != null) ...[
+                      const SizedBox(height: 12),
+                      _infoRow('📍', event.location!, t2),
+                    ],
                     const SizedBox(height: 20),
                     Container(
                       width: double.infinity,
@@ -146,7 +144,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               const SizedBox(width: -6),
                               _avatar('EF'),
                               const SizedBox(width: 8),
-                              Text('+5', style: TextStyle(fontSize: 14, color: t2)),
+                              Text('+${event.participants}', style: TextStyle(fontSize: 14, color: t2)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -171,11 +169,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Text('Descrição', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t1)),
-                    const SizedBox(height: 8),
-                    Text('Detalhes do evento...',
-                        style: TextStyle(fontSize: 15, color: t2, height: 1.5)),
+                    if (event.description != null) ...[
+                      const SizedBox(height: 20),
+                      Text('Descrição', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t1)),
+                      const SizedBox(height: 8),
+                      Text(event.description!,
+                          style: TextStyle(fontSize: 15, color: t2, height: 1.5)),
+                    ],
                     const SizedBox(height: 30),
                   ],
                 ),

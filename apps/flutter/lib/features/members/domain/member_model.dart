@@ -65,4 +65,21 @@ class MemberModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'phone': phone,
+    'avatar': avatar,
+    'dateOfBirth': birthDate?.toIso8601String(),
+    'gender': gender,
+    'maritalStatus': maritalStatus,
+    'status': status,
+    'role': role,
+    'ministries': ministries,
+    'baptismDate': baptismDate?.toIso8601String(),
+    'conversionDate': conversionDate?.toIso8601String(),
+    'createdAt': createdAt.toIso8601String(),
+  };
 }

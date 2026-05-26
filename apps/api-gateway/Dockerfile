@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22-alpine
 RUN apk add --no-cache wget
 WORKDIR /app
 
@@ -14,6 +14,8 @@ COPY apps/api-gateway/start.sh ./
 COPY apps/api-gateway/src ./src
 
 RUN chmod +x start.sh
+RUN chown -R node:node /app
+USER node
 
 EXPOSE 3030
 

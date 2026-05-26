@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { validate, parsePagination } from '../shared';
+import { validate, parsePagination } from '@church-app/shared';
 import { z } from 'zod';
 import { EventService } from '../services/event.service';
 
@@ -14,7 +14,7 @@ export async function eventRoutes(fastify: FastifyInstance) {
 
   fastify.get('/', async (request: FastifyRequest, _reply) => {
     const { page, limit } = parsePagination(request.query);
-    const { startDate, endDate, type } = request.query as any;
+    const { startDate, endDate, type } = request.query as Record<string, string | undefined>;
     return service.findAll({ page, limit, startDate, endDate, type });
   });
 
@@ -33,7 +33,7 @@ export async function eventRoutes(fastify: FastifyInstance) {
   fastify.delete('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, _reply) => service.delete(request.params.id));
 
   fastify.get('/calendar', async (request: FastifyRequest, _reply) => {
-    const { startDate, endDate } = request.query as any;
+    const { startDate, endDate } = request.query as Record<string, string | undefined>;
     return service.getCalendar(startDate, endDate);
   });
 }
