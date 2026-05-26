@@ -41,7 +41,7 @@ export class HttpClient {
 
       clearTimeout(timeoutId);
 
-      const data = await response.json();
+      const data: T = await response.json();
 
       if (!response.ok) {
         logger.error(`HTTP ${response.status}`, undefined, {
@@ -49,10 +49,11 @@ export class HttpClient {
           method,
           status: response.status,
         });
+        const errorData = data as { message?: string; code?: string };
         throw new AppError(
-          data.message || 'Request failed',
+          errorData.message || 'Request failed',
           response.status,
-          data.code
+          errorData.code
         );
       }
 
@@ -88,4 +89,15 @@ export class HttpClient {
 
 export function createHttpClient(baseUrl: string, timeout?: number): HttpClient {
   return new HttpClient({ baseUrl, timeout });
+}
+
+export function getAuthHeader(request: { headers: Record<string, string | string[] | undefined> }): Record<string, string> {
+  const authorization = request.headers.authorization;
+  if (Array.isArray(authorization)) {
+    return { Authorization: authorization[0] };
+  }
+  if (authorization) {
+    return { Authorization: authorization };
+  }
+  return {};
 }

@@ -1,49 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../events/presentation/providers/event_provider.dart';
+import '../../../members/presentation/providers/member_provider.dart';
+import '../../../finance/presentation/providers/finance_provider.dart';
+import '../../../prayers/presentation/providers/prayer_provider.dart';
 
-class DashboardScreen extends ConsumerStatefulWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (mounted) setState(() => _loading = false);
-  }
-
-  Future<void> _onRefresh() async {
-    await _loadData();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final events = ref.watch(eventListProvider);
+    final members = ref.watch(memberListProvider);
+    final finance = ref.watch(financeDashboardProvider);
+    final prayers = ref.watch(prayerFeedProvider);
 
-    if (_loading) {
-      return _buildSkeleton(isDark);
-    }
+    final loading = events.loading || members.loading || finance.loading || prayers.loading;
+
+    if (loading) return _buildSkeleton(isDark);
 
     return Container(
       color: isDark ? const Color(0xFF0A0A0F) : Colors.white,
       child: RefreshIndicator(
-        onRefresh: _onRefresh,
+        onRefresh: () async {
+          await Future.wait([
+            ref.read(eventListProvider.notifier).load(),
+            ref.read(memberListProvider.notifier).load(),
+            ref.read(financeDashboardProvider.notifier).load(),
+            ref.read(prayerFeedProvider.notifier).loadFeed(),
+          ]);
+        },
         color: const Color(0xFF0066CC),
         backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [],
+          padding: const EdgeInsets.fromLTRB(16, 64, 16, 24),
+          children: [
+            Text(
+              'Igreja Batista',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _StatCard(
+                  icon: '📅',
+                  value: '${events.data.length}',
+                  label: 'Eventos',
+                  color: const Color(0xFF008CFF),
+                  isDark: isDark,
+                ),
+                const SizedBox(width: 12),
+                _StatCard(
+                  icon: '👥',
+                  value: '${members.data.length}',
+                  label: 'Membros',
+                  color: const Color(0xFF3B82F6),
+                  isDark: isDark,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _StatCard(
+                  icon: '🙏',
+                  value: '${prayers.data.length}',
+                  label: 'Orações',
+                  color: const Color(0xFF10B981),
+                  isDark: isDark,
+                ),
+                const SizedBox(width: 12),
+                _StatCard(
+                  icon: '💰',
+                  value: finance.data != null
+                      ? Formatters.formatCurrency(finance.data!.balance)
+                      : 'R\$ 0',
+                  label: 'Saldo',
+                  color: const Color(0xFFF59E0B),
+                  isDark: isDark,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -62,22 +107,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 width: 200,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1A1A2E)
-                      : const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(
-                    child: _skeletonCard(isDark, 100),
-                  ),
+                  Expanded(child: _skeletonCard(isDark, 100)),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _skeletonCard(isDark, 100),
-                  ),
+                  Expanded(child: _skeletonCard(isDark, 100)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _skeletonCard(isDark, 100)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _skeletonCard(isDark, 100)),
                 ],
               ),
             ],
@@ -93,6 +140,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String icon;
+  final String value;
+  final String label;
+  final Color color;
+  final bool isDark;
+
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 28)),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

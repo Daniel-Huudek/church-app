@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/app_chip.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../providers/member_provider.dart';
 
 class MemberListScreen extends ConsumerStatefulWidget {
   const MemberListScreen({super.key});
@@ -16,12 +18,14 @@ class MemberListScreen extends ConsumerStatefulWidget {
 
 class _MemberListScreenState extends ConsumerState<MemberListScreen> {
   String _selectedFilter = 'Todos';
-
-  final _filters = ['Todos', 'Ativo', 'Inativo', 'Visitante'];
+  final _filters = ['Todos', 'ATIVO', 'INATIVO', 'VISITANTE'];
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final state = ref.watch(memberListProvider);
+    final members = _selectedFilter == 'Todos'
+        ? state.data
+        : state.data.where((m) => m.status == _selectedFilter).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,78 +43,85 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
       ),
       body: Column(
         children: [
-          // Filter chips
           Container(
             height: 48,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               children: _filters
-                  .map(
-                    (f) => Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: AppChip(
-                        label: f,
-                        selected: _selectedFilter == f,
-                        onTap: () =>
-                            setState(() => _selectedFilter = f),
-                      ),
-                    ),
-                  )
+                  .map((f) => Padding(
+                        padding: const EdgeInsets.only(right: AppSpacing.sm),
+                        child: AppChip(
+                          label: f == 'ATIVO' ? 'Ativo' : f == 'INATIVO' ? 'Inativo' : f == 'VISITANTE' ? 'Visitante' : 'Todos',
+                          selected: _selectedFilter == f,
+                          onTap: () => setState(() => _selectedFilter = f),
+                        ),
+                      ))
                   .toList(),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          // Member list
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              itemCount: 10,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: AppCard(
-                    onTap: () {},
-                    child: Row(
-                      children: [
-                        AppAvatar(
-                          name: 'Membro $index',
-                          size: 44,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Membro $index',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall,
-                              ),
-                              Text(
-                                'membro$index@igreja.com',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall,
-                              ),
-                            ],
+            child: state.loading
+                ? const Center(child: CircularProgressIndicator())
+                : state.error != null
+                    ? Center(child: Text('Erro: ${state.error}'))
+                    : members.isEmpty
+                        ? const AppEmptyState(
+                            title: 'Nenhum membro',
+                            subtitle: 'Não há membros cadastrados',
+                            icon: Icons.people,
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () => ref.read(memberListProvider.notifier).load(),
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                              itemCount: members.length,
+                              itemBuilder: (context, index) {
+                                final member = members[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                                  child: AppCard(
+                                    onTap: () => context.push('/members/${member.id}'),
+                                    child: Row(
+                                      children: [
+                                        AppAvatar(
+                                          name: member.name,
+                                          size: 44,
+                                        ),
+                                        const SizedBox(width: AppSpacing.md),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                member.name,
+                                                style: Theme.of(context).textTheme.titleSmall,
+                                              ),
+                                              Text(
+                                                member.email ?? '',
+                                                style: Theme.of(context).textTheme.bodySmall,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: member.status == 'ATIVO'
+                                                ? AppColors.success
+                                                : AppColors.warning,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.success,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),

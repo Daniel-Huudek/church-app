@@ -33,6 +33,10 @@ model Transaction {
   attachments     Attachment[]
   auditLogs       FinancialAuditLog[]
 
+  @@index([categoryId])
+  @@index([costCenterId])
+  @@index([createdById])
+  @@index([deletedAt])
   @@map("transactions")
 }
 
@@ -91,6 +95,8 @@ model FinancialAuditLog {
 
   transaction   Transaction @relation(fields: [transactionId], references: [id])
 
+  @@index([transactionId])
+  @@index([changedById])
   @@map("financial_audit_logs")
 }
 
@@ -107,6 +113,7 @@ model MonthlyClose {
   notes         String?
   createdAt     DateTime    @default(now())
 
+  @@index([closedById])
   @@map("monthly_closes")
 }
 

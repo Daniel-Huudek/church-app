@@ -75,6 +75,12 @@ class PrayerApi {
     return PrayerModel.fromJson(item);
   }
 
+  Future<PrayerModel> update(String id, Map<String, dynamic> data) async {
+    final response = await _client.put('${ApiConfig.prayers}/$id', data: data);
+    final item = _parseItem(response.data);
+    return PrayerModel.fromJson(item);
+  }
+
   Future<void> delete(String id) async {
     await _client.delete('${ApiConfig.prayers}/$id');
   }

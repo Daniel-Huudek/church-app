@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ChatRoom {
+  id        String        @id @default(uuid())
+  name      String?
+  type      ChatRoomType  @default(DIRECT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+
+  members   ChatRoomMember[]
+  messages  ChatMessage[]
+
+  @@index([type])
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id         String   @id @default(uuid())
+  roomId     String
+  userId     String
+  unreadCount Int     @default(0)
+  joinedAt   DateTime @default(now())
+
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@index([roomId])
+  @@map("chat_room_members")
+}
+
+model ChatMessage {
+  id        String        @id @default(uuid())
+  roomId    String
+  senderId  String
+  content   String
+  type      ChatMessageType @default(TEXT)
+  createdAt DateTime      @default(now())
+  deletedAt DateTime?
+
+  room      ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@index([senderId])
+  @@map("chat_messages")
+}
+
+enum ChatRoomType {
+  DIRECT
+  GROUP
+  MINISTRY
+}
+
+enum ChatMessageType {
+  TEXT
+  IMAGE
+  SYSTEM
+}

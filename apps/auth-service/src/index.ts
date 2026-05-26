@@ -3,7 +3,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import { PrismaClient } from '@prisma/client';
-import { AppError, logger } from './shared/index.js';
+import { AppError, logger } from '@church-app/shared';
 import { authRoutes } from './routes/auth';
 
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ async function bootstrap() {
   await fastify.register(cors, { origin: true, credentials: true });
 
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET || 'default-secret-change-me',
+    secret: process.env.JWT_SECRET!,
     sign: {
       expiresIn: process.env.JWT_EXPIRES_IN || '2h',
     },
@@ -26,21 +26,15 @@ async function bootstrap() {
 
   fastify.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
 
-  fastify.get('/seed-admin', async () => {
-    try {
-      await seedAdminUser();
-      return { success: true, message: 'Admin user created/verified' };
-    } catch (error: any) {
-      return { success: false, message: error.message };
-    }
-  });
-
   await fastify.register(authRoutes, { prefix: '/auth' });
 
   fastify.setErrorHandler((error, request, reply) => {
     logger.error('Error occurred', error, { path: request.url, method: request.method });
     if (error instanceof AppError) {
       return reply.status(error.statusCode).send({ success: false, message: error.message, code: error.code });
+    }
+    if (error.validation) {
+      return reply.status(400).send({ success: false, message: 'Validation error', details: error.validation });
     }
     return reply.status(500).send({ success: false, message: 'Internal server error' });
   });

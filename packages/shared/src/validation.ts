@@ -16,9 +16,9 @@ export function validate<T>(schema: ZodSchema<T>, data: unknown): T {
   }
 }
 
-export function validatePartial<T>(schema: ZodSchema<T>, data: unknown): Partial<T> {
+export function validatePartial<T>(schema: z.ZodObject<any, any, any>, data: unknown): Partial<T> {
   try {
-    return schema.partial().parse(data);
+    return schema.partial().parse(data) as Partial<T>;
   } catch (error) {
     if (error instanceof ZodError) {
       const details = error.errors.map((e) => ({

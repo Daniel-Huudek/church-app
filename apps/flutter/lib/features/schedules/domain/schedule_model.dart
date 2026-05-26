@@ -40,6 +40,20 @@ class ScheduleModel {
       confirmed: json['confirmed'] as int? ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'eventId': eventId,
+    'eventName': eventName,
+    'ministryId': ministryId,
+    'ministryName': ministryName,
+    'date': date.toIso8601String(),
+    'startTime': startTime,
+    'endTime': endTime,
+    'status': status,
+    'positions': positions,
+    'confirmed': confirmed,
+  };
 }
 
 class SchedulePosition {
@@ -72,4 +86,14 @@ class SchedulePosition {
       status: json['status'] as String? ?? 'PENDENTE',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'scheduleId': scheduleId,
+    'memberId': memberId,
+    'memberName': memberName,
+    'memberAvatar': memberAvatar,
+    'position': position,
+    'status': status,
+  };
 }

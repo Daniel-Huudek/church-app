@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { validate } from '../shared';
+import { validate } from '@church-app/shared';
 import { SongService } from '../services/song.service';
 import { PlaylistService } from '../services/playlist.service';
 import { WorshipEventService } from '../services/worship-event.service';

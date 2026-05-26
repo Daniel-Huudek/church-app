@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { AppError, NotFoundError } from '../shared';
+import { AppError, NotFoundError } from '@church-app/shared';
 
 export class SongService {
   constructor(private prisma: PrismaClient) {}

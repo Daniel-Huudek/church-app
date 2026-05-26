@@ -1,5 +1,5 @@
 import { PrismaClient, TransactionType, TransactionStatus } from '@prisma/client';
-import { NotFoundError, BadRequestError, ForbiddenError } from '../shared';
+import { NotFoundError, BadRequestError, ForbiddenError } from '@church-app/shared';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';

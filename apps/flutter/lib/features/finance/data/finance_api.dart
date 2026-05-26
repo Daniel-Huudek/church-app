@@ -48,4 +48,25 @@ class FinanceApi {
   Future<void> cancelTransaction(String id) async {
     await _client.post('${ApiConfig.transactions}/$id/cancel');
   }
+
+  Future<List<CashFlowMonthModel>> getCashFlow() async {
+    final response = await _client.get(ApiConfig.financeCashFlow);
+    final data = response.data as Map<String, dynamic>;
+    final list = data['data'] as List<dynamic>;
+    return list
+        .map((e) => CashFlowMonthModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> getReportMonthly({int? year, int? month}) async {
+    final params = <String, dynamic>{};
+    if (year != null) params['year'] = year;
+    if (month != null) params['month'] = month;
+    final response = await _client.get(
+      ApiConfig.financeReportsMonthly,
+      queryParameters: params,
+    );
+    final data = response.data as Map<String, dynamic>;
+    return data['data'] as Map<String, dynamic>;
+  }
 }

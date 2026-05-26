@@ -59,6 +59,12 @@ class ApiConfig {
   static const String chats = '/chats';
   static const String chatUnread = '/chats/unread';
 
+  // Worship
+  static const String worshipSongs = '/worship/songs';
+  static const String worshipPlaylists = '/worship/playlists';
+  static const String worshipEvents = '/worship/worship-events';
+  static const String worshipFavorites = '/worship/favorites';
+
   // Users
   static const String users = '/users';
 }

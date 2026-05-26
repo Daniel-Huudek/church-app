@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { scheduleClient } from '../http-client';
-import { parsePagination, validate } from '../shared';
+import { parsePagination, validate, getAuthHeader } from '@church-app/shared';
 import { z } from 'zod';
 
 const scheduleSchema = z.object({
@@ -21,99 +21,98 @@ const confirmSchema = z.object({
   confirmed: z.boolean(),
 });
 
+const substituteSchema = z.object({
+  scheduleId: z.string().uuid(),
+  positionId: z.string().uuid(),
+  substituteMemberId: z.string().uuid(),
+});
+
 export async function scheduleRoutes(fastify: FastifyInstance) {
-  fastify.get('/', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { page, limit } = parsePagination(request.query);
     try {
       const data = await scheduleClient.get(`/schedules?page=${page}&limit=${limit}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.get('/:id', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  fastify.get<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await scheduleClient.get(`/schedules/${request.params.id}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(scheduleSchema, request.body);
     try {
       const data = await scheduleClient.post('/schedules', body, getAuthHeader(request));
-      return reply.status(201).send(data);
+      await reply.status(201).send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.put('/:id', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  fastify.put<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(scheduleSchema.partial(), request.body);
     try {
       const data = await scheduleClient.put(`/schedules/${request.params.id}`, body, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.delete('/:id', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  fastify.delete<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await scheduleClient.delete(`/schedules/${request.params.id}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/confirm', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/confirm', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(confirmSchema, request.body);
     try {
       const data = await scheduleClient.post('/schedules/confirm', body, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.post('/substitute', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { scheduleId, positionId, substituteMemberId } = request.body as {
-      scheduleId: string;
-      positionId: string;
-      substituteMemberId: string;
-    };
+  fastify.post('/substitute', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const body = validate(substituteSchema, request.body);
     try {
-      const data = await scheduleClient.post('/schedules/substitute', { scheduleId, positionId, substituteMemberId }, getAuthHeader(request));
-      return reply.send(data);
+      const data = await scheduleClient.post('/schedules/substitute', body, getAuthHeader(request));
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.get('/my-schedules', { preHandler: [fastify.authenticate] }, async (request: any, reply: FastifyReply) => {
+  fastify.get('/my-schedules', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const userId = request.user.userId;
     try {
       const data = await scheduleClient.get(`/schedules/member/${userId}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 
-  fastify.get('/conflicts/:memberId', { preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Params: { memberId: string } }>, reply: FastifyReply) => {
+  fastify.get<{ Params: { memberId: string } }>('/conflicts/:memberId', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
       const data = await scheduleClient.get(`/schedules/conflicts/${request.params.memberId}`, getAuthHeader(request));
-      return reply.send(data);
+      await reply.send(data);
     } catch (error: any) {
-      return reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
     }
   });
 }
 
-function getAuthHeader(request: FastifyRequest): Record<string, string> {
-  return { Authorization: request.headers.authorization as string };
-}

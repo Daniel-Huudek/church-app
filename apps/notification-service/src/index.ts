@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import { PrismaClient } from '@prisma/client';
-import { AppError, logger } from './shared/index.js';
+import { AppError, logger } from '@church-app/shared';
 import { notificationRoutes } from './routes/index';
 
 const prisma = new PrismaClient();
@@ -18,6 +18,7 @@ async function bootstrap() {
   fastify.setErrorHandler((error, request, reply) => {
     logger.error('Error', error, { path: request.url });
     if (error instanceof AppError) return reply.status(error.statusCode).send({ success: false, message: error.message });
+    if (error.validation) return reply.status(400).send({ success: false, message: 'Validation error', details: error.validation });
     return reply.status(500).send({ success: false, message: 'Internal server error' });
   });
   const port = Number(process.env.PORT) || 3005;

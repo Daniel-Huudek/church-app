@@ -1,4 +1,4 @@
-import { createHttpClient } from './shared/index.js';
+import { createHttpClient } from '@church-app/shared';
 
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
 const MEMBER_SERVICE_URL = process.env.MEMBER_SERVICE_URL || 'http://member-service:3006';
@@ -8,6 +8,7 @@ const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http:/
 const PRAYER_SERVICE_URL = process.env.PRAYER_SERVICE_URL || 'http://prayer-service:3007';
 const FINANCIAL_SERVICE_URL = process.env.FINANCIAL_SERVICE_URL || 'http://financial-service:3008';
 const WORSHIP_SERVICE_URL = process.env.WORSHIP_SERVICE_URL || 'http://worship-service:3010';
+const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || 'http://chat-service:3002';
 
 export const authClient = createHttpClient(AUTH_SERVICE_URL);
 export const memberClient = createHttpClient(MEMBER_SERVICE_URL);
@@ -28,6 +29,10 @@ export function getServiceClient(service: string) {
     case 'prayer': return prayerClient;
     case 'financial': return financialClient;
     case 'worship': return worshipClient;
+    case 'chat': return chatClient;
     default: throw new Error(`Unknown service: ${service}`);
   }
 }
+export const chatClient = createHttpClient(CHAT_SERVICE_URL);
+
+

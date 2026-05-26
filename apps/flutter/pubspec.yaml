@@ -14,7 +14,6 @@ dependencies:
 
   # State Management
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # Routing
   go_router: ^14.6.2
@@ -26,6 +25,7 @@ dependencies:
   google_sign_in: ^6.2.2
 
   # Storage
+  flutter_secure_storage: ^9.2.4
   shared_preferences: ^2.3.4
 
   # Charts
@@ -34,22 +34,16 @@ dependencies:
   # UI
   flutter_svg: ^2.0.16
   shimmer: ^3.0.0
-  flutter_animate: ^4.5.2
   cached_network_image: ^3.4.1
 
   # Utils
   intl: ^0.20.2
-  equatable: ^2.0.7
-  share_plus: ^10.1.4
   url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  riverpod_generator: ^2.6.3
-  build_runner: ^2.4.14
-  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true

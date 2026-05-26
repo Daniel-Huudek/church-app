@@ -3,7 +3,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import jwt from '@fastify/jwt';
-import { AppError } from './shared/index.js';
+import { AppError, logger } from '@church-app/shared';
 import { authRoutes } from './routes/auth';
 import { memberRoutes } from './routes/member';
 import { scheduleRoutes } from './routes/schedule';
@@ -13,7 +13,7 @@ import { prayerRoutes } from './routes/prayer';
 import { financeRoutes } from './routes/finance';
 import { userRoutes } from './routes/user';
 import { worshipRoutes } from './routes/worship';
-import { logger } from './logger';
+import { chatRoutes } from './routes/chat';
 
 const fastify = Fastify({
   logger: false,
@@ -24,8 +24,12 @@ async function bootstrap() {
     contentSecurityPolicy: false,
   });
 
+  const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+    : ['http://localhost:5173', 'http://localhost:3000'];
+
   await fastify.register(cors, {
-    origin: true,
+    origin: corsOrigin,
     credentials: true,
   });
 
@@ -35,9 +39,9 @@ async function bootstrap() {
   });
 
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+    secret: process.env.JWT_SECRET!,
     sign: {
-      expiresIn: process.env.JWT_EXPIRES_IN || '2h',
+      expiresIn: process.env.JWT_EXPIRES_IN || '15m',
     },
   });
 
@@ -60,6 +64,7 @@ async function bootstrap() {
   await fastify.register(financeRoutes, { prefix: '/finance' });
   await fastify.register(userRoutes, { prefix: '/users' });
   await fastify.register(worshipRoutes, { prefix: '/worship' });
+  await fastify.register(chatRoutes, { prefix: '/chats' });
 
   fastify.setErrorHandler((error, request, reply) => {
     logger.error('Error occurred', error, { path: request.url, method: request.method });
@@ -86,7 +91,7 @@ async function bootstrap() {
     });
   });
 
-  const port = Number(process.env.PORT) || 3000;
+  const port = Number(process.env.PORT) || 3030;
   await fastify.listen({ port, host: '0.0.0.0' });
 
   logger.info(`API Gateway running on port ${port}`);

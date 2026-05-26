@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { validate, parsePagination } from '../shared';
-import { authorize } from '../shared/rbac';
+import { validate, parsePagination, authorize } from '@church-app/shared';
 import { z } from 'zod';
 import { FinanceService } from '../services/finance.service';
 
@@ -44,7 +43,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
   // Transactions - PASTOR can read, only ADMINISTRADOR/FINANCEIRO can write
   fastify.get('/transactions', { preHandler: [authorize('ADMINISTRADOR', 'PASTOR', 'FINANCEIRO')] }, async (request: FastifyRequest, reply: FastifyReply) => {
     const { page, limit } = parsePagination(request.query);
-    const { type, status, categoryId, costCenterId, startDate, endDate, search } = request.query as any;
+    const { type, status, categoryId, costCenterId, startDate, endDate, search } = request.query as Record<string, string | undefined>;
     const data = await service.findAllTransactions({
       page, limit, type, status, categoryId, costCenterId, startDate, endDate, search,
     });
@@ -58,49 +57,38 @@ export async function financeRoutes(fastify: FastifyInstance) {
 
   fastify.post('/transactions', { preHandler: [authorize('ADMINISTRADOR', 'FINANCEIRO')] }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = validate(transactionSchema, request.body);
-    const userId = (request as any).user.userId;
-    const userRole = (request as any).user.role;
-    const data = await service.createTransaction(body, userId, userRole);
+    const data = await service.createTransaction(body, request.user.userId, request.user.role);
     return reply.status(201).send(data);
   });
 
   fastify.put('/transactions/:id', { preHandler: [authorize('ADMINISTRADOR', 'FINANCEIRO')] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const body = validate(transactionSchema.partial(), request.body);
-    const userId = (request as any).user.userId;
-    const userRole = (request as any).user.role;
-    const data = await service.updateTransaction(request.params.id, body, userId, userRole);
+    const data = await service.updateTransaction(request.params.id, body, request.user.userId, request.user.role);
     return reply.send(data);
   });
 
   fastify.delete('/transactions/:id', { preHandler: [authorize('ADMINISTRADOR', 'FINANCEIRO')] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const userId = (request as any).user.userId;
-    const userRole = (request as any).user.role;
-    await service.deleteTransaction(request.params.id, userId, userRole);
+    await service.deleteTransaction(request.params.id, request.user.userId, request.user.role);
     return reply.send({ success: true });
   });
 
   fastify.post('/transactions/:id/confirm', { preHandler: [authorize('ADMINISTRADOR', 'FINANCEIRO')] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const userId = (request as any).user.userId;
-    const userRole = (request as any).user.role;
-    const data = await service.confirmTransaction(request.params.id, userId, userRole);
+    const data = await service.confirmTransaction(request.params.id, request.user.userId, request.user.role);
     return reply.send(data);
   });
 
   fastify.post('/transactions/:id/cancel', { preHandler: [authorize('ADMINISTRADOR', 'FINANCEIRO')] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const userId = (request as any).user.userId;
-    const userRole = (request as any).user.role;
-    const data = await service.cancelTransaction(request.params.id, userId, userRole);
+    const data = await service.cancelTransaction(request.params.id, request.user.userId, request.user.role);
     return reply.send(data);
   });
 
   fastify.post('/transactions/:id/attachments', { preHandler: [authorize('ADMINISTRADOR', 'FINANCEIRO')] }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const userId = (request as any).user.userId;
     const file = await request.file();
     if (!file) {
       return reply.status(400).send({ success: false, message: 'No file uploaded' });
     }
     const buffer = await file.toBuffer();
-    const data = await service.addAttachment(request.params.id, { filename: file.filename, buffer, mimetype: file.mimetype }, userId);
+    const data = await service.addAttachment(request.params.id, { filename: file.filename, buffer, mimetype: file.mimetype }, request.user.userId);
     return reply.status(201).send(data);
   });
 
@@ -164,7 +152,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
 
   // Reports
   fastify.get('/reports/monthly', { preHandler: [authorize('ADMINISTRADOR', 'PASTOR', 'FINANCEIRO')] }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { year, month } = request.query as any;
+    const { year, month } = request.query as Record<string, string | undefined>;
     const data = await service.getMonthlyReport(parseInt(year) || new Date().getFullYear(), parseInt(month) || new Date().getMonth() + 1);
     return reply.send(data);
   });
@@ -172,9 +160,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
   // Monthly Close
   fastify.post('/monthly-close', { preHandler: [authorize('ADMINISTRADOR', 'FINANCEIRO')] }, async (request: FastifyRequest, reply: FastifyReply) => {
     const body = validate(monthlyCloseSchema, request.body);
-    const userId = (request as any).user.userId;
-    const userRole = (request as any).user.role;
-    const data = await service.createMonthlyClose(body.referenceDate, userId, userRole, body.notes);
+    const data = await service.createMonthlyClose(body.referenceDate, request.user.userId, request.user.role, body.notes);
     return reply.status(201).send(data);
   });
 

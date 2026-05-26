@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/event_provider.dart';
 
-class CreateEventScreen extends StatefulWidget {
+class CreateEventScreen extends ConsumerStatefulWidget {
   const CreateEventScreen({super.key});
 
   @override
-  State<CreateEventScreen> createState() => _CreateEventScreenState();
+  ConsumerState<CreateEventScreen> createState() => _CreateEventScreenState();
 }
 
-class _CreateEventScreenState extends State<CreateEventScreen> {
+class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
@@ -40,16 +42,30 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     super.dispose();
   }
 
-  void _handleSave() {
+  void _handleSave() async {
     if (_titleCtrl.text.trim().isEmpty) return;
     setState(() => _loading = true);
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      await ref.read(eventListProvider.notifier).create({
+        'title': _titleCtrl.text.trim(),
+        'description': _descCtrl.text.trim(),
+        'type': _type,
+        'date': _dateCtrl.text.trim(),
+        'startTime': _timeCtrl.text.trim(),
+        'location': _locCtrl.text.trim(),
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Evento criado com sucesso!')),
+        const SnackBar(content: Text('Evento criado com sucesso!')),
       );
       context.go('/calendar');
-    });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
   }
 
   @override

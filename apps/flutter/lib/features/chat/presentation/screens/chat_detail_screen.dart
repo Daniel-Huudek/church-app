@@ -4,71 +4,93 @@ import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/app_header.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/utils/formatters.dart';
+import '../providers/chat_provider.dart';
 
-class ChatDetailScreen extends ConsumerWidget {
+class ChatDetailScreen extends ConsumerStatefulWidget {
   final String id;
 
   const ChatDetailScreen({super.key, required this.id});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
+}
+
+class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
+  final _msgCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+
+  @override
+  void dispose() {
+    _msgCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _send() {
+    final text = _msgCtrl.text.trim();
+    if (text.isEmpty) return;
+    _msgCtrl.clear();
+    ref.read(chatMessagesProvider(widget.id).notifier).send(text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final state = ref.watch(chatMessagesProvider(widget.id));
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            AppHeader(title: 'Grupo de Louvor'),
+            AppHeader(title: 'Chat'),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                itemCount: 5,
-                itemBuilder: (context, index) {
-                  final isMe = index.isEven;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: Row(
-                      mainAxisAlignment:
-                          isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (!isMe) ...[
-                          const AppAvatar(name: 'João', size: 28),
-                          const SizedBox(width: AppSpacing.sm),
-                        ],
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            decoration: BoxDecoration(
-                              color: isMe
-                                  ? AppColors.primary
-                                  : (isDark
-                                      ? AppColors.darkCard
-                                      : AppColors.lightSurface),
-                              borderRadius: BorderRadius.only(
-                                topLeft: const Radius.circular(
-                                    AppSpacing.radiusMd),
-                                topRight: const Radius.circular(
-                                    AppSpacing.radiusMd),
-                                bottomLeft: Radius.circular(
-                                    isMe ? AppSpacing.radiusMd : 0),
-                                bottomRight: Radius.circular(
-                                    isMe ? 0 : AppSpacing.radiusMd),
+              child: state.loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.error != null
+                      ? Center(child: Text('Erro: ${state.error}'))
+                      : ListView.builder(
+                          controller: _scrollCtrl,
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          itemCount: state.messages.length,
+                          itemBuilder: (context, index) {
+                            final msg = state.messages[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.darkCard : AppColors.lightSurface,
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(AppSpacing.radiusMd),
+                                      topRight: Radius.circular(AppSpacing.radiusMd),
+                                      bottomRight: Radius.circular(AppSpacing.radiusMd),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        msg.content,
+                                        style: TextStyle(color: isDark ? Colors.white : null),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        Formatters.relativeTime(msg.createdAt),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              'Mensagem de exemplo $index',
-                              style: TextStyle(
-                                color: isMe ? Colors.white : null,
-                              ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
             ),
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -84,11 +106,11 @@ class ChatDetailScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: _msgCtrl,
                       decoration: InputDecoration(
                         hintText: 'Digite uma mensagem...',
                         border: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppSpacing.radiusFull),
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.lg,
@@ -96,13 +118,14 @@ class ChatDetailScreen extends ConsumerWidget {
                         ),
                         isDense: true,
                       ),
+                      onSubmitted: (_) => _send(),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   IconButton(
                     icon: const Icon(Icons.send),
                     color: AppColors.primary,
-                    onPressed: () {},
+                    onPressed: _send,
                   ),
                 ],
               ),
