@@ -399,7 +399,7 @@ export class FinanceService {
 
   private async getMonthlyHistory(months: number): Promise<{ month: string; income: number; expense: number; balance: number }[]> {
     const history = [];
-    for (let i = months - 1; i >= 0; i--) {
+    for (let i = 0; i < months; i++) {
       const now = new Date();
       const startDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const endDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
