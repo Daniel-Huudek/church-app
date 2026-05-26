@@ -4,7 +4,8 @@ WORKDIR /app
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY apps/notification-service/package.json ./apps/notification-service/
-COPY packages/ ./packages/
+COPY packages/shared ./packages/shared
+COPY packages/tsconfig ./packages/tsconfig
 
 WORKDIR /app/apps/notification-service
 
