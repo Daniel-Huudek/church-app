@@ -8,11 +8,11 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
+    "test": "vitest run",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@church-app/shared": "workspace:*",
-    "@church-app/types": "workspace:*",
     "fastify": "^4.26.0",
     "@fastify/cors": "^8.5.0",
     "@fastify/helmet": "^11.1.1",
