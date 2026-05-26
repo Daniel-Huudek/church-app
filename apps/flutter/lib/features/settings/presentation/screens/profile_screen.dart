@@ -5,6 +5,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/providers/theme_provider.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../widgets/stat_card.dart';
+import '../widgets/menu_section.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -93,7 +95,6 @@ class ProfileScreen extends ConsumerWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // Header
                 Container(
                   height: 120,
                   color: const Color(0xFF008CFF),
@@ -116,7 +117,6 @@ class ProfileScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      // Name + Email + Role
                       Center(
                         child: Column(
                           children: [
@@ -166,7 +166,6 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // Phone
                       if (user?.phone != null)
                         Container(
                           width: double.infinity,
@@ -212,7 +211,6 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
 
-                      // Stats
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -227,19 +225,19 @@ class ProfileScreen extends ConsumerWidget {
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              _StatCard(
+                              StatCard(
                                 icon: '📅', value: '0', label: 'Escalas',
                                 color: const Color(0xFF008CFF),
                                 cardBg: cardBg, textSecondary: textSecondary,
                               ),
                               const SizedBox(width: 10),
-                              _StatCard(
+                              StatCard(
                                 icon: '🎉', value: '0', label: 'Eventos',
                                 color: const Color(0xFF3B82F6),
                                 cardBg: cardBg, textSecondary: textSecondary,
                               ),
                               const SizedBox(width: 10),
-                              _StatCard(
+                              StatCard(
                                 icon: '🙏', value: '0', label: 'Orações',
                                 color: const Color(0xFF10B981),
                                 cardBg: cardBg, textSecondary: textSecondary,
@@ -250,7 +248,6 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // Ministries
                       if (user?.ministries != null &&
                           (user!.ministries as List).isNotEmpty)
                         Column(
@@ -294,33 +291,31 @@ class ProfileScreen extends ConsumerWidget {
                           (user!.ministries as List).isNotEmpty)
                         const SizedBox(height: 20),
 
-                      // Menu
-                      _MenuSection(
+                      MenuSection(
                         title: 'Menu',
                         cardBg: cardBg,
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
                         borderColor: borderColor,
                         items: [
-                          _MenuItemData(icon: '👤', label: 'Editar Perfil', color: const Color(0xFF008CFF)),
-                          _MenuItemData(icon: '⚙️', label: 'Configurações', color: const Color(0xFF3B82F6)),
-                          _MenuItemData(icon: '🔔', label: 'Notificações', color: const Color(0xFFF59E0B)),
-                          _MenuItemData(icon: '📅', label: 'Minhas Escalas', color: const Color(0xFF10B981)),
-                          _MenuItemData(icon: '🎉', label: 'Meus Eventos', color: const Color(0xFFEC4899)),
-                          _MenuItemData(icon: '🙏', label: 'Minhas Orações', color: const Color(0xFF06B6D4)),
+                          MenuItemData(icon: '👤', label: 'Editar Perfil', color: const Color(0xFF008CFF)),
+                          MenuItemData(icon: '⚙️', label: 'Configurações', color: const Color(0xFF3B82F6)),
+                          MenuItemData(icon: '🔔', label: 'Notificações', color: const Color(0xFFF59E0B)),
+                          MenuItemData(icon: '📅', label: 'Minhas Escalas', color: const Color(0xFF10B981)),
+                          MenuItemData(icon: '🎉', label: 'Meus Eventos', color: const Color(0xFFEC4899)),
+                          MenuItemData(icon: '🙏', label: 'Minhas Orações', color: const Color(0xFF06B6D4)),
                         ],
                       ),
                       const SizedBox(height: 20),
 
-                      // Preferences
-                      _MenuSection(
+                      MenuSection(
                         title: 'Preferências',
                         cardBg: cardBg,
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
                         borderColor: borderColor,
                         items: [
-                          _MenuItemData(
+                          MenuItemData(
                             icon: isDark ? '🌙' : '☀️',
                             label: 'Tema',
                             color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
@@ -340,7 +335,6 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // Logout
                       GestureDetector(
                         onTap: () async {
                           await ref.read(authProvider.notifier).logout();
@@ -390,167 +384,4 @@ class _RoleData {
   final Color color;
   final String icon;
   const _RoleData(this.label, this.color, this.icon);
-}
-
-class _StatCard extends StatelessWidget {
-  final String icon;
-  final String value;
-  final String label;
-  final Color color;
-  final Color cardBg;
-  final Color textSecondary;
-
-  const _StatCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-    required this.cardBg,
-    required this.textSecondary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(fontSize: 11, color: textSecondary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MenuItemData {
-  final String icon;
-  final String label;
-  final Color color;
-  final Widget? trailing;
-
-  const _MenuItemData({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.trailing,
-  });
-}
-
-class _MenuSection extends StatelessWidget {
-  final String title;
-  final Color cardBg;
-  final Color textPrimary;
-  final Color textSecondary;
-  final Color borderColor;
-  final List<_MenuItemData> items;
-  final void Function(int index)? onItemTap;
-
-  const _MenuSection({
-    required this.title,
-    required this.cardBg,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.borderColor,
-    required this.items,
-    this.onItemTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              return GestureDetector(
-                onTap: onItemTap != null ? () => onItemTap!(index) : null,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: index < items.length - 1
-                        ? Border(bottom: BorderSide(color: borderColor, width: 1))
-                        : null,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: item.color.withValues(alpha: 0.13),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            item.icon,
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.label,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: textPrimary,
-                          ),
-                        ),
-                      ),
-                      if (item.trailing != null) ...[
-                        item.trailing!,
-                        const SizedBox(width: 8),
-                      ],
-                      Text(
-                        '›',
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-        ),
-      ],
-    );
-  }
 }
