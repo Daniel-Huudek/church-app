@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/utils/formatters.dart';
 import '../providers/finance_provider.dart';
@@ -83,7 +84,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
       leading: Padding(
         padding: const EdgeInsets.only(left: 8),
         child: GestureDetector(
-          onTap: () => Navigator.of(context).maybePop(),
+          onTap: () => context.mounted ? context.pop() : null,
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
