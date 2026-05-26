@@ -4,6 +4,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/auth_interceptor.dart';
 import '../../core/utils/secure_storage.dart';
 import '../models/user_model.dart';
+import '../utils/error_helper.dart';
 
 class AuthState {
   final UserModel? user;
@@ -87,7 +88,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Erro ao fazer login com Google',
+        error: formatError(e),
       );
     }
   }
@@ -117,7 +118,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Email ou senha inválidos',
+        error: formatError(e),
       );
     }
   }
@@ -147,7 +148,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Erro ao criar conta',
+        error: formatError(e),
       );
     }
   }

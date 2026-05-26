@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/schedule_api.dart';
 import '../../domain/schedule_model.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final scheduleApiProvider = Provider<ScheduleApi>((ref) {
   return ScheduleApi(ref.read(apiClientProvider));
@@ -25,7 +26,7 @@ class ScheduleListNotifier extends StateNotifier<AsyncState<List<ScheduleModel>>
       final schedules = await _api.list();
       state = AsyncState(data: schedules, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 
@@ -34,7 +35,7 @@ class ScheduleListNotifier extends StateNotifier<AsyncState<List<ScheduleModel>>
       await _api.create(data);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -65,7 +66,7 @@ class ScheduleDetailNotifier extends StateNotifier<ScheduleDetailState> {
       final schedule = await _api.getById(_id);
       state = ScheduleDetailState(schedule: schedule, loading: false);
     } catch (e) {
-      state = ScheduleDetailState(loading: false, error: e.toString());
+      state = ScheduleDetailState(loading: false, error: formatError(e));
     }
   }
 }

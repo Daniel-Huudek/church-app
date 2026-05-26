@@ -4,6 +4,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/prayer_api.dart';
 import '../../domain/prayer_model.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final prayerApiProvider = Provider<PrayerApi>((ref) {
   return PrayerApi(ref.read(apiClientProvider));
@@ -28,7 +29,7 @@ class PrayerFeedNotifier extends StateNotifier<AsyncState<List<PrayerModel>>> {
       state = AsyncState(
         data: state.data,
         loading: false,
-        error: _formatError(e),
+        error: formatError(e),
       );
     }
   }
@@ -42,31 +43,9 @@ class PrayerFeedNotifier extends StateNotifier<AsyncState<List<PrayerModel>>> {
       state = AsyncState(
         data: state.data,
         loading: false,
-        error: _formatError(e),
+        error: formatError(e),
       );
     }
-  }
-
-  String _formatError(Object e) {
-    if (e is DioException) {
-      final statusCode = e.response?.statusCode;
-      if (statusCode == 401) return 'Sessão expirada. Faça login novamente.';
-      if (statusCode == 404) return 'Nenhum pedido encontrado.';
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        return 'Sem resposta do servidor. Verifique sua conexão.';
-      }
-      if (e.type == DioExceptionType.connectionError) {
-        return 'Não foi possível conectar ao servidor.';
-      }
-      final msg = e.response?.data?['message'];
-      if (msg is String) return msg;
-      return 'Erro ao carregar pedidos ($statusCode).';
-    }
-    if (e is FormatException) {
-      return 'Resposta inesperada do servidor.';
-    }
-    return 'Ocorreu um erro inesperado (${e.runtimeType}).';
   }
 
   Future<void> create(Map<String, dynamic> data) async {
@@ -74,7 +53,7 @@ class PrayerFeedNotifier extends StateNotifier<AsyncState<List<PrayerModel>>> {
       await _api.create(data);
       await loadFeed();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: _formatError(e));
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -122,7 +101,7 @@ class PrayerDetailNotifier extends StateNotifier<PrayerDetailState> {
     } catch (e) {
       state = PrayerDetailState(
         loading: false,
-        error: _formatError(e),
+        error: formatError(e),
       );
     }
   }
@@ -166,14 +145,11 @@ class PrayerDetailNotifier extends StateNotifier<PrayerDetailState> {
         loading: false,
       );
     } catch (e) {
-      final msg = e is DioException
-          ? 'Erro (${e.response?.statusCode ?? "?"}): ${e.response?.data?['message'] ?? e.message}'
-          : 'Erro ao enviar: ${e.toString()}';
       state = PrayerDetailState(
         prayer: state.prayer,
         comments: state.comments.where((c) => c.id.isNotEmpty || c.content != content.trim()).toList(),
         loading: false,
-        error: msg,
+        error: formatError(e),
       );
     }
   }
@@ -183,26 +159,7 @@ class PrayerDetailNotifier extends StateNotifier<PrayerDetailState> {
       await _api.toggleReaction(_id, type);
       await load();
     } catch (e) {
-      state = PrayerDetailState(prayer: state.prayer, comments: state.comments, loading: false, error: 'Erro ao reagir: $e');
+      state = PrayerDetailState(prayer: state.prayer, comments: state.comments, loading: false, error: formatError(e));
     }
-  }
-
-  String _formatError(Object e) {
-    if (e is DioException) {
-      final statusCode = e.response?.statusCode;
-      if (statusCode == 401) return 'Sessão expirada. Faça login novamente.';
-      if (statusCode == 404) return 'Pedido não encontrado.';
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        return 'Sem resposta do servidor.';
-      }
-      final msg = e.response?.data?['message'];
-      if (msg is String) return msg;
-      return 'Erro ao carregar ($statusCode).';
-    }
-    if (e is FormatException) {
-      return 'Resposta inesperada do servidor.';
-    }
-    return 'Ocorreu um erro inesperado.';
   }
 }

@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/user_api.dart';
 import '../../../../shared/models/user_model.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final userApiProvider = Provider<UserApi>((ref) {
   return UserApi(ref.read(apiClientProvider));
@@ -25,7 +26,7 @@ class UserListNotifier extends StateNotifier<AsyncState<List<UserModel>>> {
       final users = await _api.list();
       state = AsyncState(data: users, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -48,7 +49,7 @@ class UserDetailNotifier extends StateNotifier<AsyncState<UserModel?>> {
       final user = await _api.getById(_id);
       state = AsyncState(data: user, loading: false);
     } catch (e) {
-      state = AsyncState(data: null, loading: false, error: e.toString());
+      state = AsyncState(data: null, loading: false, error: formatError(e));
     }
   }
 
@@ -57,7 +58,7 @@ class UserDetailNotifier extends StateNotifier<AsyncState<UserModel?>> {
       await _api.update(_id, data);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: 'Erro ao atualizar: $e');
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }

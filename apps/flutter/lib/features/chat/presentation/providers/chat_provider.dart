@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/chat_api.dart';
 import '../../domain/chat_models.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final chatApiProvider = Provider<ChatApi>((ref) {
   return ChatApi(ref.read(apiClientProvider));
@@ -25,7 +26,7 @@ class ChatRoomListNotifier extends StateNotifier<AsyncState<List<ChatRoomModel>>
       final rooms = await _api.listRooms();
       state = AsyncState(data: rooms, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -60,7 +61,7 @@ class ChatMessagesNotifier extends StateNotifier<ChatMessagesState> {
       final messages = await _api.getMessages(_roomId);
       state = ChatMessagesState(messages: messages.reversed.toList(), loading: false);
     } catch (e) {
-      state = ChatMessagesState(messages: state.messages, loading: false, error: e.toString());
+      state = ChatMessagesState(messages: state.messages, loading: false, error: formatError(e));
     }
   }
 
@@ -70,7 +71,7 @@ class ChatMessagesNotifier extends StateNotifier<ChatMessagesState> {
       await _api.markAsRead(_roomId);
       await load();
     } catch (e) {
-      state = ChatMessagesState(messages: state.messages, loading: false, error: 'Erro ao enviar mensagem: $e');
+      state = ChatMessagesState(messages: state.messages, loading: false, error: formatError(e));
     }
   }
 }

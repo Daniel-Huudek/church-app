@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/member_api.dart';
 import '../../domain/member_model.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final memberApiProvider = Provider<MemberApi>((ref) {
   return MemberApi(ref.read(apiClientProvider));
@@ -25,7 +26,7 @@ class MemberListNotifier extends StateNotifier<AsyncState<List<MemberModel>>> {
       final members = await _api.list();
       state = AsyncState(data: members, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -56,7 +57,7 @@ class MemberDetailNotifier extends StateNotifier<MemberDetailState> {
       final member = await _api.getById(_id);
       state = MemberDetailState(member: member, loading: false);
     } catch (e) {
-      state = MemberDetailState(loading: false, error: e.toString());
+      state = MemberDetailState(loading: false, error: formatError(e));
     }
   }
 }

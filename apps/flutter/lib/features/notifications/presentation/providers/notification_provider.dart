@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/notification_api.dart';
 import '../../domain/notification_model.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final notificationApiProvider = Provider<NotificationApi>((ref) {
   return NotificationApi(ref.read(apiClientProvider));
@@ -25,7 +26,7 @@ class NotificationListNotifier extends StateNotifier<AsyncState<List<Notificatio
       final notifications = await _api.list();
       state = AsyncState(data: notifications, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 
@@ -34,7 +35,7 @@ class NotificationListNotifier extends StateNotifier<AsyncState<List<Notificatio
       await _api.markAllAsRead();
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: 'Erro ao marcar como lidas: $e');
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }

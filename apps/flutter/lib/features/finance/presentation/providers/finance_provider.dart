@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/finance_api.dart';
 import '../../domain/finance_model.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final financeApiProvider = Provider<FinanceApi>((ref) {
   return FinanceApi(ref.read(apiClientProvider));
@@ -25,7 +26,7 @@ class FinanceDashboardNotifier extends StateNotifier<AsyncState<FinanceDashboard
       final dashboard = await _api.getDashboard();
       state = AsyncState(data: dashboard, loading: false);
     } catch (e) {
-      state = AsyncState(data: null, loading: false, error: e.toString());
+      state = AsyncState(data: null, loading: false, error: formatError(e));
     }
   }
 }
@@ -47,7 +48,7 @@ class TransactionListNotifier extends StateNotifier<AsyncState<List<TransactionM
       final transactions = await _api.getTransactions();
       state = AsyncState(data: transactions, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -69,7 +70,7 @@ class CashFlowNotifier extends StateNotifier<AsyncState<List<CashFlowMonthModel>
       final months = await _api.getCashFlow();
       state = AsyncState(data: months, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -91,7 +92,7 @@ class ReportMonthlyNotifier extends StateNotifier<AsyncState<Map<String, dynamic
       final report = await _api.getReportMonthly(year: year, month: month);
       state = AsyncState(data: report, loading: false);
     } catch (e) {
-      state = AsyncState(data: null, loading: false, error: e.toString());
+      state = AsyncState(data: null, loading: false, error: formatError(e));
     }
   }
 }

@@ -3,6 +3,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/event_api.dart';
 import '../../domain/event_model.dart';
 import '../../../../shared/providers/async_state.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 final eventApiProvider = Provider<EventApi>((ref) {
   return EventApi(ref.read(apiClientProvider));
@@ -25,7 +26,7 @@ class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
       final events = await _api.list();
       state = AsyncState(data: events, loading: false);
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 
@@ -34,7 +35,7 @@ class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
       await _api.create(data);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: 'Erro ao criar evento: $e');
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 
@@ -43,7 +44,7 @@ class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
       await _api.update(id, data);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: 'Erro ao atualizar evento: $e');
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 
@@ -52,7 +53,7 @@ class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
       await _api.delete(id);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: 'Erro ao excluir evento: $e');
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }
@@ -83,7 +84,7 @@ class EventDetailNotifier extends StateNotifier<EventDetailState> {
       final event = await _api.getById(_id);
       state = EventDetailState(event: event, loading: false);
     } catch (e) {
-      state = EventDetailState(loading: false, error: e.toString());
+      state = EventDetailState(loading: false, error: formatError(e));
     }
   }
 }
