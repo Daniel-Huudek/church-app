@@ -10,6 +10,8 @@ WORKDIR /app/apps/event-service
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/event-service/prisma ./prisma
 COPY apps/event-service/start.sh ./
 COPY apps/event-service/src ./src

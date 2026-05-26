@@ -29,6 +29,7 @@ export function getServiceClient(service: string) {
     case 'prayer': return prayerClient;
     case 'financial': return financialClient;
     case 'worship': return worshipClient;
+    case 'chat': return chatClient;
     default: throw new Error(`Unknown service: ${service}`);
   }
 }

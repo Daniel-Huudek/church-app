@@ -10,6 +10,8 @@ WORKDIR /app/apps/api-gateway
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/api-gateway/start.sh ./
 COPY apps/api-gateway/src ./src
 

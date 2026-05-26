@@ -10,6 +10,8 @@ WORKDIR /app/apps/auth-service
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/auth-service/prisma ./prisma
 COPY apps/auth-service/start.sh ./
 COPY apps/auth-service/src ./src

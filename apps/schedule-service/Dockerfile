@@ -10,6 +10,8 @@ WORKDIR /app/apps/schedule-service
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/schedule-service/prisma ./prisma
 COPY apps/schedule-service/start.sh ./
 COPY apps/schedule-service/src ./src

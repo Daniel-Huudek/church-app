@@ -4,7 +4,7 @@ import { getAuthHeader, validate } from '@church-app/shared';
 import { z } from 'zod';
 
 const transactionSchema = z.object({
-  type: z.enum(['RECEITA', 'DESPESA']),
+  type: z.enum(['INCOME', 'EXPENSE', 'TITHE', 'OFFERING']),
   value: z.number().positive(),
   description: z.string().min(1),
   date: z.string(),
@@ -12,12 +12,12 @@ const transactionSchema = z.object({
   costCenterId: z.string().uuid().optional(),
   paymentMethod: z.string().optional(),
   notes: z.string().optional(),
-  status: z.enum(['PENDENTE', 'CONFIRMADO', 'CANCELADO']).optional(),
+  status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED']).optional(),
 });
 
 const categorySchema = z.object({
   name: z.string().min(1),
-  type: z.enum(['RECEITA', 'DESPESA']),
+  type: z.enum(['INCOME', 'EXPENSE', 'TITHE', 'OFFERING']),
   color: z.string().optional(),
   icon: z.string().optional(),
 });

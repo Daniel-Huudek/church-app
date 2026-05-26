@@ -10,6 +10,8 @@ WORKDIR /app/apps/notification-service
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/notification-service/prisma ./prisma
 COPY apps/notification-service/start.sh ./
 COPY apps/notification-service/src ./src

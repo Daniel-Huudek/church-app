@@ -10,6 +10,8 @@ WORKDIR /app/apps/member-service
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/member-service/prisma ./prisma
 COPY apps/member-service/start.sh ./
 COPY apps/member-service/src ./src

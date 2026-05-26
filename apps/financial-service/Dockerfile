@@ -10,6 +10,8 @@ WORKDIR /app/apps/financial-service
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/financial-service/prisma ./prisma
 COPY apps/financial-service/start.sh ./
 COPY apps/financial-service/src ./src

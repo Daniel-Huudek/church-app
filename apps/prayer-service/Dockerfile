@@ -10,6 +10,8 @@ WORKDIR /app/apps/prayer-service
 
 RUN npm install -g pnpm && pnpm install
 
+RUN pnpm --filter @church-app/shared build
+
 COPY apps/prayer-service/prisma ./prisma
 COPY apps/prayer-service/start.sh ./
 COPY apps/prayer-service/src ./src
