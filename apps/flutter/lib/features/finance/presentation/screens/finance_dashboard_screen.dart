@@ -72,7 +72,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
                         Expanded(
                           child: _BalanceRow(
                             label: 'Receitas',
-                            value: Formatters.formatCurrency(dashboard.totalRevenue),
+                            value: Formatters.formatCurrency(dashboard.totalIncome),
                             color: AppColors.success,
                           ),
                         ),
@@ -80,7 +80,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
                         Expanded(
                           child: _BalanceRow(
                             label: 'Despesas',
-                            value: Formatters.formatCurrency(dashboard.totalExpenses),
+                            value: Formatters.formatCurrency(dashboard.totalExpense),
                             color: AppColors.error,
                           ),
                         ),
@@ -91,28 +91,27 @@ class FinanceDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xl2),
               Text(
-                'Transações Recentes',
+                'Resumo do Mês',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.md),
-              if (dashboard.recentTransactions.isEmpty)
+              if (dashboard.monthlyHistory.isEmpty)
                 AppCard(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.xl),
                     child: Center(
                       child: Text(
-                        'Nenhuma transação recente',
+                        'Nenhum dado financeiro ainda',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),
                   ),
                 )
               else
-                ...dashboard.recentTransactions.map((t) => _TransactionItem(
-                  description: t.description,
-                  amount: t.amount,
-                  type: t.type,
-                  date: Formatters.relativeTime(t.createdAt),
+                ...dashboard.monthlyHistory.map((m) => _BalanceRow(
+                  label: m['month'] as String? ?? '',
+                  value: Formatters.formatCurrency((m['balance'] as num?)?.toDouble() ?? 0),
+                  color: ((m['balance'] as num?)?.toDouble() ?? 0) >= 0 ? AppColors.success : AppColors.error,
                 )),
             ],
           ),
@@ -145,50 +144,4 @@ class _BalanceRow extends StatelessWidget {
   }
 }
 
-class _TransactionItem extends StatelessWidget {
-  final String description;
-  final double amount;
-  final String type;
-  final String date;
 
-  const _TransactionItem({required this.description, required this.amount, required this.type, required this.date});
-
-  @override
-  Widget build(BuildContext context) {
-    final isIncome = type == 'RECEITA' || type == 'INCOME';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AppCard(
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isIncome ? AppColors.success : AppColors.error,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(description, style: Theme.of(context).textTheme.titleSmall),
-                  Text(date, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
-            ),
-            Text(
-              '${isIncome ? '+' : '-'} ${Formatters.formatCurrency(amount)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isIncome ? AppColors.success : AppColors.error,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

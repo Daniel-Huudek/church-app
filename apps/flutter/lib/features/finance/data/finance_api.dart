@@ -9,9 +9,15 @@ class FinanceApi {
 
   Future<FinanceDashboardModel> getDashboard() async {
     final response = await _client.get(ApiConfig.financeDashboard);
-    final data = response.data as Map<String, dynamic>;
-    return FinanceDashboardModel.fromJson(
-        data['data'] as Map<String, dynamic>);
+    final raw = response.data;
+    if (raw is! Map<String, dynamic>) {
+      throw FormatException('Resposta inesperada: ${raw.runtimeType}');
+    }
+    final inner = raw['data'];
+    if (inner is! Map<String, dynamic>) {
+      throw FormatException('Formato inesperado do dashboard: $inner');
+    }
+    return FinanceDashboardModel.fromJson(inner);
   }
 
   Future<List<TransactionModel>> getTransactions({
