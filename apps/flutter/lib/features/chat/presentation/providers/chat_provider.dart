@@ -2,41 +2,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/chat_api.dart';
 import '../../domain/chat_models.dart';
+import '../../../../shared/providers/async_state.dart';
 
 final chatApiProvider = Provider<ChatApi>((ref) {
   return ChatApi(ref.read(apiClientProvider));
 });
 
-class ChatRoomListState {
-  final List<ChatRoomModel> rooms;
-  final bool loading;
-  final String? error;
-
-  const ChatRoomListState({
-    this.rooms = const [],
-    this.loading = true,
-    this.error,
-  });
-}
-
-final chatRoomListProvider = StateNotifierProvider.autoDispose<ChatRoomListNotifier, ChatRoomListState>((ref) {
+final chatRoomListProvider = StateNotifierProvider.autoDispose<ChatRoomListNotifier, AsyncState<List<ChatRoomModel>>>((ref) {
   return ChatRoomListNotifier(ref.read(chatApiProvider));
 });
 
-class ChatRoomListNotifier extends StateNotifier<ChatRoomListState> {
+class ChatRoomListNotifier extends StateNotifier<AsyncState<List<ChatRoomModel>>> {
   final ChatApi _api;
 
-  ChatRoomListNotifier(this._api) : super(const ChatRoomListState()) {
+  ChatRoomListNotifier(this._api) : super(const AsyncState(data: [])) {
     load();
   }
 
   Future<void> load() async {
-    state = ChatRoomListState(rooms: state.rooms, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final rooms = await _api.listRooms();
-      state = ChatRoomListState(rooms: rooms, loading: false);
+      state = AsyncState(data: rooms, loading: false);
     } catch (e) {
-      state = ChatRoomListState(rooms: state.rooms, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: e.toString());
     }
   }
 }

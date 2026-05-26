@@ -36,16 +36,16 @@ class FinanceTransactionsScreen extends ConsumerWidget {
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
               ? Center(child: Text('Erro: ${state.error}'))
-              : state.transactions.isEmpty
+              : state.data.isEmpty
                   ? Center(child: Text('Nenhuma transação', style: TextStyle(color: t2)))
                   : RefreshIndicator(
                       onRefresh: () => ref.read(transactionListProvider.notifier).load(),
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        itemCount: state.transactions.length,
+                        itemCount: state.data.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (_, i) {
-                          final t = state.transactions[i];
+                          final t = state.data[i];
                           final isIncome = t.isIncome;
                           return Container(
                             padding: const EdgeInsets.all(16),

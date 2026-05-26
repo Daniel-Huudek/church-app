@@ -2,53 +2,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/schedule_api.dart';
 import '../../domain/schedule_model.dart';
+import '../../../../shared/providers/async_state.dart';
 
 final scheduleApiProvider = Provider<ScheduleApi>((ref) {
   return ScheduleApi(ref.read(apiClientProvider));
 });
 
-class ScheduleListState {
-  final List<ScheduleModel> schedules;
-  final bool loading;
-  final String? error;
-  final bool created;
-
-  const ScheduleListState({
-    this.schedules = const [],
-    this.loading = true,
-    this.error,
-    this.created = false,
-  });
-}
-
-final scheduleListProvider = StateNotifierProvider.autoDispose<ScheduleListNotifier, ScheduleListState>((ref) {
+final scheduleListProvider = StateNotifierProvider.autoDispose<ScheduleListNotifier, AsyncState<List<ScheduleModel>>>((ref) {
   return ScheduleListNotifier(ref.read(scheduleApiProvider));
 });
 
-class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
+class ScheduleListNotifier extends StateNotifier<AsyncState<List<ScheduleModel>>> {
   final ScheduleApi _api;
 
-  ScheduleListNotifier(this._api) : super(const ScheduleListState()) {
+  ScheduleListNotifier(this._api) : super(const AsyncState(data: [])) {
     load();
   }
 
   Future<void> load() async {
-    state = ScheduleListState(schedules: state.schedules, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final schedules = await _api.list();
-      state = ScheduleListState(schedules: schedules, loading: false);
+      state = AsyncState(data: schedules, loading: false);
     } catch (e) {
-      state = ScheduleListState(schedules: state.schedules, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: e.toString());
     }
   }
 
   Future<void> create(Map<String, dynamic> data) async {
     try {
       await _api.create(data);
-      state = ScheduleListState(schedules: state.schedules, loading: false, created: true);
       await load();
     } catch (e) {
-      state = ScheduleListState(schedules: state.schedules, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: e.toString());
     }
   }
 }

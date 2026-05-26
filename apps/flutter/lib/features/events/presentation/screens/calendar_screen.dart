@@ -88,7 +88,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(eventListProvider);
-    final filtered = _filteredEvents(state.events);
+    final filtered = _filteredEvents(state.data);
     final sections = _groupByDate(filtered);
 
     return Container(

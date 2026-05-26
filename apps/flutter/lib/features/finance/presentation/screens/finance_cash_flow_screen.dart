@@ -17,9 +17,9 @@ class FinanceCashFlowScreen extends ConsumerWidget {
     final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
     final state = ref.watch(cashFlowProvider);
 
-    final totalRevenue = state.months.fold<double>(0, (sum, m) => sum + m.revenue);
-    final totalExpenses = state.months.fold<double>(0, (sum, m) => sum + m.expenses);
-    final currentBalance = state.months.isNotEmpty ? state.months.last.balance : 0.0;
+    final totalRevenue = state.data.fold<double>(0, (sum, m) => sum + m.revenue);
+    final totalExpenses = state.data.fold<double>(0, (sum, m) => sum + m.expenses);
+    final currentBalance = state.data.isNotEmpty ? state.data.last.balance : 0.0;
 
     return Scaffold(
       backgroundColor: bg,
@@ -80,7 +80,7 @@ class FinanceCashFlowScreen extends ConsumerWidget {
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t1)),
                       ),
                       const SizedBox(height: 12),
-                      ...state.months.map((m) => Container(
+                      ...state.data.map((m) => Container(
                         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(

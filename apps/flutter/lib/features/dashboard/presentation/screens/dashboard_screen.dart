@@ -51,7 +51,7 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 _StatCard(
                   icon: '📅',
-                  value: '${events.events.length}',
+                  value: '${events.data.length}',
                   label: 'Eventos',
                   color: const Color(0xFF008CFF),
                   isDark: isDark,
@@ -59,7 +59,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 _StatCard(
                   icon: '👥',
-                  value: '${members.members.length}',
+                  value: '${members.data.length}',
                   label: 'Membros',
                   color: const Color(0xFF3B82F6),
                   isDark: isDark,
@@ -71,7 +71,7 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 _StatCard(
                   icon: '🙏',
-                  value: '${prayers.prayers.length}',
+                  value: '${prayers.data.length}',
                   label: 'Orações',
                   color: const Color(0xFF10B981),
                   isDark: isDark,
@@ -79,8 +79,8 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 _StatCard(
                   icon: '💰',
-                  value: finance.dashboard != null
-                      ? Formatters.formatCurrency(finance.dashboard!.balance)
+                  value: finance.data != null
+                      ? Formatters.formatCurrency(finance.data!.balance)
                       : 'R\$ 0',
                   label: 'Saldo',
                   color: const Color(0xFFF59E0B),

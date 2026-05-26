@@ -26,15 +26,15 @@ class UserListScreen extends ConsumerWidget {
                   ? const Center(child: CircularProgressIndicator())
                   : state.error != null
                       ? Center(child: Text('Erro: ${state.error}'))
-                      : state.users.isEmpty
+                      : state.data.isEmpty
                           ? const Center(child: Text('Nenhum usuário'))
                           : RefreshIndicator(
                               onRefresh: () => ref.read(userListProvider.notifier).load(),
                               child: ListView.builder(
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                                itemCount: state.users.length,
+                                itemCount: state.data.length,
                                 itemBuilder: (context, index) {
-                                  final user = state.users[index];
+                                  final user = state.data[index];
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                                     child: AppCard(

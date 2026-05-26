@@ -2,135 +2,96 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/finance_api.dart';
 import '../../domain/finance_model.dart';
+import '../../../../shared/providers/async_state.dart';
 
 final financeApiProvider = Provider<FinanceApi>((ref) {
   return FinanceApi(ref.read(apiClientProvider));
 });
 
-class FinanceDashboardState {
-  final FinanceDashboardModel? dashboard;
-  final bool loading;
-  final String? error;
-
-  const FinanceDashboardState({this.dashboard, this.loading = true, this.error});
-}
-
-final financeDashboardProvider = StateNotifierProvider.autoDispose<FinanceDashboardNotifier, FinanceDashboardState>((ref) {
+final financeDashboardProvider = StateNotifierProvider.autoDispose<FinanceDashboardNotifier, AsyncState<FinanceDashboardModel?>>((ref) {
   return FinanceDashboardNotifier(ref.read(financeApiProvider));
 });
 
-class FinanceDashboardNotifier extends StateNotifier<FinanceDashboardState> {
+class FinanceDashboardNotifier extends StateNotifier<AsyncState<FinanceDashboardModel?>> {
   final FinanceApi _api;
 
-  FinanceDashboardNotifier(this._api) : super(const FinanceDashboardState()) {
+  FinanceDashboardNotifier(this._api) : super(const AsyncState(data: null)) {
     load();
   }
 
   Future<void> load() async {
-    state = const FinanceDashboardState(loading: true);
+    state = const AsyncState(data: null, loading: true);
     try {
       final dashboard = await _api.getDashboard();
-      state = FinanceDashboardState(dashboard: dashboard, loading: false);
+      state = AsyncState(data: dashboard, loading: false);
     } catch (e) {
-      state = FinanceDashboardState(loading: false, error: e.toString());
+      state = AsyncState(data: null, loading: false, error: e.toString());
     }
   }
 }
 
-class TransactionListState {
-  final List<TransactionModel> transactions;
-  final bool loading;
-  final String? error;
-
-  const TransactionListState({
-    this.transactions = const [],
-    this.loading = true,
-    this.error,
-  });
-}
-
-final transactionListProvider = StateNotifierProvider.autoDispose<TransactionListNotifier, TransactionListState>((ref) {
+final transactionListProvider = StateNotifierProvider.autoDispose<TransactionListNotifier, AsyncState<List<TransactionModel>>>((ref) {
   return TransactionListNotifier(ref.read(financeApiProvider));
 });
 
-class TransactionListNotifier extends StateNotifier<TransactionListState> {
+class TransactionListNotifier extends StateNotifier<AsyncState<List<TransactionModel>>> {
   final FinanceApi _api;
 
-  TransactionListNotifier(this._api) : super(const TransactionListState()) {
+  TransactionListNotifier(this._api) : super(const AsyncState(data: [])) {
     load();
   }
 
   Future<void> load() async {
-    state = TransactionListState(transactions: state.transactions, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final transactions = await _api.getTransactions();
-      state = TransactionListState(transactions: transactions, loading: false);
+      state = AsyncState(data: transactions, loading: false);
     } catch (e) {
-      state = TransactionListState(transactions: state.transactions, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: e.toString());
     }
   }
 }
 
-class CashFlowState {
-  final List<CashFlowMonthModel> months;
-  final bool loading;
-  final String? error;
-
-  const CashFlowState({
-    this.months = const [],
-    this.loading = true,
-    this.error,
-  });
-}
-
-final cashFlowProvider = StateNotifierProvider.autoDispose<CashFlowNotifier, CashFlowState>((ref) {
+final cashFlowProvider = StateNotifierProvider.autoDispose<CashFlowNotifier, AsyncState<List<CashFlowMonthModel>>>((ref) {
   return CashFlowNotifier(ref.read(financeApiProvider));
 });
 
-class CashFlowNotifier extends StateNotifier<CashFlowState> {
+class CashFlowNotifier extends StateNotifier<AsyncState<List<CashFlowMonthModel>>> {
   final FinanceApi _api;
 
-  CashFlowNotifier(this._api) : super(const CashFlowState()) {
+  CashFlowNotifier(this._api) : super(const AsyncState(data: [])) {
     load();
   }
 
   Future<void> load() async {
-    state = CashFlowState(months: state.months, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final months = await _api.getCashFlow();
-      state = CashFlowState(months: months, loading: false);
+      state = AsyncState(data: months, loading: false);
     } catch (e) {
-      state = CashFlowState(months: state.months, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: e.toString());
     }
   }
 }
 
-class ReportMonthlyState {
-  final Map<String, dynamic>? report;
-  final bool loading;
-  final String? error;
-
-  const ReportMonthlyState({this.report, this.loading = true, this.error});
-}
-
-final reportMonthlyProvider = StateNotifierProvider.autoDispose<ReportMonthlyNotifier, ReportMonthlyState>((ref) {
+final reportMonthlyProvider = StateNotifierProvider.autoDispose<ReportMonthlyNotifier, AsyncState<Map<String, dynamic>?>>((ref) {
   return ReportMonthlyNotifier(ref.read(financeApiProvider));
 });
 
-class ReportMonthlyNotifier extends StateNotifier<ReportMonthlyState> {
+class ReportMonthlyNotifier extends StateNotifier<AsyncState<Map<String, dynamic>?>> {
   final FinanceApi _api;
 
-  ReportMonthlyNotifier(this._api) : super(const ReportMonthlyState()) {
+  ReportMonthlyNotifier(this._api) : super(const AsyncState(data: null)) {
     load();
   }
 
   Future<void> load({int? year, int? month}) async {
-    state = const ReportMonthlyState(loading: true);
+    state = const AsyncState(data: null, loading: true);
     try {
       final report = await _api.getReportMonthly(year: year, month: month);
-      state = ReportMonthlyState(report: report, loading: false);
+      state = AsyncState(data: report, loading: false);
     } catch (e) {
-      state = ReportMonthlyState(loading: false, error: e.toString());
+      state = AsyncState(data: null, loading: false, error: e.toString());
     }
   }
 }

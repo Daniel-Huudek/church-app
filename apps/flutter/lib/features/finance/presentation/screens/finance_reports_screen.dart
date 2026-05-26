@@ -32,7 +32,7 @@ class FinanceReportsScreen extends ConsumerWidget {
         title: Text('Relatórios',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: t1)),
         actions: [
-          if (state.report != null)
+          if (state.data != null)
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: IconButton(
@@ -47,15 +47,15 @@ class FinanceReportsScreen extends ConsumerWidget {
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
               ? Center(child: Text('Erro: ${state.error}'))
-              : state.report != null
+              : state.data != null
                   ? ListView(
                       padding: const EdgeInsets.all(20),
                       children: [
-                        _summaryCard('Receitas Totais', state.report!['totalRevenue'] ?? 0, true, card, t1, t2, border),
+                        _summaryCard('Receitas Totais', state.data!['totalRevenue'] ?? 0, true, card, t1, t2, border),
                         const SizedBox(height: 12),
-                        _summaryCard('Despesas Totais', state.report!['totalExpenses'] ?? 0, false, card, t1, t2, border),
+                        _summaryCard('Despesas Totais', state.data!['totalExpenses'] ?? 0, false, card, t1, t2, border),
                         const SizedBox(height: 12),
-                        _summaryCard('Saldo', state.report!['balance'] ?? 0, true, card, t1, t2, border),
+                        _summaryCard('Saldo', state.data!['balance'] ?? 0, true, card, t1, t2, border),
                       ],
                     )
                   : _reportMenu(ref, t1, t2, card, border, bg),

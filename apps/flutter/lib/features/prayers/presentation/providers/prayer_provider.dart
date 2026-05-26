@@ -3,41 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/prayer_api.dart';
 import '../../domain/prayer_model.dart';
+import '../../../../shared/providers/async_state.dart';
 
 final prayerApiProvider = Provider<PrayerApi>((ref) {
   return PrayerApi(ref.read(apiClientProvider));
 });
 
-class PrayerListState {
-  final List<PrayerModel> prayers;
-  final bool loading;
-  final String? error;
-
-  const PrayerListState({
-    this.prayers = const [],
-    this.loading = true,
-    this.error,
-  });
-}
-
 final prayerFeedProvider =
-    StateNotifierProvider<PrayerFeedNotifier, PrayerListState>((ref) {
+    StateNotifierProvider<PrayerFeedNotifier, AsyncState<List<PrayerModel>>>((ref) {
   return PrayerFeedNotifier(ref.read(prayerApiProvider));
 });
 
-class PrayerFeedNotifier extends StateNotifier<PrayerListState> {
+class PrayerFeedNotifier extends StateNotifier<AsyncState<List<PrayerModel>>> {
   final PrayerApi _api;
 
-  PrayerFeedNotifier(this._api) : super(const PrayerListState());
+  PrayerFeedNotifier(this._api) : super(const AsyncState(data: []));
 
   Future<void> loadFeed() async {
-    state = PrayerListState(prayers: state.prayers, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final prayers = await _api.list();
-      state = PrayerListState(prayers: prayers, loading: false);
+      state = AsyncState(data: prayers, loading: false);
     } catch (e) {
-      state = PrayerListState(
-        prayers: state.prayers,
+      state = AsyncState(
+        data: state.data,
         loading: false,
         error: _formatError(e),
       );
@@ -45,13 +34,13 @@ class PrayerFeedNotifier extends StateNotifier<PrayerListState> {
   }
 
   Future<void> loadMine() async {
-    state = PrayerListState(prayers: state.prayers, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final prayers = await _api.getMy();
-      state = PrayerListState(prayers: prayers, loading: false);
+      state = AsyncState(data: prayers, loading: false);
     } catch (e) {
-      state = PrayerListState(
-        prayers: state.prayers,
+      state = AsyncState(
+        data: state.data,
         loading: false,
         error: _formatError(e),
       );
@@ -85,7 +74,7 @@ class PrayerFeedNotifier extends StateNotifier<PrayerListState> {
       await _api.create(data);
       await loadFeed();
     } catch (e) {
-      state = PrayerListState(prayers: state.prayers, loading: false, error: _formatError(e));
+      state = AsyncState(data: state.data, loading: false, error: _formatError(e));
     }
   }
 }

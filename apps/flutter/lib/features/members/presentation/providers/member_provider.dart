@@ -2,41 +2,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/member_api.dart';
 import '../../domain/member_model.dart';
+import '../../../../shared/providers/async_state.dart';
 
 final memberApiProvider = Provider<MemberApi>((ref) {
   return MemberApi(ref.read(apiClientProvider));
 });
 
-class MemberListState {
-  final List<MemberModel> members;
-  final bool loading;
-  final String? error;
-
-  const MemberListState({
-    this.members = const [],
-    this.loading = true,
-    this.error,
-  });
-}
-
-final memberListProvider = StateNotifierProvider.autoDispose<MemberListNotifier, MemberListState>((ref) {
+final memberListProvider = StateNotifierProvider.autoDispose<MemberListNotifier, AsyncState<List<MemberModel>>>((ref) {
   return MemberListNotifier(ref.read(memberApiProvider));
 });
 
-class MemberListNotifier extends StateNotifier<MemberListState> {
+class MemberListNotifier extends StateNotifier<AsyncState<List<MemberModel>>> {
   final MemberApi _api;
 
-  MemberListNotifier(this._api) : super(const MemberListState()) {
+  MemberListNotifier(this._api) : super(const AsyncState(data: [])) {
     load();
   }
 
   Future<void> load() async {
-    state = MemberListState(members: state.members, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final members = await _api.list();
-      state = MemberListState(members: members, loading: false);
+      state = AsyncState(data: members, loading: false);
     } catch (e) {
-      state = MemberListState(members: state.members, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: e.toString());
     }
   }
 }

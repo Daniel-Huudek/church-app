@@ -24,7 +24,7 @@ class NotificationListScreen extends ConsumerWidget {
             AppHeader(
               title: 'Notificações',
               action: TextButton(
-                onPressed: state.notifications.any((n) => n.isUnread)
+                onPressed: state.data.any((n) => n.isUnread)
                     ? () => ref.read(notificationListProvider.notifier).markAllAsRead()
                     : null,
                 child: const Text('Marcar todas como lidas'),
@@ -35,15 +35,15 @@ class NotificationListScreen extends ConsumerWidget {
                   ? const Center(child: CircularProgressIndicator())
                   : state.error != null
                       ? Center(child: Text('Erro: ${state.error}'))
-                      : state.notifications.isEmpty
+                      : state.data.isEmpty
                           ? Center(child: Text('Nenhuma notificação', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)))
                           : RefreshIndicator(
                               onRefresh: () => ref.read(notificationListProvider.notifier).load(),
                               child: ListView.builder(
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                                itemCount: state.notifications.length,
+                                itemCount: state.data.length,
                                 itemBuilder: (context, index) {
-                                  final n = state.notifications[index];
+                                  final n = state.data[index];
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                                     child: AppCard(

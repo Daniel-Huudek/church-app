@@ -55,8 +55,8 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final insets = MediaQuery.of(context).padding;
     final state = ref.watch(prayerFeedProvider);
-    final list = _filtered(state.prayers);
-    final feedCount = state.prayers.length;
+    final list = _filtered(state.data);
+    final feedCount = state.data.length;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC),
@@ -77,7 +77,7 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
                               ? const Color(0xFFF9FAFB)
                               : const Color(0xFF111827))),
                   const SizedBox(height: 4),
-                  Text(_countText(state.prayers.length),
+                  Text(_countText(state.data.length),
                       style: TextStyle(
                           fontSize: 14,
                           color: isDark
@@ -141,7 +141,7 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _TabButton(
-                      label: 'Meus (${_mineCount(state.prayers)})',
+                      label: 'Meus (${_mineCount(state.data)})',
                       isActive: _activeTab == 1,
                       isDark: isDark,
                       onTap: () {

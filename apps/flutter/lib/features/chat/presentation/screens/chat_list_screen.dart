@@ -21,15 +21,15 @@ class ChatListScreen extends ConsumerWidget {
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
               ? Center(child: Text('Erro: ${state.error}'))
-              : state.rooms.isEmpty
+              : state.data.isEmpty
                   ? const Center(child: Text('Nenhuma conversa'))
                   : RefreshIndicator(
                       onRefresh: () => ref.read(chatRoomListProvider.notifier).load(),
                       child: ListView.builder(
                         padding: const EdgeInsets.all(AppSpacing.lg),
-                        itemCount: state.rooms.length,
+                        itemCount: state.data.length,
                         itemBuilder: (context, index) {
-                          final room = state.rooms[index];
+                          final room = state.data[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: AppSpacing.md),
                             child: AppCard(

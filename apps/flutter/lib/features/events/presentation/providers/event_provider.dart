@@ -2,41 +2,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/event_api.dart';
 import '../../domain/event_model.dart';
+import '../../../../shared/providers/async_state.dart';
 
 final eventApiProvider = Provider<EventApi>((ref) {
   return EventApi(ref.read(apiClientProvider));
 });
 
-class EventListState {
-  final List<EventModel> events;
-  final bool loading;
-  final String? error;
-
-  const EventListState({
-    this.events = const [],
-    this.loading = true,
-    this.error,
-  });
-}
-
-final eventListProvider = StateNotifierProvider.autoDispose<EventListNotifier, EventListState>((ref) {
+final eventListProvider = StateNotifierProvider.autoDispose<EventListNotifier, AsyncState<List<EventModel>>>((ref) {
   return EventListNotifier(ref.read(eventApiProvider));
 });
 
-class EventListNotifier extends StateNotifier<EventListState> {
+class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
   final EventApi _api;
 
-  EventListNotifier(this._api) : super(const EventListState()) {
+  EventListNotifier(this._api) : super(const AsyncState(data: [])) {
     load();
   }
 
   Future<void> load() async {
-    state = EventListState(events: state.events, loading: true);
+    state = AsyncState(data: state.data, loading: true);
     try {
       final events = await _api.list();
-      state = EventListState(events: events, loading: false);
+      state = AsyncState(data: events, loading: false);
     } catch (e) {
-      state = EventListState(events: state.events, loading: false, error: e.toString());
+      state = AsyncState(data: state.data, loading: false, error: e.toString());
     }
   }
 
@@ -45,7 +34,7 @@ class EventListNotifier extends StateNotifier<EventListState> {
       await _api.create(data);
       await load();
     } catch (e) {
-      state = EventListState(events: state.events, loading: false, error: 'Erro ao criar evento: $e');
+      state = AsyncState(data: state.data, loading: false, error: 'Erro ao criar evento: $e');
     }
   }
 
@@ -54,7 +43,7 @@ class EventListNotifier extends StateNotifier<EventListState> {
       await _api.update(id, data);
       await load();
     } catch (e) {
-      state = EventListState(events: state.events, loading: false, error: 'Erro ao atualizar evento: $e');
+      state = AsyncState(data: state.data, loading: false, error: 'Erro ao atualizar evento: $e');
     }
   }
 
@@ -63,7 +52,7 @@ class EventListNotifier extends StateNotifier<EventListState> {
       await _api.delete(id);
       await load();
     } catch (e) {
-      state = EventListState(events: state.events, loading: false, error: 'Erro ao excluir evento: $e');
+      state = AsyncState(data: state.data, loading: false, error: 'Erro ao excluir evento: $e');
     }
   }
 }

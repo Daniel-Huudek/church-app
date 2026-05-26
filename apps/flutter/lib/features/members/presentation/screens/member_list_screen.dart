@@ -24,8 +24,8 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(memberListProvider);
     final members = _selectedFilter == 'Todos'
-        ? state.members
-        : state.members.where((m) => m.status == _selectedFilter).toList();
+        ? state.data
+        : state.data.where((m) => m.status == _selectedFilter).toList();
 
     return Scaffold(
       appBar: AppBar(

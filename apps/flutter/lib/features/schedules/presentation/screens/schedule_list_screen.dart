@@ -44,7 +44,7 @@ class _ScheduleListScreenState extends ConsumerState<ScheduleListScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : state.error != null
                     ? Center(child: Text('Erro: ${state.error}'))
-                    : _selectedTab == 0 ? _buildMine(state.schedules) : _buildAll(state.schedules),
+                    : _selectedTab == 0 ? _buildMine(state.data) : _buildAll(state.data),
           ),
         ],
       ),

@@ -28,7 +28,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
       );
     }
 
-    final dashboard = state.dashboard!;
+    final dashboard = state.data!;
 
     return Scaffold(
       appBar: AppBar(
