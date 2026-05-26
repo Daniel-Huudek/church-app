@@ -15,7 +15,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
     if (state.loading) {
       return Scaffold(
         backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-        appBar: _buildAppBar(isDark),
+        appBar: _buildAppBar(context, isDark),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -23,7 +23,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
     if (state.error != null) {
       return Scaffold(
         backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-        appBar: _buildAppBar(isDark),
+        appBar: _buildAppBar(context, isDark),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -45,7 +45,7 @@ class FinanceDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-      appBar: _buildAppBar(isDark),
+      appBar: _buildAppBar(context, isDark),
       body: RefreshIndicator(
         onRefresh: () => ref.read(financeDashboardProvider.notifier).load(),
         child: ListView(
@@ -75,11 +75,26 @@ class FinanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(bool isDark) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, bool isDark) {
     return AppBar(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
       elevation: 0,
       scrolledUnderElevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: GestureDetector(
+          onTap: () => Navigator.of(context).maybePop(),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.arrow_back_rounded, size: 22,
+              color: isDark ? AppColors.darkText : AppColors.lightText),
+          ),
+        ),
+      ),
       title: Text('Finanças', style: TextStyle(
         fontSize: 22, fontWeight: FontWeight.w700,
         color: isDark ? AppColors.darkText : AppColors.lightText,

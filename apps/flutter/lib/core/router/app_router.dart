@@ -75,7 +75,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(
-          hideNav: state.matchedLocation == '/prayers/create' || state.matchedLocation.startsWith('/worship'),
+          hideNav: state.matchedLocation == '/prayers/create' || state.matchedLocation.startsWith('/worship') || state.matchedLocation.startsWith('/finance'),
           child: child,
         ),
         routes: [
