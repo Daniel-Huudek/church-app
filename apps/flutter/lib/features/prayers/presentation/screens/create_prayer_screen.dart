@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/prayer_provider.dart';
+import '../../../../shared/utils/error_helper.dart';
 
 class CreatePrayerScreen extends ConsumerStatefulWidget {
   const CreatePrayerScreen({super.key});
@@ -32,7 +33,7 @@ class _CreatePrayerScreenState extends ConsumerState<CreatePrayerScreen> {
     if (!_canSubmit) return;
     setState(() => _loading = true);
     try {
-      await ref.read(prayerApiProvider).create({
+      await ref.read(prayerFeedProvider.notifier).create({
         'title': _titleCtrl.text.trim(),
         'content': _contentCtrl.text.trim(),
         'isAnonymous': _isAnonymous,
@@ -46,7 +47,7 @@ class _CreatePrayerScreenState extends ConsumerState<CreatePrayerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro: $e'),
+          content: Text(formatError(e)),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
