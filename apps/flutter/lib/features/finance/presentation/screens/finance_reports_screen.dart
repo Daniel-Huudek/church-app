@@ -58,11 +58,11 @@ class FinanceReportsScreen extends ConsumerWidget {
                         _summaryCard('Saldo', state.report!['balance'] ?? 0, true, card, t1, t2, border),
                       ],
                     )
-                  : _reportMenu(t1, t2, card, border, bg),
+                  : _reportMenu(ref, t1, t2, card, border, bg),
     );
   }
 
-  Widget _reportMenu(Color t1, Color t2, Color card, Color border, Color bg) {
+  Widget _reportMenu(WidgetRef ref, Color t1, Color t2, Color card, Color border, Color bg) {
     final reports = [
       ('Receitas Mensais', '📊'),
       ('Despesas Mensais', '📉'),

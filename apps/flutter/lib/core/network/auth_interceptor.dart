@@ -42,10 +42,9 @@ class AuthInterceptor extends Interceptor {
         return handler.reject(err);
       }
 
-      final response = await Dio().post(
+      final response = await Dio(BaseOptions(baseUrl: err.requestOptions.baseUrl)).post(
         '/auth/refresh',
         data: {'refreshToken': refreshToken},
-        options: Options(baseUrl: err.requestOptions.baseUrl),
       );
 
       final newAccessToken = response.data['accessToken'] as String;

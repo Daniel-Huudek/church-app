@@ -1,5 +1,4 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { UnauthorizedError } from './errors.js';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 
 const ALLOWED_ROLES = {
@@ -39,10 +38,10 @@ export function authorize(...allowedRoles: Role[]) {
   };
 }
 
-export function getUserId(request: FastifyRequest): string {
+export function getUserId(request: FastifyRequest): string | undefined {
   return request.user?.userId;
 }
 
-export function getUserRole(request: FastifyRequest): string {
+export function getUserRole(request: FastifyRequest): string | undefined {
   return request.user?.role;
 }

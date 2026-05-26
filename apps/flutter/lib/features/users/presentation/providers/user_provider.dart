@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/user_api.dart';
-import '../../../shared/models/user_model.dart';
+import '../../../../shared/models/user_model.dart';
 
 final userApiProvider = Provider<UserApi>((ref) {
   return UserApi(ref.read(apiClientProvider));

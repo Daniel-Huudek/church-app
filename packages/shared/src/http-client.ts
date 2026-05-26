@@ -41,7 +41,7 @@ export class HttpClient {
 
       clearTimeout(timeoutId);
 
-      const data = await response.json();
+      const data: T = await response.json();
 
       if (!response.ok) {
         logger.error(`HTTP ${response.status}`, undefined, {
@@ -49,10 +49,11 @@ export class HttpClient {
           method,
           status: response.status,
         });
+        const errorData = data as { message?: string; code?: string };
         throw new AppError(
-          data.message || 'Request failed',
+          errorData.message || 'Request failed',
           response.status,
-          data.code
+          errorData.code
         );
       }
 

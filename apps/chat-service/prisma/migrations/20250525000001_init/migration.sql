@@ -1,4 +1,4 @@
-﻿-- CreateEnum
+-- CreateEnum
 CREATE TYPE "ChatRoomType" AS ENUM ('DIRECT', 'GROUP', 'MINISTRY');
 
 -- CreateEnum

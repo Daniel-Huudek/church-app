@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { AppError } from '@church-app/shared';
 
 export class ChatService {
@@ -36,7 +36,7 @@ export class ChatService {
   }
 
   async getMessages(roomId: string, userId: string, page: number, limit: number) {
-    const room = await this.getRoom(roomId, userId);
+    await this.getRoom(roomId, userId);
     const messages = await this.prisma.chatMessage.findMany({
       where: { roomId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
@@ -50,7 +50,7 @@ export class ChatService {
   }
 
   async sendMessage(roomId: string, userId: string, content: string, type: string = 'TEXT') {
-    const room = await this.getRoom(roomId, userId);
+    await this.getRoom(roomId, userId);
     const message = await this.prisma.chatMessage.create({
       data: { roomId, senderId: userId, content, type: type as any },
     });
