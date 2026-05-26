@@ -76,19 +76,19 @@ export class PrayerService {
     return { success: true, data };
   }
 
-  async update(id: string, userId: string, body: any) {
+  async update(id: string, userId: string, body: any, role?: string) {
     const existing = await this.prisma.prayerRequest.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundError('Prayer request not found');
-    if (existing.authorId !== userId) throw new ForbiddenError('Not authorized');
+    if (existing.authorId !== userId && role !== 'ADMINISTRADOR') throw new ForbiddenError('Not authorized');
 
     const data = await this.prisma.prayerRequest.update({ where: { id }, data: body, include: { category: true } });
     return { success: true, data };
   }
 
-  async delete(id: string, userId: string) {
+  async delete(id: string, userId: string, role?: string) {
     const existing = await this.prisma.prayerRequest.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundError('Prayer request not found');
-    if (existing.authorId !== userId) throw new ForbiddenError('Not authorized');
+    if (existing.authorId !== userId && role !== 'ADMINISTRADOR') throw new ForbiddenError('Not authorized');
     await this.prisma.prayerRequest.update({ where: { id }, data: { deletedAt: new Date() } });
     return { success: true };
   }

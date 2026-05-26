@@ -86,15 +86,15 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.put('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.query as Record<string, string | undefined>;
+    const { userId, role } = request.query as Record<string, string | undefined>;
     const body = validate(prayerSchema.partial(), request.body);
-    const data = await service.update(request.params.id, userId ?? '', body);
+    const data = await service.update(request.params.id, userId ?? '', body, role);
     return reply.send(data);
   });
 
   fastify.delete('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.query as Record<string, string | undefined>;
-    await service.delete(request.params.id, userId ?? '');
+    const { userId, role } = request.query as Record<string, string | undefined>;
+    await service.delete(request.params.id, userId ?? '', role);
     return reply.send({ success: true });
   });
 

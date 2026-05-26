@@ -150,7 +150,7 @@ export async function prayerRoutes(fastify: FastifyInstance) {
 
   fastify.put<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
-      const data = await prayerClient.put(`/prayers/${request.params.id}`, { ...(request.body as object), userId: request.user.userId }, getAuthHeader(request));
+      const data = await prayerClient.put(`/prayers/${request.params.id}?role=${request.user.role}`, { ...(request.body as object), userId: request.user.userId }, getAuthHeader(request));
       await reply.send(await enrichWithAuthors(data, getAuthHeader(request)));
     } catch (error: any) {
       await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
@@ -159,7 +159,7 @@ export async function prayerRoutes(fastify: FastifyInstance) {
 
   fastify.delete<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
-      const data = await prayerClient.delete(`/prayers/${request.params.id}?userId=${request.user.userId}`, getAuthHeader(request));
+      const data = await prayerClient.delete(`/prayers/${request.params.id}?userId=${request.user.userId}&role=${request.user.role}`, getAuthHeader(request));
       await reply.send(data);
     } catch (error: any) {
       await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
