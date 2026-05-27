@@ -7,11 +7,11 @@ COPY apps/member-service/package.json ./apps/member-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install
+RUN npm install -g pnpm && pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN npm run build --workspace=@church-app/shared
+RUN pnpm --filter @church-app/shared build
 
 COPY apps/member-service/prisma ./apps/member-service/prisma
 COPY apps/member-service/src ./apps/member-service/src
@@ -24,3 +24,4 @@ USER node
 
 EXPOSE 3006
 CMD ["./start.sh"]
+

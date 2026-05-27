@@ -7,11 +7,11 @@ COPY apps/chat-service/package.json ./apps/chat-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install
+RUN npm install -g pnpm && pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN npm run build --workspace=@church-app/shared
+RUN pnpm --filter @church-app/shared build
 
 COPY apps/chat-service/prisma ./apps/chat-service/prisma
 COPY apps/chat-service/src ./apps/chat-service/src
@@ -24,3 +24,4 @@ USER node
 
 EXPOSE 3002
 CMD ["./start.sh"]
+

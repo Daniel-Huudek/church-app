@@ -7,11 +7,11 @@ COPY apps/auth-service/package.json ./apps/auth-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install
+RUN npm install -g pnpm && pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN npm run build --workspace=@church-app/shared
+RUN pnpm --filter @church-app/shared build
 
 COPY apps/auth-service/prisma ./apps/auth-service/prisma
 COPY apps/auth-service/src ./apps/auth-service/src
@@ -24,3 +24,4 @@ USER node
 
 EXPOSE 3001
 CMD ["./start.sh"]
+

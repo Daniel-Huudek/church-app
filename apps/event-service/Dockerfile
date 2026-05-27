@@ -7,11 +7,11 @@ COPY apps/event-service/package.json ./apps/event-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install
+RUN npm install -g pnpm && pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN npm run build --workspace=@church-app/shared
+RUN pnpm --filter @church-app/shared build
 
 COPY apps/event-service/prisma ./apps/event-service/prisma
 COPY apps/event-service/src ./apps/event-service/src
@@ -24,3 +24,4 @@ USER node
 
 EXPOSE 3004
 CMD ["./start.sh"]
+

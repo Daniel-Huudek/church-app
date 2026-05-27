@@ -7,11 +7,11 @@ COPY apps/prayer-service/package.json ./apps/prayer-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install
+RUN npm install -g pnpm && pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN npm run build --workspace=@church-app/shared
+RUN pnpm --filter @church-app/shared build
 
 COPY apps/prayer-service/prisma ./apps/prayer-service/prisma
 COPY apps/prayer-service/src ./apps/prayer-service/src
@@ -24,3 +24,4 @@ USER node
 
 EXPOSE 3007
 CMD ["./start.sh"]
+

@@ -7,11 +7,11 @@ COPY apps/notification-service/package.json ./apps/notification-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install
+RUN npm install -g pnpm && pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN npm run build --workspace=@church-app/shared
+RUN pnpm --filter @church-app/shared build
 
 COPY apps/notification-service/prisma ./apps/notification-service/prisma
 COPY apps/notification-service/src ./apps/notification-service/src
@@ -24,3 +24,4 @@ USER node
 
 EXPOSE 3005
 CMD ["./start.sh"]
+

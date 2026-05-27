@@ -7,11 +7,11 @@ COPY apps/financial-service/package.json ./apps/financial-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install
+RUN npm install -g pnpm && pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN npm run build --workspace=@church-app/shared
+RUN pnpm --filter @church-app/shared build
 
 COPY apps/financial-service/prisma ./apps/financial-service/prisma
 COPY apps/financial-service/src ./apps/financial-service/src
@@ -24,3 +24,4 @@ USER node
 
 EXPOSE 3008
 CMD ["./start.sh"]
+
