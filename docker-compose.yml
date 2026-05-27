@@ -1,8 +1,5 @@
 services:
   api-gateway:
-    build:
-      context: .
-      dockerfile: apps/api-gateway/Dockerfile
     container_name: church-app-api-gateway
     restart: unless-stopped
     ports:
@@ -59,9 +56,6 @@ services:
     cpus: 0.5
 
   auth-service:
-    build:
-      context: .
-      dockerfile: apps/auth-service/Dockerfile
     container_name: church-app-auth-service
     restart: unless-stopped
     environment:
@@ -90,9 +84,6 @@ services:
     cpus: 0.5
 
   member-service:
-    build:
-      context: .
-      dockerfile: apps/member-service/Dockerfile
     container_name: church-app-member-service
     restart: unless-stopped
     environment:
@@ -116,9 +107,6 @@ services:
     cpus: 0.5
 
   schedule-service:
-    build:
-      context: .
-      dockerfile: apps/schedule-service/Dockerfile
     container_name: church-app-schedule-service
     restart: unless-stopped
     environment:
@@ -142,9 +130,6 @@ services:
     cpus: 0.5
 
   event-service:
-    build:
-      context: .
-      dockerfile: apps/event-service/Dockerfile
     container_name: church-app-event-service
     restart: unless-stopped
     environment:
@@ -168,9 +153,6 @@ services:
     cpus: 0.5
 
   notification-service:
-    build:
-      context: .
-      dockerfile: apps/notification-service/Dockerfile
     container_name: church-app-notification-service
     restart: unless-stopped
     environment:
@@ -196,9 +178,6 @@ services:
     cpus: 0.5
 
   prayer-service:
-    build:
-      context: .
-      dockerfile: apps/prayer-service/Dockerfile
     container_name: church-app-prayer-service
     restart: unless-stopped
     environment:
@@ -222,9 +201,6 @@ services:
     cpus: 0.5
 
   financial-service:
-    build:
-      context: .
-      dockerfile: apps/financial-service/Dockerfile
     container_name: church-app-financial-service
     restart: unless-stopped
     environment:
@@ -248,9 +224,6 @@ services:
     cpus: 0.5
 
   worship-service:
-    build:
-      context: .
-      dockerfile: apps/worship-service/Dockerfile
     container_name: church-app-worship-service
     ports:
       - "3010"
@@ -275,9 +248,6 @@ services:
     cpus: 0.5
 
   chat-service:
-    build:
-      context: .
-      dockerfile: apps/chat-service/Dockerfile
     container_name: church-app-chat-service
     restart: unless-stopped
     environment:
