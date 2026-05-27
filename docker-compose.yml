@@ -52,8 +52,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -83,8 +83,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -109,8 +109,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3006/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -135,8 +135,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -161,8 +161,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -189,8 +189,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3005/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -215,8 +215,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3007/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -241,8 +241,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3008/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -268,8 +268,8 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3010/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 60s
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -294,7 +294,7 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
     mem_limit: 128m
     mem_reservation: 64m
     cpus: 0.25
@@ -313,7 +313,7 @@ services:
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d church_app"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -327,4 +327,6 @@ networks:
 
 volumes:
   postgres-data:
+
+
 
