@@ -1,5 +1,6 @@
 FROM node:22-alpine
 RUN apk add --no-cache wget
+ENV CI=true
 WORKDIR /app
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
@@ -7,7 +8,14 @@ COPY apps/api-gateway/package.json ./apps/api-gateway/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN npm install -g pnpm && pnpm install
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
+RUN pnpm config set fetch-timeout 120000
+RUN pnpm config set network-timeout 120000
+RUN pnpm config set network-concurrency 3
+RUN pnpm config set child-concurrency 2
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
@@ -23,4 +31,3 @@ USER node
 
 EXPOSE 3030
 CMD ["./start.sh"]
-
