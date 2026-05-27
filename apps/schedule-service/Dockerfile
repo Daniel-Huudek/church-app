@@ -1,26 +1,28 @@
 FROM node:22-alpine
 RUN apk add --no-cache openssl wget
+RUN npm install -g pnpm
 WORKDIR /app
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY apps/schedule-service/package.json ./apps/schedule-service/
-COPY packages/shared ./packages/shared
-COPY packages/tsconfig ./packages/tsconfig
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-WORKDIR /app/apps/schedule-service
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
-
+COPY packages/shared/ ./packages/shared/
+COPY packages/tsconfig/ ./packages/tsconfig/
 RUN pnpm --filter @church-app/shared build
 
-COPY apps/schedule-service/prisma ./prisma
-COPY apps/schedule-service/start.sh ./
-COPY apps/schedule-service/src ./src
+COPY apps/schedule-service/prisma ./apps/schedule-service/prisma
+COPY apps/schedule-service/src ./apps/schedule-service/src
+COPY apps/schedule-service/start.sh ./apps/schedule-service/start.sh
 
+WORKDIR /app/apps/schedule-service
 RUN npx prisma generate && chmod +x start.sh
 RUN chown -R node:node /app
 USER node
 
 EXPOSE 3003
-
 CMD ["./start.sh"]

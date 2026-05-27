@@ -9,6 +9,7 @@ on:
 env:
   NODE_VERSION: '22'
   PNPM_VERSION: '11'
+  ALL_SERVICES: '["api-gateway","auth-service","chat-service","event-service","financial-service","member-service","notification-service","prayer-service","schedule-service","worship-service"]'
 
 jobs:
   lint-and-test:
@@ -31,32 +32,47 @@ jobs:
       - name: Secret scanning
         uses: gitleaks/gitleaks-action@v2
 
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.set-matrix.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED=$(git diff --name-only HEAD~1 -- apps/ | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            if [ "$CHANGED" = "[]" ]; then
+              echo "services=${{ env.ALL_SERVICES }}" >> "$GITHUB_OUTPUT"
+            else
+              echo "services=$CHANGED" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "services=${{ env.ALL_SERVICES }}" >> "$GITHUB_OUTPUT"
+          fi
+
   docker-build:
     runs-on: ubuntu-latest
-    needs: [lint-and-test]
+    needs: [lint-and-test, detect-changes]
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Cache Docker layers
-        uses: actions/cache@v4
+      - name: Build ${{ matrix.service }}
+        uses: docker/build-push-action@v6
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-      - name: Build changed services
-        run: |
-          CHANGED=$(git diff --name-only HEAD~1 -- apps/ | cut -d'/' -f2 | sort -u)
-          if [ -z "$CHANGED" ]; then
-            echo "No service changes detected, building all"
-            docker compose build --parallel
-          else
-            for svc in $CHANGED; do
-              echo "Building $svc"
-              docker compose build --parallel "$svc" 2>/dev/null || true
-            done
-          fi
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: false
+          tags: church-app/${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
         env:
           DOCKER_BUILDKIT: 1
           BUILDKIT_PROGRESS: plain

@@ -14,3 +14,11 @@ README.md
 *.log
 .DS_Store
 Thumbs.db
+
+# Monorepo — exclude everything not needed for Docker build
+apps/flutter/
+packages/eslint-config/
+apps/*/node_modules
+apps/*/dist
+packages/*/node_modules
+packages/*/dist
