@@ -15,7 +15,7 @@ RUN pnpm config set network-concurrency 3
 RUN pnpm config set child-concurrency 2
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
