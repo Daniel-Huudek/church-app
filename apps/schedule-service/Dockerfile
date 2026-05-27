@@ -1,6 +1,6 @@
 FROM node:22-alpine
 RUN apk add --no-cache openssl wget
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@11 --activate
 WORKDIR /app
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
