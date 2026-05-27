@@ -1,6 +1,5 @@
 FROM node:22-alpine
 RUN apk add --no-cache openssl wget
-RUN corepack enable && corepack prepare pnpm@11 --activate
 WORKDIR /app
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
@@ -8,12 +7,11 @@ COPY apps/event-service/package.json ./apps/event-service/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install 
+RUN npm install
 
 COPY packages/shared/ ./packages/shared/
 COPY packages/tsconfig/ ./packages/tsconfig/
-RUN pnpm --filter @church-app/shared build
+RUN npm run build --workspace=@church-app/shared
 
 COPY apps/event-service/prisma ./apps/event-service/prisma
 COPY apps/event-service/src ./apps/event-service/src
