@@ -12,17 +12,13 @@ class NotificationApi {
       ApiConfig.notifications,
       queryParameters: {'page': page, 'limit': limit},
     );
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>;
-    return list
-        .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, NotificationModel.fromJson);
   }
 
   Future<int> getUnreadCount() async {
     final response = await _client.get(ApiConfig.unreadCount);
-    final data = response.data as Map<String, dynamic>;
-    return (data['data'] as Map<String, dynamic>)['unread'] as int? ?? 0;
+    final data = _client.unwrapData(response.data);
+    return data['unread'] as int? ?? 0;
   }
 
   Future<void> markAllAsRead() async {

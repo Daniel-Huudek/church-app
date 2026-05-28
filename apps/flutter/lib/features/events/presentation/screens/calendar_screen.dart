@@ -178,7 +178,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                           ),
                                           ...section.events.map((event) =>
                                             EventCard(
-                                              event: event.toEventCardMap(),
+                                              event: event,
                                               onPress: () => context.go('/calendar/${event.id}'),
                                             )),
                                         ],

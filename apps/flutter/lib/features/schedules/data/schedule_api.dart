@@ -12,23 +12,17 @@ class ScheduleApi {
       ApiConfig.schedules,
       queryParameters: {'page': page},
     );
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>? ?? data as List<dynamic>;
-    return list
-        .map((e) => ScheduleModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, ScheduleModel.fromJson);
   }
 
   Future<ScheduleModel> getById(String id) async {
     final response = await _client.get('${ApiConfig.schedules}/$id');
-    final data = response.data as Map<String, dynamic>;
-    return ScheduleModel.fromJson(data['data'] as Map<String, dynamic>);
+    return ScheduleModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<ScheduleModel> create(Map<String, dynamic> data) async {
     final response = await _client.post(ApiConfig.schedules, data: data);
-    final result = response.data as Map<String, dynamic>;
-    return ScheduleModel.fromJson(result['data'] as Map<String, dynamic>);
+    return ScheduleModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<void> confirmPresence(String scheduleId, String positionId) async {

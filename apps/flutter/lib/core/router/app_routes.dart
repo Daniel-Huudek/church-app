@@ -1,0 +1,40 @@
+class AppRoutes {
+  AppRoutes._();
+
+  static const String splash = '/splash';
+  static const String login = '/login';
+  static const String home = '/';
+  static const String dashboard = '/dashboard';
+  static const String prayers = '/prayers';
+  static const String prayersCreate = '/prayers/create';
+  static String prayerDetail(String id) => '/prayers/$id';
+  static const String calendar = '/calendar';
+  static const String calendarCreate = '/calendar/create';
+  static String calendarDetail(String id) => '/calendar/$id';
+  static String calendarEdit(String id) => '/calendar/$id/edit';
+  static const String profile = '/profile';
+  static const String settings = '/settings';
+  static const String schedules = '/schedules';
+  static const String schedulesCreate = '/schedules/create';
+  static String scheduleDetail(String id) => '/schedules/$id';
+  static const String members = '/members';
+  static String memberDetail(String id) => '/members/$id';
+  static const String finance = '/finance';
+  static const String financeTransactions = '/finance/transactions';
+  static const String financeReports = '/finance/reports';
+  static const String financeCashFlow = '/finance/cash-flow';
+  static String financeCreate(String type) => '/finance/create/$type';
+  static const String worship = '/worship';
+  static const String worshipScaleCreate = '/worship/scale/create';
+  static String worshipScaleDetail(String id) => '/worship/scale/$id';
+  static String worshipScaleEdit(String id) => '/worship/scale/$id/edit';
+  static const String worshipRepertorioCreate = '/worship/repertorio/create';
+  static String worshipSongDetail(String id) => '/worship/songs/$id';
+  static String worshipSongEdit(String id) => '/worship/songs/$id/edit';
+  static const String notifications = '/notifications';
+  static const String chat = '/chat';
+  static String chatDetail(String id) => '/chat/$id';
+  static const String users = '/users';
+  static const String usersRoles = '/users/roles';
+  static String userEdit(String id) => '/users/$id/edit';
+}

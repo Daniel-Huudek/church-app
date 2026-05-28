@@ -9,15 +9,7 @@ class FinanceApi {
 
   Future<FinanceDashboardModel> getDashboard() async {
     final response = await _client.get(ApiConfig.financeDashboard);
-    final raw = response.data;
-    if (raw is! Map<String, dynamic>) {
-      throw FormatException('Resposta inesperada: ${raw.runtimeType}');
-    }
-    final inner = raw['data'];
-    if (inner is! Map<String, dynamic>) {
-      throw FormatException('Formato inesperado do dashboard: $inner');
-    }
-    return FinanceDashboardModel.fromJson(inner);
+    return FinanceDashboardModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<List<TransactionModel>> getTransactions({
@@ -33,20 +25,12 @@ class FinanceApi {
       ApiConfig.transactions,
       queryParameters: params,
     );
-    final body = response.data as Map<String, dynamic>;
-    final inner = body['data'];
-    final list = inner is List ? inner as List<dynamic>
-        : (inner as Map<String, dynamic>)['data'] as List<dynamic>;
-    return list
-        .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, TransactionModel.fromJson);
   }
 
   Future<TransactionModel> createTransaction(Map<String, dynamic> data) async {
     final response = await _client.post(ApiConfig.transactions, data: data);
-    final result = response.data as Map<String, dynamic>;
-    return TransactionModel.fromJson(
-        result['data'] as Map<String, dynamic>);
+    return TransactionModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<void> confirmTransaction(String id) async {
@@ -63,11 +47,7 @@ class FinanceApi {
 
   Future<List<CashFlowMonthModel>> getCashFlow() async {
     final response = await _client.get(ApiConfig.financeCashFlow);
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>;
-    return list
-        .map((e) => CashFlowMonthModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, CashFlowMonthModel.fromJson);
   }
 
   Future<Map<String, dynamic>> getReportMonthly({int? year, int? month}) async {
@@ -78,7 +58,6 @@ class FinanceApi {
       ApiConfig.financeReportsMonthly,
       queryParameters: params,
     );
-    final data = response.data as Map<String, dynamic>;
-    return data['data'] as Map<String, dynamic>;
+    return _client.unwrapData(response.data);
   }
 }

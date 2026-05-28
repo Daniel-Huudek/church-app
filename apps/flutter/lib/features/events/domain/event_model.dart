@@ -50,16 +50,6 @@ class EventModel {
     'organizerId': organizerId,
   };
 
-  Map<String, dynamic> toEventCardMap() => {
-    'id': id,
-    'type': type,
-    'title': title,
-    'date': date.toIso8601String(),
-    'time': startTime,
-    'location': location ?? '',
-    'participants': List.generate(participants, (_) => <String, dynamic>{}),
-  };
-
   factory EventModel.fromJson(Map<String, dynamic> json) {
     return EventModel(
       id: json['id'] as String,
@@ -81,4 +71,14 @@ class EventModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EventModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

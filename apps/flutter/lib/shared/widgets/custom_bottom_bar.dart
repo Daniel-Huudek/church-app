@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../core/config/theme/app_colors.dart';
 
 class TabData {
   final String key;
@@ -31,7 +32,7 @@ class TabItem extends StatelessWidget {
     required this.onTap,
   });
 
-  Color get _activeColor => tab.key == '' ? const Color(0xFF9CA3AF) : const Color(0xFF008CFF);
+  Color get _activeColor => tab.key == '' ? AppColors.neutral400 : AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +44,8 @@ class TabItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: isFocused
               ? (isDark
-                  ? const Color(0x266B7280)
-                  : const Color(0x269CA3AF))
+                  ? AppColors.neutral500.withValues(alpha: 0.15)
+                  : AppColors.neutral400.withValues(alpha: 0.15))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
@@ -57,7 +58,7 @@ class TabItem extends StatelessWidget {
                     'assets/images/home.png',
                     width: 25,
                     height: 25,
-                    color: isFocused ? _activeColor : const Color(0xFF9CA3AF),
+                    color: isFocused ? _activeColor : AppColors.neutral400,
                   )
                 : tab.key == 'prayers'
                     ? SvgPicture.asset(
@@ -65,14 +66,14 @@ class TabItem extends StatelessWidget {
                         width: 25,
                         height: 25,
                         colorFilter: ColorFilter.mode(
-                          isFocused ? _activeColor : const Color(0xFF9CA3AF),
+                          isFocused ? _activeColor : AppColors.neutral400,
                           BlendMode.srcIn,
                         ),
                       )
                     : Icon(
                         isFocused ? tab.activeIcon : tab.icon,
                         size: 25,
-                        color: isFocused ? _activeColor : const Color(0xFF9CA3AF),
+                        color: isFocused ? _activeColor : AppColors.neutral400,
                       ),
             if (isFocused) ...[
               const SizedBox(width: 8),
@@ -140,7 +141,7 @@ class ProfileAvatar extends StatelessWidget {
       height: size,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: Color(0xFF008CFF),
+        color: AppColors.primary,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -183,15 +184,15 @@ class CustomBottomBar extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 10),
           decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.darkSurface.withValues(alpha: 0.94)
+              : Colors.white.withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
             color: isDark
-                ? const Color(0xEF161622)
-                : const Color(0xEFFFFFFF),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.black.withValues(alpha: 0.05),
-            ),
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.05),
+          ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),

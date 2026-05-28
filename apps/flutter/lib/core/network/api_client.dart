@@ -75,4 +75,20 @@ class ApiClient {
   }) {
     return _dio.delete<T>(path, data: data, queryParameters: queryParameters);
   }
+
+  Map<String, dynamic> unwrapData(dynamic responseData) {
+    final map = responseData as Map<String, dynamic>;
+    if (map.containsKey('data')) {
+      final inner = map['data'];
+      if (inner is Map<String, dynamic>) return inner;
+      if (inner is List) return {'list': inner};
+    }
+    return map;
+  }
+
+  List<T> unwrapList<T>(dynamic responseData, T Function(Map<String, dynamic>) fromJson) {
+    final map = responseData as Map<String, dynamic>;
+    final list = map['data'] as List<dynamic>? ?? [];
+    return list.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+  }
 }

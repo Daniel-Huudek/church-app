@@ -1,45 +1,48 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/constants.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorage {
   SecureStorage._();
 
-  static Future<SharedPreferences> get _prefs async =>
-      SharedPreferences.getInstance();
+  static const _storage = FlutterSecureStorage();
+
+  static const _accessTokenKey = '@church_app_access_token';
+  static const _refreshTokenKey = '@church_app_refresh_token';
+  static const _userKey = '@church_app_user';
+  static const _themeKey = '@church_app_theme';
 
   static Future<void> setAccessToken(String token) async {
-    await (await _prefs).setString(AppConstants.accessTokenKey, token);
+    await _storage.write(key: _accessTokenKey, value: token);
   }
 
   static Future<String?> getAccessToken() async {
-    return (await _prefs).getString(AppConstants.accessTokenKey);
+    return _storage.read(key: _accessTokenKey);
   }
 
   static Future<void> setRefreshToken(String token) async {
-    await (await _prefs).setString(AppConstants.refreshTokenKey, token);
+    await _storage.write(key: _refreshTokenKey, value: token);
   }
 
   static Future<String?> getRefreshToken() async {
-    return (await _prefs).getString(AppConstants.refreshTokenKey);
+    return _storage.read(key: _refreshTokenKey);
   }
 
   static Future<void> setUser(String userJson) async {
-    await (await _prefs).setString(AppConstants.userKey, userJson);
+    await _storage.write(key: _userKey, value: userJson);
   }
 
   static Future<String?> getUser() async {
-    return (await _prefs).getString(AppConstants.userKey);
+    return _storage.read(key: _userKey);
   }
 
   static Future<void> setThemeMode(String mode) async {
-    await (await _prefs).setString(AppConstants.themeKey, mode);
+    await _storage.write(key: _themeKey, value: mode);
   }
 
   static Future<String?> getThemeMode() async {
-    return (await _prefs).getString(AppConstants.themeKey);
+    return _storage.read(key: _themeKey);
   }
 
   static Future<void> clearAll() async {
-    await (await _prefs).clear();
+    await _storage.deleteAll();
   }
 }

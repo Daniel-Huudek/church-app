@@ -21,29 +21,22 @@ class EventApi {
       ApiConfig.events,
       queryParameters: params,
     );
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>;
-    return list
-        .map((e) => EventModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, EventModel.fromJson);
   }
 
   Future<EventModel> getById(String id) async {
     final response = await _client.get('${ApiConfig.events}/$id');
-    final data = response.data as Map<String, dynamic>;
-    return EventModel.fromJson(data['data'] as Map<String, dynamic>);
+    return EventModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<EventModel> create(Map<String, dynamic> data) async {
     final response = await _client.post(ApiConfig.events, data: data);
-    final result = response.data as Map<String, dynamic>;
-    return EventModel.fromJson(result['data'] as Map<String, dynamic>);
+    return EventModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<EventModel> update(String id, Map<String, dynamic> data) async {
     final response = await _client.put('${ApiConfig.events}/$id', data: data);
-    final result = response.data as Map<String, dynamic>;
-    return EventModel.fromJson(result['data'] as Map<String, dynamic>);
+    return EventModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<void> delete(String id) async {
@@ -52,7 +45,7 @@ class EventApi {
 
   Future<List<String>> getTypes() async {
     final response = await _client.get(ApiConfig.eventTypes);
-    final data = response.data as Map<String, dynamic>;
-    return (data['data'] as List<dynamic>).cast<String>();
+    final list = _client.unwrapList(response.data, (m) => m['value'] as String);
+    return list.map((e) => e.toString()).toList();
   }
 }
