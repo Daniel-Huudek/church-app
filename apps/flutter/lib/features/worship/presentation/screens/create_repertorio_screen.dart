@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/worship_api.dart';
 
@@ -14,6 +15,7 @@ class CreateRepertorioScreen extends ConsumerStatefulWidget {
 class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
     with SingleTickerProviderStateMixin {
   late final WorshipApi _worshipApi;
+  final _urlCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
   final _artistCtrl = TextEditingController();
   final _bpmCtrl = TextEditingController();
@@ -25,6 +27,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
   final _notesCtrl = TextEditingController();
   final _keyCtrl = TextEditingController();
   bool _saving = false;
+  bool _fetching = false;
   late final AnimationController _animCtrl;
   late final Animation<double> _fadeAnim;
 
@@ -38,6 +41,44 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
     );
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
+  }
+
+  Future<void> _fetchFromWeb() async {
+    final url = _urlCtrl.text.trim();
+    if (url.isEmpty) {
+      _showError('Informe a URL da música');
+      return;
+    }
+    setState(() => _fetching = true);
+    try {
+      final data = await _worshipApi.fetchSong(url);
+      _titleCtrl.text = data['title'] as String? ?? '';
+      _artistCtrl.text = data['artist'] as String? ?? '';
+      _keyCtrl.text = data['key'] as String? ?? '';
+      _lyricsCtrl.text = data['lyrics'] as String? ?? '';
+      _chordsCtrl.text = data['chords'] as String? ?? '';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              const Expanded(child: Text('Música encontrada! Campos preenchidos.', style: TextStyle(fontSize: 14))),
+            ]),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      _showError('Erro ao buscar: $e');
+    } finally {
+      if (mounted) setState(() => _fetching = false);
+    }
   }
 
   Future<void> _save() async {
@@ -76,7 +117,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
           const SizedBox(width: 10),
           Expanded(child: Text(msg, style: const TextStyle(fontSize: 14))),
         ]),
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -88,6 +129,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
 
   @override
   void dispose() {
+    _urlCtrl.dispose();
     _titleCtrl.dispose();
     _artistCtrl.dispose();
     _keyCtrl.dispose();
@@ -105,7 +147,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
+    final bg = isDark ? AppColors.darkBg : const Color(0xFFF8FAFC);
 
     return Scaffold(
       backgroundColor: bg,
@@ -116,11 +158,11 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
         leading: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF008CFF).withValues(alpha: 0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF008CFF), size: 24),
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary, size: 24),
             onPressed: () => context.pop(),
           ),
         ),
@@ -129,7 +171,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : const Color(0xFF111827),
+            color: isDark ? Colors.white : AppColors.lightText,
           ),
         ),
       ),
@@ -141,7 +183,9 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              _buildFetchSection(isDark),
+              const SizedBox(height: 20),
               _buildSection('Informações', Icons.music_note_rounded, [
                 _input(_titleCtrl, 'Nome da Versão', icon: Icons.music_note_outlined),
                 const SizedBox(height: 14),
@@ -184,6 +228,103 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
     );
   }
 
+  Widget _buildFetchSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.08),
+            AppColors.primary.withValues(alpha: 0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.language_rounded, size: 16, color: AppColors.primary),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Importar da Web',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkBg : AppColors.neutral50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  ),
+                  child: TextField(
+                    controller: _urlCtrl,
+                    style: TextStyle(fontSize: 14, color: isDark ? Colors.white : AppColors.lightText),
+                    decoration: InputDecoration(
+                      hintText: 'https://cifraclub.com/...',
+                      hintStyle: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: _fetching ? null : _fetchFromWeb,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  child: _fetching
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.search_rounded, size: 18),
+                            SizedBox(width: 6),
+                            Text('Buscar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cole o link do CifraClub ou Letras.mus.br',
+            style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -191,14 +332,14 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF008CFF), Color(0xFF0066CC)],
+          colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF008CFF).withValues(alpha: 0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -244,10 +385,10 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF161622) : Colors.white,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFF3F4F6),
+          color: isDark ? AppColors.darkBorderLight : AppColors.lightBorderLight,
           width: 1,
         ),
         boxShadow: [
@@ -266,10 +407,10 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF008CFF).withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 16, color: const Color(0xFF008CFF)),
+                child: Icon(icon, size: 16, color: AppColors.primary),
               ),
               const SizedBox(width: 10),
               Text(
@@ -277,7 +418,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  color: isDark ? Colors.white : AppColors.lightText,
                 ),
               ),
             ],
@@ -294,10 +435,10 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 14, vertical: multiline ? 4 : 0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.darkBg : AppColors.neutral50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.darkBorderLight : AppColors.lightBorder,
         ),
       ),
       child: TextField(
@@ -307,21 +448,21 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: isDark ? Colors.white : const Color(0xFF111827),
+          color: isDark ? Colors.white : AppColors.lightText,
         ),
         decoration: InputDecoration(
-          prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF008CFF)) : null,
+          prefixIcon: icon != null ? Icon(icon, size: 18, color: AppColors.primary) : null,
           labelText: label,
           floatingLabelBehavior: FloatingLabelBehavior.auto,
           labelStyle: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? const Color(0xFF6B7280) : const Color(0xFF6B7280),
+            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
           ),
           floatingLabelStyle: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF008CFF),
+            color: AppColors.primary,
           ),
           border: InputBorder.none,
           isDense: true,
@@ -338,14 +479,14 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
       child: ElevatedButton(
         onPressed: _saving ? null : _save,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF008CFF),
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          shadowColor: const Color(0xFF008CFF).withValues(alpha: 0.3),
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
         ).copyWith(
           elevation: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.pressed) ? 0 : 4),
-          shadowColor: WidgetStateProperty.all(const Color(0xFF008CFF).withValues(alpha: 0.3)),
+          shadowColor: WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.3)),
         ),
         child: _saving
             ? const SizedBox(
