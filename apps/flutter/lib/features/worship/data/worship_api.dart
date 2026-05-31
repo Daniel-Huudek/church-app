@@ -33,9 +33,11 @@ class WorshipApi {
   Future<void> confirmMusician(String weId, String memberId, {String status = 'confirmado'}) async { await _client.post('${ApiConfig.worshipEvents}/$weId/musicians/$memberId/confirm', data: {'status': status}); }
   Future<List<dynamic>> getFavorites() async { final r = await _client.get(ApiConfig.worshipFavorites); return (r.data as Map?)?['data'] as List? ?? []; }
 
-  Future<Map<String, dynamic>> fetchSong(String url) async {
-    final r = await _client.post(ApiConfig.worshipSongsFetch, data: {'url': url});
-    return _client.unwrapData(r.data);
+  Future<List<Map<String, dynamic>>> searchSongs(String query) async {
+    final r = await _client.post(ApiConfig.worshipSongsSearch, data: {'query': query});
+    final data = _client.unwrapData(r.data);
+    final list = data['list'] as List<dynamic>? ?? data as List<dynamic>;
+    return list.cast<Map<String, dynamic>>();
   }
   Future<void> addFavorite(String songId) async { await _client.post('${ApiConfig.worshipFavorites}/$songId'); }
   Future<void> removeFavorite(String songId) async { await _client.delete('${ApiConfig.worshipFavorites}/$songId'); }

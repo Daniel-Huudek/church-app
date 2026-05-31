@@ -24,6 +24,7 @@ import '../../features/worship/presentation/screens/worship_dashboard_screen.dar
 import '../../features/worship/presentation/screens/create_scale_screen.dart';
 import '../../features/worship/presentation/screens/scale_detail_screen.dart';
 import '../../features/worship/presentation/screens/create_repertorio_screen.dart';
+import '../../features/worship/presentation/screens/fetch_song_screen.dart';
 import '../../features/worship/presentation/screens/song_detail_screen.dart';
 import '../../features/worship/presentation/screens/edit_song_screen.dart';
 import '../../features/finance/presentation/screens/finance_dashboard_screen.dart';
@@ -39,6 +40,10 @@ import '../../features/chat/presentation/screens/chat_detail_screen.dart';
 import '../../features/users/presentation/screens/user_list_screen.dart';
 import '../../features/users/presentation/screens/user_edit_screen.dart';
 import '../../features/users/presentation/screens/role_manager_screen.dart';
+import '../../features/bible/presentation/screens/bible_home_screen.dart';
+import '../../features/bible/presentation/screens/bible_chapter_screen.dart';
+import '../../features/bible/presentation/screens/bible_verse_screen.dart';
+import '../../features/bible/presentation/screens/bible_verse_reader_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -58,8 +63,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         return AppRoutes.login;
       }
       if (isAuthenticated && user != null) {
-        const adminRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'];
-        if ((location == AppRoutes.dashboard || location.startsWith(AppRoutes.users)) && !user.hasAnyRole(adminRoles)) {
+        if (location.startsWith(AppRoutes.users) && !user.hasPermission('users_read')) {
+          return AppRoutes.home;
+        }
+        if (location.startsWith(AppRoutes.finance) && !user.hasPermission('finance_read')) {
+          return AppRoutes.home;
+        }
+        if (location == AppRoutes.dashboard && !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) {
           return AppRoutes.home;
         }
       }
@@ -209,12 +219,47 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const CreateRepertorioScreen(),
               ),
               GoRoute(
+                path: 'repertorio/fetch',
+                builder: (context, state) => const FetchSongScreen(),
+              ),
+              GoRoute(
                 path: 'songs/:id',
                 builder: (context, state) => SongDetailScreen(songId: state.pathParameters['id']!),
                 routes: [
                   GoRoute(
                     path: 'edit',
                     builder: (context, state) => EditSongScreen(songId: state.pathParameters['id']!),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.bible,
+            builder: (context, state) => const BibleHomeScreen(),
+            routes: [
+              GoRoute(
+                path: ':book',
+                builder: (context, state) => BibleChapterScreen(
+                  bookId: state.pathParameters['book'] ?? '',
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':chapter',
+                    builder: (context, state) => BibleVerseScreen(
+                      bookId: state.pathParameters['book'] ?? '',
+                      chapter: int.tryParse(state.pathParameters['chapter'] ?? '1') ?? 1,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: ':verse',
+                        builder: (context, state) => BibleVerseReaderScreen(
+                          bookId: state.pathParameters['book'] ?? '',
+                          chapter: int.tryParse(state.pathParameters['chapter'] ?? '1') ?? 1,
+                          verse: int.tryParse(state.pathParameters['verse'] ?? '1') ?? 1,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

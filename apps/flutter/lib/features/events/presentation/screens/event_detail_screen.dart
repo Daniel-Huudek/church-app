@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/config/theme/app_colors.dart';
 import '../providers/event_provider.dart';
 
 class EventDetailScreen extends ConsumerWidget {
@@ -20,6 +21,7 @@ class EventDetailScreen extends ConsumerWidget {
     if (state.loading) {
       return Scaffold(
         backgroundColor: bg,
+        appBar: AppBar(backgroundColor: const Color(0xFF008CFF), foregroundColor: Colors.white, elevation: 0),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -27,6 +29,15 @@ class EventDetailScreen extends ConsumerWidget {
     if (state.error != null) {
       return Scaffold(
         backgroundColor: bg,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF008CFF),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => context.pop(),
+          ),
+        ),
         body: Center(child: Text('Erro: ${state.error}')),
       );
     }
@@ -35,181 +46,134 @@ class EventDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF008CFF),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Colors.white),
+            onPressed: () => context.push('/calendar/${event.id}/edit'),
+          ),
+        ],
+      ),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 200,
-              pinned: true,
-              backgroundColor: const Color(0xFF008CFF),
-              leading: Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: Colors.white24,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Text('←', style: TextStyle(fontSize: 20, color: Colors.white)),
-                    ),
-                  ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 60, height: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                child: const Center(child: Text('📅', style: TextStyle(fontSize: 28))),
               ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => context.push('/calendar/${event.id}/edit'),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: Colors.white24,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.edit_outlined, color: Colors.white, size: 20),
-                      ),
-                    ),
-                  ),
+              const SizedBox(height: 12),
+              Text(event.title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: t1)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Text(event.type, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+              ),
+              const SizedBox(height: 20),
+              Row(children: [
+                const Text('📅', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 12),
+                Text(DateFormat("EEEE, dd 'de' MMMM 'de' yyyy", 'pt_BR').format(event.date),
+                    style: TextStyle(fontSize: 15, color: t2)),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                const Text('⏰', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 12),
+                Text(event.startTime, style: TextStyle(fontSize: 15, color: t2)),
+              ]),
+              if (event.location != null) ...[
+                const SizedBox(height: 12),
+                Row(children: [
+                  const Text('📍', style: TextStyle(fontSize: 18)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(event.location!, style: TextStyle(fontSize: 15, color: t2))),
+                ]),
               ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF008CFF), Color(0xFF0066CC)],
-                    ),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Center(child: Text('📅', style: TextStyle(fontSize: 28))),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(event.type, style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9))),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
+              const SizedBox(height: 24),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(event.title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: t1)),
-                    const SizedBox(height: 16),
-                    _infoRow('📅', DateFormat("EEEE, dd 'de' MMMM 'de' yyyy", 'pt_BR').format(event.date), t2),
+                    Text('Participantes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t1)),
                     const SizedBox(height: 12),
-                    _infoRow('⏰', event.startTime, t2),
-                    if (event.location != null) ...[
-                      const SizedBox(height: 12),
-                      _infoRow('📍', event.location!, t2),
-                    ],
-                    const SizedBox(height: 20),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: card,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    SizedBox(
+                      height: 36,
+                      child: Row(
                         children: [
-                          Text('Participantes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t1)),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              _avatar('AB'),
-                              const SizedBox(width: -6),
-                              _avatar('CD'),
-                              const SizedBox(width: -6),
-                              _avatar('EF'),
-                              const SizedBox(width: 8),
-                              Text('+${event.participants}', style: TextStyle(fontSize: 14, color: t2)),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          GestureDetector(
-                            onTap: () {},
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFF008CFF)),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Center(
-                                child: Text('Confirmar Presença',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF008CFF))),
-                              ),
-                            ),
-                          ),
+                          _avatar('AB'),
+                          _overlapAvatar('CD'),
+                          _overlapAvatar('EF'),
+                          const SizedBox(width: 12),
+                          Text('+${event.participants}', style: TextStyle(fontSize: 14, color: t2)),
                         ],
                       ),
                     ),
-                    if (event.description != null) ...[
-                      const SizedBox(height: 20),
-                      Text('Descrição', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t1)),
-                      const SizedBox(height: 8),
-                      Text(event.description!,
-                          style: TextStyle(fontSize: 15, color: t2, height: 1.5)),
-                    ],
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () {},
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Confirmar Presença', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+              if (event.description != null) ...[
+                const SizedBox(height: 24),
+                Text('Descrição', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: t1)),
+                const SizedBox(height: 8),
+                Text(event.description!, style: TextStyle(fontSize: 15, color: t2, height: 1.5)),
+              ],
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _infoRow(String icon, String text, Color t2) {
-    return Row(
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 18)),
-        const SizedBox(width: 12),
-        Text(text, style: TextStyle(fontSize: 15, color: t2)),
-      ],
-    );
-  }
-
   Widget _avatar(String initials) {
     return Container(
-      width: 36,
-      height: 36,
+      width: 36, height: 36,
       decoration: BoxDecoration(
-        color: const Color(0xFF008CFF).withOpacity(0.2),
+        color: AppColors.primary.withValues(alpha: 0.2),
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
       ),
-      child: Center(
-        child: Text(initials,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF008CFF))),
-      ),
+      alignment: Alignment.center,
+      child: Text(initials, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+    );
+  }
+
+  Widget _overlapAvatar(String initials) {
+    return Transform.translate(
+      offset: const Offset(-8, 0),
+      child: _avatar(initials),
     );
   }
 }

@@ -89,6 +89,14 @@ class _DrawerOverlayState extends State<DrawerOverlay>
                     },
                   ),
                   _drawerItem(
+                    icon: Icons.menu_book_rounded,
+                    label: 'Bíblia',
+                    onTap: () {
+                      context.go(AppRoutes.bible);
+                      widget.onClose();
+                    },
+                  ),
+                  _drawerItem(
                     icon: Icons.music_note_rounded,
                     label: 'Louvor',
                     onTap: () {

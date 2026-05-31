@@ -88,7 +88,15 @@ class ApiClient {
 
   List<T> unwrapList<T>(dynamic responseData, T Function(Map<String, dynamic>) fromJson) {
     final map = responseData as Map<String, dynamic>;
-    final list = map['data'] as List<dynamic>? ?? [];
-    return list.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+    final field = map['data'];
+    List<dynamic> items;
+    if (field is List<dynamic>) {
+      items = field;
+    } else if (field is Map<String, dynamic> && field.containsKey('data')) {
+      items = field['data'] as List<dynamic>;
+    } else {
+      items = [];
+    }
+    return items.map((e) => fromJson(e as Map<String, dynamic>)).toList();
   }
 }

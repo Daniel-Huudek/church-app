@@ -40,31 +40,31 @@ class TabItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: isFocused
               ? (isDark
                   ? AppColors.neutral500.withValues(alpha: 0.15)
                   : AppColors.neutral400.withValues(alpha: 0.15))
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             tab.key == ''
                 ? Image.asset(
                     'assets/images/home.png',
-                    width: 25,
-                    height: 25,
+                    width: 22,
+                    height: 22,
                     color: isFocused ? _activeColor : AppColors.neutral400,
                   )
                 : tab.key == 'prayers'
                     ? SvgPicture.asset(
                         'assets/icons/oracao.svg',
-                        width: 25,
-                        height: 25,
+                        width: 22,
+                        height: 22,
                         colorFilter: ColorFilter.mode(
                           isFocused ? _activeColor : AppColors.neutral400,
                           BlendMode.srcIn,
@@ -72,20 +72,18 @@ class TabItem extends StatelessWidget {
                       )
                     : Icon(
                         isFocused ? tab.activeIcon : tab.icon,
-                        size: 25,
+                        size: 22,
                         color: isFocused ? _activeColor : AppColors.neutral400,
                       ),
-            if (isFocused) ...[
-              const SizedBox(width: 8),
-              Text(
-                tab.label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: _activeColor,
-                ),
+            const SizedBox(height: 4),
+            Text(
+              tab.label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isFocused ? _activeColor : AppColors.neutral400,
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -174,7 +172,8 @@ class CustomBottomBar extends ConsumerWidget {
 
     final tabs = [
       TabData(key: '', label: 'Início', icon: Icons.home_outlined, activeIcon: Icons.home),
-      TabData(key: 'prayers', label: 'Oração', icon: Icons.menu_book_outlined, activeIcon: Icons.menu_book),
+      TabData(key: 'bible', label: 'Bíblia', icon: Icons.menu_book_outlined, activeIcon: Icons.menu_book),
+      TabData(key: 'prayers', label: 'Oração', icon: Icons.whatshot_outlined, activeIcon: Icons.whatshot),
       TabData(key: 'calendar', label: 'Eventos', icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month),
     ];
 
@@ -212,6 +211,8 @@ class CustomBottomBar extends ConsumerWidget {
                     onTap: () {
                       if (tab.key == 'prayers') {
                         context.go('/prayers');
+                      } else if (tab.key == 'bible') {
+                        context.go('/bible');
                       } else if (!(tab.key == currentTab)) {
                         context.go('/${tab.key}');
                       }

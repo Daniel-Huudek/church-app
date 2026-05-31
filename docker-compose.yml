@@ -259,6 +259,7 @@ services:
       - PORT=3010
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/worship_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
     depends_on:
       postgres-db:
         condition: service_healthy

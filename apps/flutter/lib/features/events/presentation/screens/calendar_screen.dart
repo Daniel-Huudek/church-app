@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/widgets/event_card.dart';
+import '../../../../core/config/theme/app_colors.dart';
 import '../../domain/event_model.dart';
 import '../providers/event_provider.dart';
 
@@ -13,244 +13,458 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  late int _currentYear;
-  late int _currentMonth;
+  late DateTime _selectedDate;
+  late int _viewYear;
+  late int _viewMonth;
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _currentYear = now.year;
-    _currentMonth = now.month;
+    _selectedDate = DateTime(now.year, now.month, now.day);
+    _viewYear = now.year;
+    _viewMonth = now.month;
   }
 
-  String _getMonthName(int year, int month) {
-    final months = [
-      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-    ];
-    return '${months[month - 1]} de $year';
-  }
-
-  void _changeMonth(int delta) {
+  void _prevMonth() {
     setState(() {
-      _currentMonth += delta;
-      if (_currentMonth > 12) {
-        _currentMonth = 1;
-        _currentYear++;
-      } else if (_currentMonth < 1) {
-        _currentMonth = 12;
-        _currentYear--;
-      }
+      if (_viewMonth == 1) { _viewMonth = 12; _viewYear--; }
+      else { _viewMonth--; }
     });
   }
 
-  List<EventModel> _filteredEvents(List<EventModel> events) {
-    return events.where((e) =>
-      e.date.year == _currentYear && e.date.month == _currentMonth
-    ).toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
-  }
-
-  List<_EventSection> _groupByDate(List<EventModel> events) {
-    final grouped = <String, List<EventModel>>{};
-    for (final event in events) {
-      final key = event.date.toIso8601String().substring(0, 10);
-      grouped.putIfAbsent(key, () => []).add(event);
-    }
-    final sortedKeys = grouped.keys.toList()..sort();
-    return sortedKeys.map((date) {
-      final d = DateTime.tryParse(date);
-      final title = d != null
-          ? '${_weekdayName(d.weekday)}, ${d.day} de ${_monthName(d.month)}'
-          : date;
-      return _EventSection(title: title, events: grouped[date]!);
-    }).toList();
-  }
-
-  String _weekdayName(int wd) {
-    const names = [
-      'segunda-feira', 'terça-feira', 'quarta-feira',
-      'quinta-feira', 'sexta-feira', 'sábado', 'domingo'
-    ];
-    return names[wd - 1];
-  }
-
-  String _monthName(int m) {
-    const names = [
-      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-    ];
-    return names[m - 1];
+  void _nextMonth() {
+    setState(() {
+      if (_viewMonth == 12) { _viewMonth = 1; _viewYear++; }
+      else { _viewMonth++; }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1);
+    final accent = AppColors.primary;
     final state = ref.watch(eventListProvider);
-    final filtered = _filteredEvents(state.data);
-    final sections = _groupByDate(filtered);
 
-    return Container(
-      color: isDark ? const Color(0xFF0A0A0F) : Colors.white,
-      child: SafeArea(
-        child: Stack(
+    final firstDay = DateTime(_viewYear, _viewMonth, 1);
+    final lastDay = DateTime(_viewYear, _viewMonth + 1, 0);
+    final daysInMonth = lastDay.day;
+    final startWeekday = firstDay.weekday % 7; // 0=domingo
+
+    final monthEvents = state.data.where((e) =>
+      e.date.year == _viewYear && e.date.month == _viewMonth
+    ).toList()..sort((a, b) => a.date.compareTo(b.date));
+
+    final selectedEvents = monthEvents.where((e) =>
+      e.date.year == _selectedDate.year &&
+      e.date.month == _selectedDate.month &&
+      e.date.day == _selectedDate.day
+    ).toList();
+
+    final eventDates = monthEvents.map((e) => e.date.day).toSet();
+
+    return Scaffold(
+      backgroundColor: bg,
+      body: SafeArea(
+        child: Column(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(24, 20, 24, 16),
-                  child: Text(
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
                     'Agenda',
                     style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF1A1A2E),
                     ),
                   ),
-                ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF1A1A2E)
-                        : const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${monthEvents.length} eventos',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: accent,
+                      ),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => _changeMonth(-1),
-                        child: const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Text('‹', style: TextStyle(fontSize: 24)),
-                        ),
+                ],
+              ),
+            ),
+
+            // Month navigation
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Material(color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: _prevMonth,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(Icons.chevron_left_rounded, color: accent, size: 28),
                       ),
-                      Text(
-                        _getMonthName(_currentYear, _currentMonth),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _changeMonth(1),
-                        child: const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Text('›', style: TextStyle(fontSize: 24)),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: state.loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : state.error != null
-                          ? Center(child: Text('Erro: ${state.error}'))
-                          : filtered.isEmpty
-                              ? _buildEmpty(isDark)
-                              : RefreshIndicator(
-                                  onRefresh: () => ref.read(eventListProvider.notifier).load(),
-                                  child: ListView.builder(
-                                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                                    itemCount: sections.length,
-                                    itemBuilder: (context, sectionIndex) {
-                                      final section = sections[sectionIndex];
-                                      return Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                            child: Text(
-                                              section.title.toUpperCase(),
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: isDark
-                                                    ? const Color(0xFF9CA3AF)
-                                                    : const Color(0xFF6B7280),
-                                              ),
-                                            ),
-                                          ),
-                                          ...section.events.map((event) =>
-                                            EventCard(
-                                              event: event,
-                                              onPress: () => context.go('/calendar/${event.id}'),
-                                            )),
-                                        ],
-                                      );
-                                    },
+                  Text(
+                    _monthName(_viewMonth).toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white70 : Colors.black54,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Material(color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: _nextMonth,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(Icons.chevron_right_rounded, color: accent, size: 28),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+
+            // Weekday headers
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map((d) =>
+                  Expanded(
+                    child: Center(
+                      child: Text(d, style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white30 : Colors.black26,
+                      )),
+                    ),
+                  ),
+                ).toList(),
+              ),
+            ),
+            const SizedBox(height: 4),
+
+            // Calendar grid
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: AspectRatio(
+                aspectRatio: 7 / 5.5,
+                child: GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    childAspectRatio: 1,
+                    mainAxisSpacing: 2,
+                    crossAxisSpacing: 2,
+                  ),
+                  itemCount: startWeekday + daysInMonth,
+                  itemBuilder: (context, index) {
+                    if (index < startWeekday) return const SizedBox();
+                    final day = index - startWeekday + 1;
+                    final isToday = day == DateTime.now().day &&
+                        _viewMonth == DateTime.now().month &&
+                        _viewYear == DateTime.now().year;
+                    final isSelected = day == _selectedDate.day &&
+                        _viewMonth == _selectedDate.month &&
+                        _viewYear == _selectedDate.year;
+                    final hasEvent = eventDates.contains(day);
+
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => setState(() {
+                          _selectedDate = DateTime(_viewYear, _viewMonth, day);
+                        }),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? accent
+                                : isToday
+                                    ? accent.withValues(alpha: 0.1)
+                                    : null,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                day.toString(),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected || isToday
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : isToday
+                                          ? accent
+                                          : (isDark ? Colors.white70 : Colors.black54),
+                                ),
+                              ),
+                              if (hasEvent)
+                                Container(
+                                  width: 4, height: 4,
+                                  margin: const EdgeInsets.only(top: 3),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? Colors.white : accent,
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                ),
-              ],
-            ),
-            Positioned(
-              right: 20,
-              bottom: 20,
-              child: FloatingActionButton(
-                onPressed: () => context.push('/calendar/create'),
-                backgroundColor: const Color(0xFF008CFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Image.asset(
-                  'assets/images/add.png',
-                  width: 24,
-                  height: 24,
-                  color: Colors.white,
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
+            ),
+            const SizedBox(height: 8),
+
+            // Divider with date info
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Text(
+                    '${_weekdayName(_selectedDate.weekday)}, ${_selectedDate.day} de ${_monthName(_selectedDate.month)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white60 : Colors.black45,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (selectedEvents.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${selectedEvents.length}',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: accent),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 16, indent: 20, endIndent: 20),
+
+            // Event list
+            Expanded(
+              child: state.loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.error != null
+                      ? Center(child: Text('Erro: ${state.error}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black45)))
+                      : selectedEvents.isEmpty
+                          ? _emptyDay(isDark, accent)
+                          : RefreshIndicator(
+                              onRefresh: () => ref.read(eventListProvider.notifier).load(),
+                              child: ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+                                itemCount: selectedEvents.length,
+                                itemBuilder: (_, i) => _EventTile(
+                                  event: selectedEvents[i],
+                                  onTap: () => context.go('/calendar/${selectedEvents[i].id}'),
+                                  isDark: isDark,
+                                  accent: accent,
+                                ),
+                              ),
+                            ),
             ),
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/calendar/create'),
+        backgroundColor: const Color(0xFF008CFF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
-  Widget _buildEmpty(bool isDark) {
-    return RefreshIndicator(
-      onRefresh: () => ref.read(eventListProvider.notifier).load(),
-      child: ListView(
+  Widget _emptyDay(bool isDark, Color accent) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 40),
-          Center(
-            child: Column(
-              children: [
-                const Text('📅', style: TextStyle(fontSize: 48)),
-                const SizedBox(height: 16),
-                Text(
-                  'Nenhum evento',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Não há eventos para este período',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                  ),
-                ),
-              ],
+          Icon(Icons.event_busy_rounded, size: 40,
+            color: isDark ? Colors.white24 : Colors.black12),
+          const SizedBox(height: 12),
+          Text(
+            'Nenhum evento neste dia',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white38 : Colors.black26,
             ),
           ),
         ],
       ),
     );
   }
+
+  String _monthName(int m) => [
+    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+  ][m - 1];
+
+  String _weekdayName(int wd) => [
+    'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'
+  ][wd - 1];
 }
 
-class _EventSection {
-  final String title;
-  final List<EventModel> events;
+class _EventTile extends StatelessWidget {
+  final EventModel event;
+  final VoidCallback onTap;
+  final bool isDark;
+  final Color accent;
 
-  const _EventSection({required this.title, required this.events});
+  const _EventTile({
+    required this.event, required this.onTap,
+    required this.isDark, required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF16161F) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.black.withValues(alpha: 0.04),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Time column
+                Container(
+                  width: 48,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        event.startTime.length >= 5
+                            ? event.startTime.substring(0, 5)
+                            : event.startTime,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _typeLabel(event.type),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: accent,
+                              ),
+                            ),
+                          ),
+                          if (event.location != null && event.location!.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Icon(Icons.location_on_outlined, size: 12,
+                              color: isDark ? Colors.white30 : Colors.black26),
+                            const SizedBox(width: 2),
+                            Flexible(
+                              child: Text(
+                                event.location!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white38 : Colors.black38,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right_rounded, size: 18,
+                  color: isDark ? Colors.white24 : Colors.black12),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _typeLabel(String type) {
+    const labels = {
+      'CULTO': 'Culto', 'REUNIAO': 'Reunião', 'ESTUDO': 'Estudo',
+      'EVENTO_SOCIAL': 'Evento', 'EVENTO_ESPECIAL': 'Especial',
+      'ESCOLA_DOMINICAL': 'E. Dominical', 'JEJUM': 'Jejum',
+      'VIGILIA': 'Vigília', 'RETIRO': 'Retiro', 'OUTRO': 'Outro',
+    };
+    return labels[type] ?? 'Outro';
+  }
 }

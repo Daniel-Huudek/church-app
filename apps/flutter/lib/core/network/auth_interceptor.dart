@@ -76,6 +76,7 @@ class AuthInterceptor extends Interceptor {
       _isRefreshing = false;
       _pendingRequests.clear();
       await SecureStorage.clearAll();
+      onSessionExpired?.call();
       handler.reject(err);
     }
   }

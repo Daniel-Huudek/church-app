@@ -29,6 +29,7 @@ class AppRoutes {
   static String worshipScaleDetail(String id) => '/worship/scale/$id';
   static String worshipScaleEdit(String id) => '/worship/scale/$id/edit';
   static const String worshipRepertorioCreate = '/worship/repertorio/create';
+  static const String worshipRepertorioFetch = '/worship/repertorio/fetch';
   static String worshipSongDetail(String id) => '/worship/songs/$id';
   static String worshipSongEdit(String id) => '/worship/songs/$id/edit';
   static const String notifications = '/notifications';
@@ -37,4 +38,8 @@ class AppRoutes {
   static const String users = '/users';
   static const String usersRoles = '/users/roles';
   static String userEdit(String id) => '/users/$id/edit';
+  static const String bible = '/bible';
+  static String bibleChapter(String bookId) => '/bible/$bookId';
+  static String bibleVerse(String bookId, int chapter) => '/bible/$bookId/$chapter';
+  static String bibleVerseReader(String bookId, int chapter, int verse) => '/bible/$bookId/$chapter/$verse';
 }

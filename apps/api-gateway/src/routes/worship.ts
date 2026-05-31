@@ -10,6 +10,7 @@ export async function worshipRoutes(fastify: FastifyInstance) {
   });
   fastify.get('/songs/:id', { preHandler: [fastify.authenticate] }, async (r: FastifyRequest<{ Params: { id: string } }>, reply) => reply.send(await worshipClient.get(`/worship/songs/${r.params.id}`)));
   fastify.post('/songs', { preHandler: [fastify.authenticate] }, async (r, reply) => reply.status(201).send(await worshipClient.post('/worship/songs', r.body)));
+  fastify.post('/songs/search', async (r, reply) => reply.send(await worshipClient.post('/worship/songs/search', r.body)));
   fastify.put('/songs/:id', { preHandler: [fastify.authenticate] }, async (r: FastifyRequest<{ Params: { id: string } }>, reply) => reply.send(await worshipClient.put(`/worship/songs/${r.params.id}`, r.body)));
   fastify.post('/songs/:id/transpose', { preHandler: [fastify.authenticate] }, async (r: FastifyRequest<{ Params: { id: string } }>, reply) => reply.send(await worshipClient.post(`/worship/songs/${r.params.id}/transpose`, r.body)));
   fastify.get('/songs/:id/history', { preHandler: [fastify.authenticate] }, async (r: FastifyRequest<{ Params: { id: string } }>, reply) => reply.send(await worshipClient.get(`/worship/songs/${r.params.id}/history`)));
