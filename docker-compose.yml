@@ -52,11 +52,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   auth-service:
     build:
@@ -83,11 +83,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   member-service:
     build:
@@ -109,11 +109,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3006/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   schedule-service:
     build:
@@ -135,11 +135,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   event-service:
     build:
@@ -161,11 +161,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   notification-service:
     build:
@@ -189,11 +189,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3005/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   prayer-service:
     build:
@@ -215,11 +215,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3007/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   financial-service:
     build:
@@ -241,11 +241,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3008/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   worship-service:
     build:
@@ -259,6 +259,7 @@ services:
       - PORT=3010
       - DATABASE_URL=postgresql://${POSTGRES_USER:-church}:${POSTGRES_PASSWORD:-church123}@postgres-db:5432/worship_db
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -268,11 +269,11 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3010/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+      start_period: 60s
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   chat-service:
     build:
@@ -294,10 +295,10 @@ services:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
+      retries: 5
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.25
 
   postgres-db:
     image: postgres:16-alpine
@@ -313,13 +314,13 @@ services:
     networks:
       - church-app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d church_app"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-    mem_limit: 512m
-    mem_reservation: 256m
-    cpus: 1.0
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
 
 networks:
   church-app-network:
@@ -327,3 +328,6 @@ networks:
 
 volumes:
   postgres-data:
+
+
+

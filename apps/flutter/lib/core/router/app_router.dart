@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../shared/widgets/main_shell.dart';
+import 'app_routes.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -23,6 +24,7 @@ import '../../features/worship/presentation/screens/worship_dashboard_screen.dar
 import '../../features/worship/presentation/screens/create_scale_screen.dart';
 import '../../features/worship/presentation/screens/scale_detail_screen.dart';
 import '../../features/worship/presentation/screens/create_repertorio_screen.dart';
+import '../../features/worship/presentation/screens/fetch_song_screen.dart';
 import '../../features/worship/presentation/screens/song_detail_screen.dart';
 import '../../features/worship/presentation/screens/edit_song_screen.dart';
 import '../../features/finance/presentation/screens/finance_dashboard_screen.dart';
@@ -38,58 +40,66 @@ import '../../features/chat/presentation/screens/chat_detail_screen.dart';
 import '../../features/users/presentation/screens/user_list_screen.dart';
 import '../../features/users/presentation/screens/user_edit_screen.dart';
 import '../../features/users/presentation/screens/role_manager_screen.dart';
-
+import '../../features/bible/presentation/screens/bible_home_screen.dart';
+import '../../features/bible/presentation/screens/bible_chapter_screen.dart';
+import '../../features/bible/presentation/screens/bible_verse_screen.dart';
+import '../../features/bible/presentation/screens/bible_verse_reader_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: AppRoutes.splash,
     redirect: (context, state) {
       final isAuthenticated = authState.isAuthenticated;
       final user = authState.user;
       final location = state.matchedLocation;
-      final isAuthRoute = location == '/login' || location == '/splash';
+      final isAuthRoute = location == AppRoutes.login || location == AppRoutes.splash;
 
       if (isAuthenticated && isAuthRoute) {
-        return '/';
+        return AppRoutes.home;
       }
-      if (!isAuthenticated && !isAuthRoute && location != '/splash') {
-        return '/login';
+      if (!isAuthenticated && !isAuthRoute && location != AppRoutes.splash) {
+        return AppRoutes.login;
       }
       if (isAuthenticated && user != null) {
-        final adminRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'];
-        if ((location == '/dashboard' || location.startsWith('/users')) && !user.hasAnyRole(adminRoles)) {
-          return '/';
+        if (location.startsWith(AppRoutes.users) && !user.hasPermission('users_read')) {
+          return AppRoutes.home;
+        }
+        if (location.startsWith(AppRoutes.finance) && !user.hasPermission('finance_read')) {
+          return AppRoutes.home;
+        }
+        if (location == AppRoutes.dashboard && !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) {
+          return AppRoutes.home;
         }
       }
       return null;
     },
     routes: [
       GoRoute(
-        path: '/splash',
+        path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
-        path: '/login',
+        path: AppRoutes.login,
         builder: (context, state) => const LoginScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(
-          hideNav: state.matchedLocation == '/prayers/create' || state.matchedLocation.startsWith('/worship') || state.matchedLocation.startsWith('/finance'),
+          hideNav: state.matchedLocation == AppRoutes.prayersCreate || state.matchedLocation.startsWith(AppRoutes.worship) || state.matchedLocation.startsWith(AppRoutes.finance),
           child: child,
         ),
         routes: [
           GoRoute(
-            path: '/',
+            path: AppRoutes.home,
             builder: (context, state) => const DashboardScreen(),
           ),
           GoRoute(
-            path: '/dashboard',
+            path: AppRoutes.dashboard,
             builder: (context, state) => const AdminDashboardScreen(),
           ),
           GoRoute(
-            path: '/prayers',
+            path: AppRoutes.prayers,
             builder: (context, state) => const PrayerFeedScreen(),
             routes: [
               GoRoute(
@@ -105,7 +115,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/calendar',
+            path: AppRoutes.calendar,
             builder: (context, state) => const CalendarScreen(),
             routes: [
               GoRoute(
@@ -129,15 +139,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/profile',
+            path: AppRoutes.profile,
             builder: (context, state) => const ProfileScreen(),
           ),
           GoRoute(
-            path: '/settings',
+            path: AppRoutes.settings,
             builder: (context, state) => const SettingsScreen(),
           ),
           GoRoute(
-            path: '/schedules',
+            path: AppRoutes.schedules,
             builder: (context, state) => const ScheduleListScreen(),
             routes: [
               GoRoute(
@@ -153,7 +163,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/members',
+            path: AppRoutes.members,
             builder: (context, state) => const MemberListScreen(),
             routes: [
               GoRoute(
@@ -165,7 +175,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/finance',
+            path: AppRoutes.finance,
             builder: (context, state) => const FinanceDashboardScreen(),
             routes: [
               GoRoute(
@@ -189,7 +199,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/worship',
+            path: AppRoutes.worship,
             builder: (context, state) => const WorshipDashboardScreen(),
             routes: [
               GoRoute(
@@ -209,6 +219,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const CreateRepertorioScreen(),
               ),
               GoRoute(
+                path: 'repertorio/fetch',
+                builder: (context, state) => const FetchSongScreen(),
+              ),
+              GoRoute(
                 path: 'songs/:id',
                 builder: (context, state) => SongDetailScreen(songId: state.pathParameters['id']!),
                 routes: [
@@ -221,11 +235,42 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/notifications',
+            path: AppRoutes.bible,
+            builder: (context, state) => const BibleHomeScreen(),
+            routes: [
+              GoRoute(
+                path: ':book',
+                builder: (context, state) => BibleChapterScreen(
+                  bookId: state.pathParameters['book'] ?? '',
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':chapter',
+                    builder: (context, state) => BibleVerseScreen(
+                      bookId: state.pathParameters['book'] ?? '',
+                      chapter: int.tryParse(state.pathParameters['chapter'] ?? '1') ?? 1,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: ':verse',
+                        builder: (context, state) => BibleVerseReaderScreen(
+                          bookId: state.pathParameters['book'] ?? '',
+                          chapter: int.tryParse(state.pathParameters['chapter'] ?? '1') ?? 1,
+                          verse: int.tryParse(state.pathParameters['verse'] ?? '1') ?? 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.notifications,
             builder: (context, state) => const NotificationListScreen(),
           ),
           GoRoute(
-            path: '/chat',
+            path: AppRoutes.chat,
             builder: (context, state) => const ChatListScreen(),
             routes: [
               GoRoute(
@@ -237,7 +282,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/users',
+            path: AppRoutes.users,
             builder: (context, state) => const UserListScreen(),
             routes: [
               GoRoute(
@@ -250,7 +295,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-
         ],
       ),
     ],

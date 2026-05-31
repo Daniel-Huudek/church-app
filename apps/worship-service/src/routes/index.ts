@@ -2,11 +2,13 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { validate } from '@church-app/shared';
 import { SongService } from '../services/song.service';
+import { SongSearchService } from '../services/song-search.service';
 import { PlaylistService } from '../services/playlist.service';
 import { WorshipEventService } from '../services/worship-event.service';
 
 export async function worshipRoutes(fastify: FastifyInstance) {
   const songService = new SongService(fastify.prisma);
+  const songSearch = new SongSearchService();
   const playlistService = new PlaylistService(fastify.prisma);
   const worshipEventService = new WorshipEventService(fastify.prisma);
 
@@ -27,6 +29,12 @@ export async function worshipRoutes(fastify: FastifyInstance) {
   fastify.delete('/songs/:id', async (r: FastifyRequest<{ Params: { id: string } }>) => { await songService.remove(r.params.id); return { success: true }; });
   fastify.post('/songs/:id/transpose', async (r: FastifyRequest<{ Params: { id: string } }>) => songService.transpose(r.params.id, validate(transposeSchema, r.body).semitons));
   fastify.get('/songs/:id/history', async (r: FastifyRequest<{ Params: { id: string } }>) => songService.getHistory(r.params.id));
+
+  const searchSchema = z.object({ query: z.string().min(1) });
+  fastify.post('/songs/search', async (r) => {
+    const { query } = validate(searchSchema, r.body);
+    return { success: true, data: await songSearch.search(query) };
+  });
 
   fastify.get('/playlists', async (r) => playlistService.list({ page: Number((r.query as any).page) || 1, limit: Number((r.query as any).limit) || 20 }));
   fastify.get('/playlists/:id', async (r: FastifyRequest<{ Params: { id: string } }>) => playlistService.getById(r.params.id));

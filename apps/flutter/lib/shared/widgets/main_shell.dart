@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../shared/providers/auth_provider.dart';
 import '../../core/config/theme/app_colors.dart';
+import '../../core/router/app_routes.dart';
 import 'drawer_overlay.dart';
 import 'custom_bottom_bar.dart';
 
@@ -24,7 +25,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     final authState = ref.watch(authProvider);
     final user = authState.user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppColors.darkBg : Colors.white;
     final currentRoute = GoRouterState.of(context).matchedLocation;
 
     return Scaffold(
@@ -36,7 +36,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               isDark: isDark,
               onClose: () => setState(() => _drawerVisible = false),
             ),
-          if (user != null && !currentRoute.startsWith('/worship') && !currentRoute.startsWith('/finance') && currentRoute != '/dashboard' && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'FINANCEIRO']))
+          if (user != null && !currentRoute.startsWith(AppRoutes.worship) && !currentRoute.startsWith(AppRoutes.finance) && !currentRoute.startsWith(AppRoutes.bible) && !currentRoute.startsWith(AppRoutes.calendar) && currentRoute != AppRoutes.dashboard && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'FINANCEIRO']))
             Positioned(
               right: 0,
               top: 0,
@@ -49,8 +49,8 @@ class _MainShellState extends ConsumerState<MainShell> {
                       _sideButton(
                         icon: Icons.music_note_rounded,
                         label: 'Louvor',
-                        grad: const [Color(0xFF008CFF), Color(0xFF0066CC)],
-                        onTap: () => context.go('/worship'),
+                        grad: const [AppColors.primary, AppColors.primaryDark],
+                        onTap: () => context.go(AppRoutes.worship),
                       ),
                     if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) ...[
                       const SizedBox(height: 10),
@@ -58,7 +58,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                         icon: Icons.dashboard_rounded,
                         label: '',
                         grad: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-                        onTap: () => context.go('/dashboard'),
+                        onTap: () => context.go(AppRoutes.dashboard),
                         height: 56,
                       ),
                     ],

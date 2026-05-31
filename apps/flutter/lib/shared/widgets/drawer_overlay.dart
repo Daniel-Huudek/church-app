@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/config/theme/app_colors.dart';
+import '../../core/router/app_routes.dart';
 
 class DrawerOverlay extends StatefulWidget {
   final bool isDark;
@@ -57,72 +59,80 @@ class _DrawerOverlayState extends State<DrawerOverlay>
             child: Container(
               width: 230,
               color: widget.isDark
-                  ? const Color(0xFF12121A)
+                  ? AppColors.darkSurface
                   : Colors.white,
               padding: const EdgeInsets.only(top: 60),
               child: ListView(
                 children: [
                   _drawerItem(
-                    icon: '📊',
+                    icon: Icons.dashboard_rounded,
                     label: 'Dashboard',
                     onTap: () {
-                      context.go('/');
+                      context.go(AppRoutes.home);
                       widget.onClose();
                     },
                   ),
                   _drawerItem(
-                    icon: '📅',
+                    icon: Icons.calendar_month_rounded,
                     label: 'Eventos',
                     onTap: () {
-                      context.go('/calendar');
+                      context.go(AppRoutes.calendar);
                       widget.onClose();
                     },
                   ),
                   _drawerItem(
-                    icon: '🙏',
+                    icon: Icons.menu_book_rounded,
                     label: 'Oração',
                     onTap: () {
-                      context.go('/prayers');
+                      context.go(AppRoutes.prayers);
                       widget.onClose();
                     },
                   ),
                   _drawerItem(
-                    icon: '🎵',
+                    icon: Icons.menu_book_rounded,
+                    label: 'Bíblia',
+                    onTap: () {
+                      context.go(AppRoutes.bible);
+                      widget.onClose();
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.music_note_rounded,
                     label: 'Louvor',
                     onTap: () {
-                      context.go('/worship');
+                      context.go(AppRoutes.worship);
                       widget.onClose();
                     },
                   ),
                   _drawerItem(
-                    icon: '📋',
+                    icon: Icons.assignment_rounded,
                     label: 'Escalas',
                     onTap: () {
-                      context.go('/schedules');
+                      context.go(AppRoutes.schedules);
                       widget.onClose();
                     },
                   ),
                   _drawerItem(
-                    icon: '👥',
+                    icon: Icons.people_rounded,
                     label: 'Membros',
                     onTap: () {
-                      context.go('/members');
+                      context.go(AppRoutes.members);
                       widget.onClose();
                     },
                   ),
                   _drawerItem(
-                    icon: '💰',
+                    icon: Icons.attach_money_rounded,
                     label: 'Finanças',
                     onTap: () {
-                      context.go('/finance');
+                      context.go(AppRoutes.finance);
                       widget.onClose();
                     },
                   ),
                   _drawerItem(
-                    icon: '💬',
+                    icon: Icons.chat_rounded,
                     label: 'Chat',
                     onTap: () {
-                      context.go('/chat');
+                      context.go(AppRoutes.chat);
                       widget.onClose();
                     },
                   ),
@@ -136,7 +146,7 @@ class _DrawerOverlayState extends State<DrawerOverlay>
   }
 
   Widget _drawerItem({
-    required String icon,
+    required IconData icon,
     required String label,
     required VoidCallback onTap,
   }) {
@@ -148,15 +158,15 @@ class _DrawerOverlayState extends State<DrawerOverlay>
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           child: Row(
             children: [
-              Text(icon, style: const TextStyle(fontSize: 20)),
+              Icon(icon, size: 22, color: widget.isDark ? AppColors.darkText : AppColors.lightText),
               const SizedBox(width: 12),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 14,
                   color: widget.isDark
-                      ? const Color(0xFFF9FAFB)
-                      : const Color(0xFF111827),
+                      ? AppColors.darkText
+                      : AppColors.lightText,
                 ),
               ),
             ],

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/worship_api.dart';
+import '../providers/worship_provider.dart';
 
 class CreateRepertorioScreen extends ConsumerStatefulWidget {
   const CreateRepertorioScreen({super.key});
@@ -59,6 +61,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
         if (_chordsCtrl.text.trim().isNotEmpty) 'chords': _chordsCtrl.text.trim(),
         if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
       });
+      ref.invalidate(songsProvider);
       if (mounted) context.pop();
     } catch (e) {
       _showError('Erro ao salvar: $e');
@@ -76,7 +79,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
           const SizedBox(width: 10),
           Expanded(child: Text(msg, style: const TextStyle(fontSize: 14))),
         ]),
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -105,7 +108,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
+    final bg = isDark ? AppColors.darkBg : const Color(0xFFF8FAFC);
 
     return Scaffold(
       backgroundColor: bg,
@@ -116,11 +119,11 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
         leading: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF008CFF).withValues(alpha: 0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF008CFF), size: 24),
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primary, size: 24),
             onPressed: () => context.pop(),
           ),
         ),
@@ -129,7 +132,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : const Color(0xFF111827),
+            color: isDark ? Colors.white : AppColors.lightText,
           ),
         ),
       ),
@@ -191,14 +194,14 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF008CFF), Color(0xFF0066CC)],
+          colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF008CFF).withValues(alpha: 0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -244,10 +247,10 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF161622) : Colors.white,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFF3F4F6),
+          color: isDark ? AppColors.darkBorderLight : AppColors.lightBorderLight,
           width: 1,
         ),
         boxShadow: [
@@ -266,10 +269,10 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF008CFF).withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 16, color: const Color(0xFF008CFF)),
+                child: Icon(icon, size: 16, color: AppColors.primary),
               ),
               const SizedBox(width: 10),
               Text(
@@ -277,7 +280,7 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  color: isDark ? Colors.white : AppColors.lightText,
                 ),
               ),
             ],
@@ -294,10 +297,10 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 14, vertical: multiline ? 4 : 0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.darkBg : AppColors.neutral50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.darkBorderLight : AppColors.lightBorder,
         ),
       ),
       child: TextField(
@@ -307,21 +310,21 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: isDark ? Colors.white : const Color(0xFF111827),
+          color: isDark ? Colors.white : AppColors.lightText,
         ),
         decoration: InputDecoration(
-          prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF008CFF)) : null,
+          prefixIcon: icon != null ? Icon(icon, size: 18, color: AppColors.primary) : null,
           labelText: label,
           floatingLabelBehavior: FloatingLabelBehavior.auto,
           labelStyle: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? const Color(0xFF6B7280) : const Color(0xFF6B7280),
+            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
           ),
           floatingLabelStyle: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF008CFF),
+            color: AppColors.primary,
           ),
           border: InputBorder.none,
           isDense: true,
@@ -338,14 +341,14 @@ class _CreateRepertorioScreenState extends ConsumerState<CreateRepertorioScreen>
       child: ElevatedButton(
         onPressed: _saving ? null : _save,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF008CFF),
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          shadowColor: const Color(0xFF008CFF).withValues(alpha: 0.3),
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
         ).copyWith(
           elevation: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.pressed) ? 0 : 4),
-          shadowColor: WidgetStateProperty.all(const Color(0xFF008CFF).withValues(alpha: 0.3)),
+          shadowColor: WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.3)),
         ),
         child: _saving
             ? const SizedBox(

@@ -12,22 +12,16 @@ class UserApi {
       ApiConfig.users,
       queryParameters: {'page': page, 'limit': limit},
     );
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>;
-    return list
-        .map((e) => UserModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, UserModel.fromJson);
   }
 
   Future<UserModel> getById(String id) async {
     final response = await _client.get('${ApiConfig.users}/$id');
-    final data = response.data as Map<String, dynamic>;
-    return UserModel.fromJson(data['data'] as Map<String, dynamic>);
+    return UserModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<UserModel> update(String id, Map<String, dynamic> data) async {
     final response = await _client.put('${ApiConfig.users}/$id', data: data);
-    final result = response.data as Map<String, dynamic>;
-    return UserModel.fromJson(result['data'] as Map<String, dynamic>);
+    return UserModel.fromJson(_client.unwrapData(response.data));
   }
 }

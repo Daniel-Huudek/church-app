@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/api_client.dart';
-import '../../core/network/auth_interceptor.dart';
 import '../../core/utils/secure_storage.dart';
 import '../models/user_model.dart';
 import '../utils/error_helper.dart';
@@ -69,8 +68,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         '/auth/google',
         data: {'token': token},
       );
-      final rawData = response.data as Map<String, dynamic>;
-      final data = rawData['data'] as Map<String, dynamic>;
+      final data = _apiClient.unwrapData(response.data);
       final accessToken = data['accessToken'] as String;
       final refreshToken = data['refreshToken'] as String;
       final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
@@ -100,7 +98,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         '/auth/login',
         data: {'email': email, 'password': password},
       );
-      final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final data = _apiClient.unwrapData(response.data);
       final accessToken = data['accessToken'] as String;
       final refreshToken = data['refreshToken'] as String;
       final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
@@ -130,7 +128,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         '/auth/register',
         data: {'name': name, 'email': email, 'password': password},
       );
-      final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final data = _apiClient.unwrapData(response.data);
       final accessToken = data['accessToken'] as String;
       final refreshToken = data['refreshToken'] as String;
       final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);

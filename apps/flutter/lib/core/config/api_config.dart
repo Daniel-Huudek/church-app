@@ -61,10 +61,12 @@ class ApiConfig {
 
   // Worship
   static const String worshipSongs = '/worship/songs';
+  static const String worshipSongsSearch = '/worship/songs/search';
   static const String worshipPlaylists = '/worship/playlists';
   static const String worshipEvents = '/worship/worship-events';
   static const String worshipFavorites = '/worship/favorites';
 
   // Users
   static const String users = '/users';
+
 }

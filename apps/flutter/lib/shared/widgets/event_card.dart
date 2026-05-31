@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../features/events/domain/event_model.dart';
+import '../../core/config/theme/app_colors.dart';
 
 class EventCard extends StatelessWidget {
-  final Map<String, dynamic> event;
+  final EventModel event;
   final VoidCallback? onPress;
-  final int index;
 
   const EventCard({
     super.key,
     required this.event,
     this.onPress,
-    this.index = 0,
   });
 
   static const _typeLabels = {
@@ -26,26 +26,26 @@ class EventCard extends StatelessWidget {
   };
 
   static const _typeColors = {
-    'CULTO': Color(0xFF008CFF),
-    'REUNIAO': Color(0xFF3B82F6),
-    'ESTUDO': Color(0xFF10B981),
-    'EVENTO_SOCIAL': Color(0xFFF59E0B),
+    'CULTO': AppColors.primary,
+    'REUNIAO': AppColors.primary500,
+    'ESTUDO': AppColors.success,
+    'EVENTO_SOCIAL': AppColors.warning,
     'EVENTO_ESPECIAL': Color(0xFFEC4899),
     'ESCOLA_DOMINICAL': Color(0xFF06B6D4),
-    'JEJUM': Color(0xFF6B7280),
-    'VIGILIA': Color(0xFF1E40AF),
+    'JEJUM': AppColors.neutral500,
+    'VIGILIA': AppColors.primary800,
     'RETIRO': Color(0xFF059669),
-    'OUTRO': Color(0xFF9CA3AF),
+    'OUTRO': AppColors.neutral400,
   };
 
-  String get _type => event['type'] as String? ?? 'OUTRO';
-  Color get _typeColor => _typeColors[_type] ?? const Color(0xFF9CA3AF);
+  String get _type => event.type;
+  Color get _typeColor => _typeColors[_type] ?? AppColors.neutral400;
   String get _typeLabel => _typeLabels[_type] ?? 'Outro';
-  String get _title => event['title'] as String? ?? '';
-  String get _date => event['date'] as String? ?? '';
-  String get _time => event['time'] as String? ?? '';
-  String get _location => event['location'] as String? ?? '';
-  int get _participants => (event['participants'] as List?)?.length ?? 0;
+  String get _title => event.title;
+  String get _date => event.date.toIso8601String();
+  String get _time => event.startTime;
+  String get _location => event.location ?? '';
+  int get _participants => event.participants;
 
   String _formatDate(String dateStr) {
     if (dateStr.isEmpty) return '';
@@ -78,7 +78,7 @@ class EventCard extends StatelessWidget {
         onTap: onPress,
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+            color: isDark ? AppColors.darkCard : Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(

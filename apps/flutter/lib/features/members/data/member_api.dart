@@ -24,23 +24,17 @@ class MemberApi {
       ApiConfig.members,
       queryParameters: params,
     );
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>;
-    return list
-        .map((e) => MemberModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, MemberModel.fromJson);
   }
 
   Future<MemberModel> getById(String id) async {
     final response = await _client.get('${ApiConfig.members}/$id');
-    final data = response.data as Map<String, dynamic>;
-    return MemberModel.fromJson(data['data'] as Map<String, dynamic>);
+    return MemberModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<MemberModel> create(Map<String, dynamic> data) async {
     final response = await _client.post(ApiConfig.members, data: data);
-    final result = response.data as Map<String, dynamic>;
-    return MemberModel.fromJson(result['data'] as Map<String, dynamic>);
+    return MemberModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<MemberModel> update(String id, Map<String, dynamic> data) async {
@@ -48,8 +42,7 @@ class MemberApi {
       '${ApiConfig.members}/$id',
       data: data,
     );
-    final result = response.data as Map<String, dynamic>;
-    return MemberModel.fromJson(result['data'] as Map<String, dynamic>);
+    return MemberModel.fromJson(_client.unwrapData(response.data));
   }
 
   Future<List<MemberModel>> search(String query) async {
@@ -57,10 +50,6 @@ class MemberApi {
       ApiConfig.membersSearch,
       queryParameters: {'q': query},
     );
-    final data = response.data as Map<String, dynamic>;
-    final list = data['data'] as List<dynamic>;
-    return list
-        .map((e) => MemberModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _client.unwrapList(response.data, MemberModel.fromJson);
   }
 }
