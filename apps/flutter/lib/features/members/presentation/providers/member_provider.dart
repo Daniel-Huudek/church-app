@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/member_api.dart';
 import '../../domain/member_model.dart';
+import '../../domain/birthday_model.dart';
 import '../../../../shared/providers/async_state.dart';
 import '../../../../shared/utils/error_helper.dart';
 
@@ -58,6 +59,30 @@ class MemberDetailNotifier extends StateNotifier<MemberDetailState> {
       state = MemberDetailState(member: member, loading: false);
     } catch (e) {
       state = MemberDetailState(loading: false, error: formatError(e));
+    }
+  }
+}
+
+final birthdayListProvider =
+    StateNotifierProvider.autoDispose<BirthdayListNotifier, AsyncState<BirthdayListResult>>((ref) {
+  return BirthdayListNotifier(ref.read(memberApiProvider));
+});
+
+class BirthdayListNotifier extends StateNotifier<AsyncState<BirthdayListResult>> {
+  final MemberApi _api;
+
+  BirthdayListNotifier(this._api)
+      : super(AsyncState(data: BirthdayListResult.empty())) {
+    load('week');
+  }
+
+  Future<void> load([String period = 'week']) async {
+    state = AsyncState(data: state.data, loading: true);
+    try {
+      final result = await _api.listBirthdays(period: period);
+      state = AsyncState(data: result, loading: false);
+    } catch (e) {
+      state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
   }
 }

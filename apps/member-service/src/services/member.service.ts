@@ -3,6 +3,14 @@ import { NotFoundError, ConflictError } from '@church-app/shared';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+  BirthdayPeriod,
+  birthdayOccurrenceInRange,
+  isSameDay,
+  rangeForPeriod,
+  toDateOnlyIso,
+  turningAge,
+} from '../utils/birthday.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
@@ -78,6 +86,50 @@ export class MemberService {
     });
     if (!data) throw new NotFoundError('Member not found');
     return { success: true, data };
+  }
+
+  async findBirthdays(period: BirthdayPeriod = 'week', now = new Date()) {
+    const { start, end } = rangeForPeriod(period, now);
+    const members = await this.prisma.member.findMany({
+      where: {
+        deletedAt: null,
+        dateOfBirth: { not: null },
+        status: { not: 'EXCLUIDO' },
+      },
+      include: { ministry: true },
+      orderBy: { name: 'asc' },
+    });
+
+    const items = members
+      .map((member) => {
+        const birth = member.dateOfBirth!;
+        const occurrence = birthdayOccurrenceInRange(birth, start, end);
+        if (!occurrence) return null;
+        return {
+          ...member,
+          birthdayThisYear: toDateOnlyIso(occurrence),
+          turningAge: turningAge(birth, occurrence),
+          isToday: isSameDay(occurrence, now),
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item != null)
+      .sort((a, b) => {
+        if (a.birthdayThisYear === b.birthdayThisYear) {
+          return a.name.localeCompare(b.name, 'pt-BR');
+        }
+        return a.birthdayThisYear.localeCompare(b.birthdayThisYear);
+      });
+
+    return {
+      success: true,
+      data: {
+        period,
+        startDate: toDateOnlyIso(start),
+        endDate: toDateOnlyIso(end),
+        total: items.length,
+        items,
+      },
+    };
   }
 
   async create(body: any) {
