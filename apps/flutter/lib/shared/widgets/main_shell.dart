@@ -52,7 +52,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                         grad: const [AppColors.primary, AppColors.primaryDark],
                         onTap: () => context.go(AppRoutes.worship),
                       ),
-                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_DIACONOS', 'DIACONO'])) ...[
+                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'DIACONO', 'LIDER_DIACONOS'])) ...[
                       const SizedBox(height: 10),
                       _sideButton(
                         icon: Icons.volunteer_activism_rounded,
