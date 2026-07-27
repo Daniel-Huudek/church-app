@@ -3,6 +3,11 @@ import { memberClient } from '../http-client';
 import { validate, getAuthHeader } from '@church-app/shared';
 import { z } from 'zod';
 
+const addressSchema = z.object({
+  street: z.string().min(1), number: z.string().optional(), complement: z.string().optional(),
+  neighborhood: z.string().min(1), city: z.string().min(1), state: z.string().min(1), zipCode: z.string().min(1),
+});
+
 const memberSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().optional(),
@@ -13,20 +18,18 @@ const memberSchema = z.object({
   baptismDate: z.string().optional(),
   baptismChurch: z.string().optional(),
   conversionDate: z.string().optional(),
+  admissionDate: z.string().optional(),
+  admissionType: z.enum(['BATISMO', 'TRANSFERENCIA', 'RECONCILIACAO', 'OUTRO']).optional(),
   isBaptized: z.boolean().default(false),
   status: z.enum(['ATIVO', 'INATIVO', 'AFASTADO', 'TRANSFERIDO', 'EXCLUIDO']).default('ATIVO'),
   role: z.enum(['MEMBRO', 'DIACONO', 'PRESBITERO', 'PASTOR']).default('MEMBRO'),
   ministryId: z.string().uuid().optional(),
   occupation: z.string().optional(),
   notes: z.string().optional(),
+  address: addressSchema.optional(),
 });
 
 const importSchema = z.object({ records: z.array(z.record(z.string(), z.unknown())) });
-
-const addressSchema = z.object({
-  street: z.string().min(1), number: z.string().optional(), complement: z.string().optional(),
-  neighborhood: z.string().min(1), city: z.string().min(1), state: z.string().min(1), zipCode: z.string().min(1),
-});
 
 const documentSchema = z.object({ type: z.string().min(1), value: z.string().min(1) });
 

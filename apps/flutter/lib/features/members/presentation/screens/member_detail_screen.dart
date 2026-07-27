@@ -1,17 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/app_badge.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../domain/member_model.dart';
 import '../providers/member_provider.dart';
 
 class MemberDetailScreen extends ConsumerWidget {
   final String id;
 
   const MemberDetailScreen({super.key, required this.id});
+
+  String _admissionLabel(String? type) {
+    switch (type) {
+      case 'BATISMO':
+        return 'Batismo';
+      case 'TRANSFERENCIA':
+        return 'Transferência';
+      case 'RECONCILIACAO':
+        return 'Reconciliação';
+      case 'OUTRO':
+        return 'Outro';
+      default:
+        return type ?? '';
+    }
+  }
+
+  String _formatAddress(MemberAddress address) {
+    final line1 = [
+      address.street,
+      address.number,
+    ].whereType<String>().where((e) => e.isNotEmpty).join(', ');
+    final cityState = [
+      address.city,
+      address.state,
+    ].whereType<String>().where((e) => e.isNotEmpty).join(' - ');
+    final parts = <String>[
+      if (line1.isNotEmpty) line1,
+      if (address.complement != null && address.complement!.isNotEmpty) address.complement!,
+      if (address.neighborhood != null && address.neighborhood!.isNotEmpty) address.neighborhood!,
+      if (cityState.isNotEmpty) cityState,
+      if (address.zipCode != null && address.zipCode!.isNotEmpty) 'CEP ${address.zipCode}',
+    ];
+    return parts.join('\n');
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,8 +81,16 @@ class MemberDetailScreen extends ConsumerWidget {
     }
 
     final member = state.member!;
+    final secondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await context.push(AppRoutes.membersEdit(id));
+          ref.read(memberDetailProvider(id).notifier).load();
+        },
+        child: const Icon(Icons.edit),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -81,22 +126,25 @@ class MemberDetailScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         member.email!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: secondary),
                       ),
                     ],
                     const SizedBox(height: AppSpacing.sm),
-                    AppBadge(label: member.role),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        AppBadge(label: member.role),
+                        AppBadge(label: member.status, variant: AppBadgeVariant.info),
+                      ],
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
               if (member.phone != null || member.email != null) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Text('Contato', style: Theme.of(context).textTheme.titleMedium),
-                ),
+                _sectionTitle(context, 'Contato'),
                 const SizedBox(height: AppSpacing.sm),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -105,7 +153,7 @@ class MemberDetailScreen extends ConsumerWidget {
                       children: [
                         if (member.phone != null) ...[
                           _ContactRow(icon: Icons.phone, value: member.phone!, onTap: () {}),
-                          const Divider(),
+                          if (member.email != null) const Divider(),
                         ],
                         if (member.email != null)
                           _ContactRow(icon: Icons.email, value: member.email!, onTap: () {}),
@@ -115,10 +163,7 @@ class MemberDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.xl),
               ],
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text('Informações Pessoais', style: Theme.of(context).textTheme.titleMedium),
-              ),
+              _sectionTitle(context, 'Informações pessoais'),
               const SizedBox(height: AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -126,26 +171,65 @@ class MemberDetailScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       if (member.birthDate != null)
-                        _InfoItem(label: 'Data de Nascimento', value: Formatters.formatDate(member.birthDate!)),
-                      if (member.birthDate != null) const Divider(),
-                      if (member.maritalStatus != null)
-                        _InfoItem(label: 'Estado Civil', value: member.maritalStatus!),
-                      if (member.maritalStatus != null) const Divider(),
-                      if (member.baptismDate != null)
-                        _InfoItem(label: 'Batismo', value: Formatters.formatDate(member.baptismDate!)),
-                      if (member.baptismDate != null) const Divider(),
-                      if (member.conversionDate != null)
+                        _InfoItem(label: 'Nascimento', value: Formatters.formatDate(member.birthDate!)),
+                      if (member.birthDate != null && member.age.isNotEmpty) const Divider(),
+                      if (member.age.isNotEmpty) _InfoItem(label: 'Idade', value: member.age),
+                      if (member.gender != null) ...[
+                        if (member.birthDate != null || member.age.isNotEmpty) const Divider(),
+                        _InfoItem(label: 'Gênero', value: member.gender!),
+                      ],
+                      if (member.maritalStatus != null) ...[
+                        const Divider(),
+                        _InfoItem(label: 'Estado civil', value: member.maritalStatus!),
+                      ],
+                      if (member.occupation != null) ...[
+                        const Divider(),
+                        _InfoItem(label: 'Profissão', value: member.occupation!),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              _sectionTitle(context, 'Vida espiritual'),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: AppCard(
+                  child: Column(
+                    children: [
+                      _InfoItem(label: 'Batizado', value: member.isBaptized ? 'Sim' : 'Não'),
+                      if (member.baptismDate != null) ...[
+                        const Divider(),
+                        _InfoItem(label: 'Data do batismo', value: Formatters.formatDate(member.baptismDate!)),
+                      ],
+                      if (member.baptismChurch != null) ...[
+                        const Divider(),
+                        _InfoItem(label: 'Igreja do batismo', value: member.baptismChurch!),
+                      ],
+                      if (member.conversionDate != null) ...[
+                        const Divider(),
                         _InfoItem(label: 'Conversão', value: Formatters.formatDate(member.conversionDate!)),
+                      ],
+                      if (member.admissionDate != null) ...[
+                        const Divider(),
+                        _InfoItem(label: 'Admissão', value: Formatters.formatDate(member.admissionDate!)),
+                      ],
+                      if (member.admissionType != null) ...[
+                        const Divider(),
+                        _InfoItem(label: 'Tipo de admissão', value: _admissionLabel(member.admissionType)),
+                      ],
+                      if (member.notes != null && member.notes!.isNotEmpty) ...[
+                        const Divider(),
+                        _InfoItem(label: 'Observações', value: member.notes!),
+                      ],
                     ],
                   ),
                 ),
               ),
               if (member.ministries.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xl),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Text('Ministérios', style: Theme.of(context).textTheme.titleMedium),
-                ),
+                _sectionTitle(context, 'Ministérios'),
                 const SizedBox(height: AppSpacing.sm),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -163,11 +247,35 @@ class MemberDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+              if (member.address?.hasAny == true) ...[
+                const SizedBox(height: AppSpacing.xl),
+                _sectionTitle(context, 'Endereço'),
+                const SizedBox(height: AppSpacing.sm),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: AppCard(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: Text(
+                        _formatAddress(member.address!),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.xl2),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _sectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Text(title, style: Theme.of(context).textTheme.titleMedium),
     );
   }
 }
@@ -209,12 +317,17 @@ class _InfoItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            ),
           ),
         ],
       ),

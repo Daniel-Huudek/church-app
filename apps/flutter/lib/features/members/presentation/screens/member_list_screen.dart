@@ -7,6 +7,7 @@ import '../../../../shared/widgets/app_chip.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/router/app_routes.dart';
 import '../providers/member_provider.dart';
 
 class MemberListScreen extends ConsumerStatefulWidget {
@@ -18,7 +19,22 @@ class MemberListScreen extends ConsumerStatefulWidget {
 
 class _MemberListScreenState extends ConsumerState<MemberListScreen> {
   String _selectedFilter = 'Todos';
-  final _filters = ['Todos', 'ATIVO', 'INATIVO', 'VISITANTE'];
+  final _filters = ['Todos', 'ATIVO', 'INATIVO', 'AFASTADO', 'TRANSFERIDO'];
+
+  String _filterLabel(String f) {
+    switch (f) {
+      case 'ATIVO':
+        return 'Ativo';
+      case 'INATIVO':
+        return 'Inativo';
+      case 'AFASTADO':
+        return 'Afastado';
+      case 'TRANSFERIDO':
+        return 'Transferido';
+      default:
+        return 'Todos';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +54,12 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => context.push(AppRoutes.membersCreate),
         child: const Icon(Icons.add),
       ),
       body: Column(
         children: [
-          Container(
+          SizedBox(
             height: 48,
             child: ListView(
               scrollDirection: Axis.horizontal,
@@ -52,7 +68,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                   .map((f) => Padding(
                         padding: const EdgeInsets.only(right: AppSpacing.sm),
                         child: AppChip(
-                          label: f == 'ATIVO' ? 'Ativo' : f == 'INATIVO' ? 'Inativo' : f == 'VISITANTE' ? 'Visitante' : 'Todos',
+                          label: _filterLabel(f),
                           selected: _selectedFilter == f,
                           onTap: () => setState(() => _selectedFilter = f),
                         ),
@@ -82,7 +98,7 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                                   child: AppCard(
-                                    onTap: () => context.push('/members/${member.id}'),
+                                    onTap: () => context.push(AppRoutes.memberDetail(member.id)),
                                     child: Row(
                                       children: [
                                         AppAvatar(

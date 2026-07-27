@@ -13,6 +13,8 @@ const memberSchema = z.object({
   baptismDate: z.string().optional(),
   baptismChurch: z.string().optional(),
   conversionDate: z.string().optional(),
+  admissionDate: z.string().optional(),
+  admissionType: z.enum(['BATISMO', 'TRANSFERENCIA', 'RECONCILIACAO', 'OUTRO']).optional(),
   isBaptized: z.boolean().default(false),
   status: z.enum(['ATIVO', 'INATIVO', 'AFASTADO', 'TRANSFERIDO', 'EXCLUIDO']).default('ATIVO'),
   role: z.enum(['MEMBRO', 'DIACONO', 'PRESBITERO', 'PASTOR']).default('MEMBRO'),
@@ -20,6 +22,15 @@ const memberSchema = z.object({
   occupation: z.string().optional(),
   notes: z.string().optional(),
   userId: z.string().uuid().optional(),
+  address: z.object({
+    street: z.string().min(1),
+    number: z.string().optional(),
+    complement: z.string().optional(),
+    neighborhood: z.string().min(1),
+    city: z.string().min(1),
+    state: z.string().min(1),
+    zipCode: z.string().min(1),
+  }).optional(),
 });
 
 const addressSchema = z.object({
