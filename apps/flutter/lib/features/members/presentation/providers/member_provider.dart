@@ -68,6 +68,10 @@ final birthdayListProvider =
   return BirthdayListNotifier(ref.read(memberApiProvider));
 });
 
+final weeklyBirthdaysProvider = FutureProvider.autoDispose<BirthdayListResult>((ref) {
+  return ref.read(memberApiProvider).listBirthdays(period: 'week');
+});
+
 class BirthdayListNotifier extends StateNotifier<AsyncState<BirthdayListResult>> {
   final MemberApi _api;
 
