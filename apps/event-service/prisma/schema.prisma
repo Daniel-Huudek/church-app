@@ -22,6 +22,9 @@ model Event {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
+  @@index([date])
+  @@index([type])
+  @@index([deletedAt])
   @@map("events")
 }
 

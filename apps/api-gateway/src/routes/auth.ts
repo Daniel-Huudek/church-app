@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { authClient } from '../http-client';
-import { validate } from '@church-app/shared';
+import { validate, getAuthHeader } from '@church-app/shared';
 import { z } from 'zod';
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
@@ -10,7 +10,7 @@ const googleTokenSchema = z.object({ token: z.string().min(1) });
 
 export async function authRoutes(fastify: FastifyInstance) {
   fastify.get('/google', async (_request, reply) => {
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_REDIRECT_URI}&response_type=code&scope=openid profile email&access_type=offline`;
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.GOOGLE_REDIRECT_URI || '')}&response_type=code&scope=openid%20profile%20email&access_type=offline&state=${crypto.randomUUID()}`;
     return reply.redirect(googleAuthUrl);
   });
 
@@ -20,7 +20,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ success: false, message: 'Code not provided' });
     }
     try {
-      const data = await authClient.post('/auth/google/callback', { code });
+      // Auth service expects code in query string
+      const data = await authClient.post(`/auth/google/callback?code=${encodeURIComponent(code)}`, {});
       await reply.send(data);
     } catch (error: any) {
       await reply.status(error.statusCode || 500).send({
@@ -84,8 +85,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   fastify.post('/logout', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
-      const token = request.headers.authorization?.replace('Bearer ', '');
-      await authClient.post('/auth/logout', { token });
+      await authClient.post('/auth/logout', {}, getAuthHeader(request));
       await reply.send({ success: true, message: 'Logged out successfully' });
     } catch (error: any) {
       await reply.status(error.statusCode || 500).send({

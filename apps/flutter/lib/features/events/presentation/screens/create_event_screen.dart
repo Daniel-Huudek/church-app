@@ -14,22 +14,16 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
-  final _timeCtrl = TextEditingController();
+  final _startCtrl = TextEditingController();
+  final _endCtrl = TextEditingController();
   final _locCtrl = TextEditingController();
-  String _type = 'CULTO';
+  String _type = 'WORSHIP';
   bool _loading = false;
 
   static const _eventTypes = [
-    ('CULTO', 'Culto', '✝️'),
-    ('REUNIAO', 'Reunião', '👥'),
-    ('ESTUDO', 'Estudo', '📖'),
-    ('EVENTO_SOCIAL', 'Social', '🎉'),
-    ('EVENTO_ESPECIAL', 'Especial', '⭐'),
-    ('ESCOLA_DOMINICAL', 'Escola Dominical', '📚'),
-    ('JEJUM', 'Jejum', '🙏'),
-    ('VIGILIA', 'Vigília', '🌙'),
-    ('RETIRO', 'Retiro', '🏕️'),
-    ('OUTRO', 'Outro', '📌'),
+    ('WORSHIP', 'Culto', '✝️'),
+    ('EVENT', 'Evento', '🎉'),
+    ('REHEARSAL', 'Ensaio', '🎵'),
   ];
 
   @override
@@ -37,22 +31,46 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _dateCtrl.dispose();
-    _timeCtrl.dispose();
+    _startCtrl.dispose();
+    _endCtrl.dispose();
     _locCtrl.dispose();
     super.dispose();
   }
 
+  String _datePayload() {
+    final value = _dateCtrl.text.trim();
+    final parts = value.split('/');
+    if (parts.length == 3) {
+      final day = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
+      final rawYear = int.tryParse(parts[2]);
+      if (day != null && month != null && rawYear != null) {
+        final year = rawYear < 100 ? 2000 + rawYear : rawYear;
+        return DateTime(year, month, day).toIso8601String();
+      }
+    }
+    final parsed = DateTime.tryParse(value);
+    return parsed?.toIso8601String() ?? value;
+  }
+
   void _handleSave() async {
-    if (_titleCtrl.text.trim().isEmpty) return;
+    if (_titleCtrl.text.trim().isEmpty ||
+        _dateCtrl.text.trim().isEmpty ||
+        _startCtrl.text.trim().isEmpty ||
+        _endCtrl.text.trim().isEmpty) {
+      return;
+    }
     setState(() => _loading = true);
     try {
       await ref.read(eventListProvider.notifier).create({
         'title': _titleCtrl.text.trim(),
-        'description': _descCtrl.text.trim(),
+        if (_descCtrl.text.trim().isNotEmpty)
+          'description': _descCtrl.text.trim(),
         'type': _type,
-        'date': _dateCtrl.text.trim(),
-        'startTime': _timeCtrl.text.trim(),
-        'location': _locCtrl.text.trim(),
+        'date': _datePayload(),
+        'startTime': _startCtrl.text.trim(),
+        'endTime': _endCtrl.text.trim(),
+        if (_locCtrl.text.trim().isNotEmpty) 'location': _locCtrl.text.trim(),
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -135,9 +153,11 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  _field('Data', _dateCtrl, 'DD/MM/YY', t1, t2, card, border),
+                  _field('Data', _dateCtrl, 'AAAA-MM-DD ou DD/MM/AAAA', t1, t2, card, border),
                   const SizedBox(height: 20),
-                  _field('Horário', _timeCtrl, '19:00', t1, t2, card, border),
+                  _field('Início', _startCtrl, '19:00', t1, t2, card, border),
+                  const SizedBox(height: 20),
+                  _field('Término', _endCtrl, '21:00', t1, t2, card, border),
                   const SizedBox(height: 20),
                   _field('Local', _locCtrl, 'Endereço do evento', t1, t2, card, border),
                   const SizedBox(height: 20),

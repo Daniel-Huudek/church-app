@@ -1,18 +1,24 @@
 import { FastifyInstance } from 'fastify';
 import { authClient } from '../http-client';
 import { z } from 'zod';
-import { validate, getAuthHeader } from '@church-app/shared';
+import { validate, getAuthHeader, requireRoles } from '@church-app/shared';
 
-const userUpdateSchema = z.object({
-  role: z.string().optional(),
+const profileUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   avatar: z.string().optional(),
 });
+
+const userAdminUpdateSchema = profileUpdateSchema.extend({
+  role: z.string().optional(),
+});
+
 const permissionsUpdateSchema = z.object({ permissions: z.array(z.string()) });
 
+const adminRoles = requireRoles('ADMINISTRADOR', 'PASTOR');
+
 export async function userRoutes(fastify: FastifyInstance) {
-  fastify.get('/', { preHandler: [fastify.authenticate] }, async (_request, reply) => {
+  fastify.get('/', { preHandler: [fastify.authenticate, adminRoles] }, async (_request, reply) => {
     try {
       const data = await authClient.get('/auth');
       await reply.send(data);
@@ -24,7 +30,7 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate, adminRoles] }, async (request, reply) => {
     try {
       const data = await authClient.get(`/auth/${request.params.id}`);
       await reply.send(data);
@@ -36,9 +42,9 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.put<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.put<{ Params: { id: string } }>('/:id', { preHandler: [fastify.authenticate, adminRoles] }, async (request, reply) => {
     try {
-      const body = validate(userUpdateSchema, request.body);
+      const body = validate(userAdminUpdateSchema, request.body);
       const data = await authClient.put(`/auth/${request.params.id}`, body, getAuthHeader(request));
       await reply.send(data);
     } catch (error: any) {
@@ -49,9 +55,10 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Self-service profile update: never allow role changes via /me
   fastify.put('/me', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     try {
-      const body = validate(userUpdateSchema, request.body);
+      const body = validate(profileUpdateSchema, request.body);
       const data = await authClient.put(`/auth/${request.user.userId}`, body, getAuthHeader(request));
       await reply.send(data);
     } catch (error: any) {
@@ -62,7 +69,7 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.put<{ Params: { id: string } }>('/:id/permissions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.put<{ Params: { id: string } }>('/:id/permissions', { preHandler: [fastify.authenticate, adminRoles] }, async (request, reply) => {
     try {
       const body = validate(permissionsUpdateSchema, request.body);
       const data = await authClient.put(`/auth/${request.params.id}/permissions`, body, getAuthHeader(request));
@@ -75,4 +82,3 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 }
-

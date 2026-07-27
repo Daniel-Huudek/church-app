@@ -20,6 +20,10 @@ const fastify = Fastify({
 });
 
 async function bootstrap() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+
   await fastify.register(helmet, {
     contentSecurityPolicy: false,
   });
@@ -39,7 +43,7 @@ async function bootstrap() {
   });
 
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET!,
+    secret: process.env.JWT_SECRET,
     sign: {
       expiresIn: process.env.JWT_EXPIRES_IN || '15m',
     },

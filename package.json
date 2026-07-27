@@ -8,22 +8,14 @@
   ],
   "scripts": {
     "dev": "pnpm --parallel -r dev",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
     "docker:build": "DOCKER_BUILDKIT=1 COMPOSE_BAKE=true docker compose build",
     "docker:bake": "DOCKER_BUILDKIT=1 docker buildx bake -f docker-bake.hcl",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "prepare": "husky install"
-  },
-  "pnpm": {
-    "overrides": {
-      "metro": "0.81.5"
-    }
-  },
-  "dependencies": {
-    "metro-runtime": "0.81.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",

@@ -33,6 +33,7 @@ model PrayerRequest {
   @@index([authorId])
   @@index([categoryId])
   @@index([answeredBy])
+  @@index([deletedAt])
   @@map("prayer_requests")
 }
 

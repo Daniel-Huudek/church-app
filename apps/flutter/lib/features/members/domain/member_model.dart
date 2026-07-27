@@ -83,3 +83,26 @@ class MemberModel {
     'createdAt': createdAt.toIso8601String(),
   };
 }
+
+class MinistryModel {
+  final String id;
+  final String name;
+  final String? description;
+  final String? leaderId;
+
+  const MinistryModel({
+    required this.id,
+    required this.name,
+    this.description,
+    this.leaderId,
+  });
+
+  factory MinistryModel.fromJson(Map<String, dynamic> json) {
+    return MinistryModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      leaderId: json['leaderId'] as String?,
+    );
+  }
+}
