@@ -16,7 +16,10 @@ export class AuthService {
   private refreshExpiresIn: string;
 
   constructor(private prisma: PrismaClient) {
-    this.jwtSecret = process.env.JWT_SECRET!;
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+    this.jwtSecret = process.env.JWT_SECRET;
     this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '15m';
     this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
   }
@@ -34,7 +37,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({ where: { email, deletedAt: null } });
     if (!user || !user.password) throw new UnauthorizedError('Invalid credentials');
 
     const valid = await bcrypt.compare(password, user.password);
@@ -77,10 +80,10 @@ export class AuthService {
   }
 
   private async findOrCreateGoogleUser(payload: { sub: string; email?: string; name?: string; picture?: string }) {
-    let user = await this.prisma.user.findUnique({ where: { googleId: payload.sub } });
+    let user = await this.prisma.user.findFirst({ where: { googleId: payload.sub, deletedAt: null } });
 
     if (!user) {
-      user = await this.prisma.user.findUnique({ where: { email: payload.email! } });
+      user = await this.prisma.user.findFirst({ where: { email: payload.email!, deletedAt: null } });
       if (user) {
         user = await this.prisma.user.update({ where: { id: user.id }, data: { googleId: payload.sub, avatar: payload.picture } });
       } else {
@@ -99,7 +102,7 @@ export class AuthService {
     const token = await this.prisma.refreshToken.findUnique({ where: { token: refreshToken } });
     if (!token || token.expiresAt < new Date()) throw new UnauthorizedError('Invalid refresh token');
 
-    const user = await this.prisma.user.findUnique({ where: { id: token.userId } });
+    const user = await this.prisma.user.findFirst({ where: { id: token.userId, deletedAt: null } });
     if (!user) throw new UnauthorizedError('User not found');
 
     await this.prisma.refreshToken.delete({ where: { id: token.id } });
@@ -148,6 +151,7 @@ export class AuthService {
 
   async getAllUsers() {
     const users = await this.prisma.user.findMany({
+      where: { deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -162,8 +166,8 @@ export class AuthService {
   }
 
   async getUserById(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -181,13 +185,13 @@ export class AuthService {
   async updateUser(userId: string, data: { role?: string; name?: string; email?: string; avatar?: string }) {
     const updateData: any = {};
     if (data.role) {
-      const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'MEMBRO', 'VISITANTE'];
+      const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'MEMBRO', 'VISITANTE'];
       if (!validRoles.includes(data.role)) throw new AppError('Invalid role', 400);
       updateData.role = data.role;
     }
     if (data.name) updateData.name = data.name;
     if (data.email) {
-      const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
+      const existing = await this.prisma.user.findFirst({ where: { email: data.email, deletedAt: null } });
       if (existing && existing.id !== userId) throw new ConflictError('Email already in use');
       updateData.email = data.email;
     }

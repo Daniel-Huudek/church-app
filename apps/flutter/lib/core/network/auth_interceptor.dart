@@ -31,6 +31,14 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
+    // Avoid infinite refresh loops on the refresh endpoint itself
+    if (err.requestOptions.path.contains('/auth/refresh')) {
+      _isRefreshing = false;
+      await SecureStorage.clearAuth();
+      onSessionExpired?.call();
+      return handler.reject(err);
+    }
+
     if (_isRefreshing) {
       _pendingRequests.add((options: err.requestOptions, handler: handler));
       return;
@@ -41,6 +49,8 @@ class AuthInterceptor extends Interceptor {
       final refreshToken = await SecureStorage.getRefreshToken();
       if (refreshToken == null) {
         _isRefreshing = false;
+        await SecureStorage.clearAuth();
+        onSessionExpired?.call();
         return handler.reject(err);
       }
 
@@ -49,8 +59,17 @@ class AuthInterceptor extends Interceptor {
         data: {'refreshToken': refreshToken},
       );
 
-      final newAccessToken = response.data['accessToken'] as String;
-      final newRefreshToken = response.data['refreshToken'] as String;
+      // Backend returns { success: true, data: { accessToken, refreshToken, user } }
+      final payload = response.data is Map<String, dynamic>
+          ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+          : <String, dynamic>{};
+
+      final newAccessToken = payload['accessToken'] as String?;
+      final newRefreshToken = payload['refreshToken'] as String?;
+
+      if (newAccessToken == null || newRefreshToken == null) {
+        throw StateError('Invalid refresh response');
+      }
 
       await SecureStorage.setAccessToken(newAccessToken);
       await SecureStorage.setRefreshToken(newRefreshToken);
@@ -75,7 +94,7 @@ class AuthInterceptor extends Interceptor {
     } catch (e) {
       _isRefreshing = false;
       _pendingRequests.clear();
-      await SecureStorage.clearAll();
+      await SecureStorage.clearAuth();
       onSessionExpired?.call();
       handler.reject(err);
     }

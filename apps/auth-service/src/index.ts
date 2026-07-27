@@ -10,13 +10,17 @@ const prisma = new PrismaClient();
 const fastify = Fastify({ logger: false });
 
 async function bootstrap() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+
   await prisma.$connect();
 
   await fastify.register(helmet, { contentSecurityPolicy: false });
   await fastify.register(cors, { origin: true, credentials: true });
 
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET!,
+    secret: process.env.JWT_SECRET,
     sign: {
       expiresIn: process.env.JWT_EXPIRES_IN || '2h',
     },

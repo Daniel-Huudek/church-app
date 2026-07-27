@@ -4,12 +4,18 @@ import { getAuthHeader, validate } from '@church-app/shared';
 import { z } from 'zod';
 
 const messageSchema = z.object({ content: z.string().min(1) });
-const directChatSchema = z.object({ participantId: z.string().uuid(), message: z.string().min(1).optional() });
+const directChatSchema = z.object({
+  participantId: z.string().uuid().optional(),
+  otherUserId: z.string().uuid().optional(),
+  message: z.string().min(1).optional(),
+}).refine((data) => !!(data.participantId || data.otherUserId), {
+  message: 'participantId or otherUserId is required',
+});
 const readSchema = z.object({ messageId: z.string().uuid().optional() });
 
 export async function chatRoutes(fastify: FastifyInstance) {
   fastify.post('/ministry', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const body = { ...request.body as any, userId: request.user.userId };
+    const body = { ...request.body as object, userId: request.user.userId };
     try {
       const data = await chatClient.post('/chats/ministry', body, getAuthHeader(request));
       await reply.send(data);
@@ -66,7 +72,12 @@ export async function chatRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/direct', { preHandler: [fastify.authenticate] }, async (request, reply) => {
-    const body = { ...validate(directChatSchema, request.body), userId: request.user.userId };
+    const validated = validate(directChatSchema, request.body);
+    const body = {
+      userId: request.user.userId,
+      otherUserId: validated.otherUserId || validated.participantId,
+      message: validated.message,
+    };
     try {
       const data = await chatClient.post('/chats/direct', body, getAuthHeader(request));
       await reply.status(201).send(data);
@@ -85,5 +96,3 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
   });
 }
-
-

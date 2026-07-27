@@ -163,7 +163,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _clearLocalAuth() async {
-    await SecureStorage.clearAll();
+    await SecureStorage.clearAuth();
     _apiClient.clearAuthToken();
     state = const AuthState(isLoading: false);
   }

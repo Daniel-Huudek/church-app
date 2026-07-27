@@ -42,6 +42,15 @@ class SecureStorage {
     return _storage.read(key: _themeKey);
   }
 
+  /// Clears auth session keys only — preserves theme and other prefs.
+  static Future<void> clearAuth() async {
+    await Future.wait([
+      _storage.delete(key: _accessTokenKey),
+      _storage.delete(key: _refreshTokenKey),
+      _storage.delete(key: _userKey),
+    ]);
+  }
+
   static Future<void> clearAll() async {
     await _storage.deleteAll();
   }

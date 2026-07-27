@@ -12,7 +12,10 @@ const notificationSchema = z.object({
 
 const bulkNotificationSchema = z.object({
   type: z.enum(['SCHEDULE_REMINDER', 'ATTENDANCE_CONFIRMATION', 'GENERAL']),
-  recipientIds: z.array(z.string().uuid()),
+  recipients: z.array(z.object({
+    recipientId: z.string().uuid(),
+    phone: z.string().min(1),
+  })).min(1),
   message: z.string().min(1),
 });
 
