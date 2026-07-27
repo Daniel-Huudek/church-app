@@ -20,6 +20,7 @@ import '../../features/schedules/presentation/screens/schedule_detail_screen.dar
 import '../../features/schedules/presentation/screens/create_schedule_screen.dart';
 import '../../features/members/presentation/screens/member_list_screen.dart';
 import '../../features/members/presentation/screens/member_detail_screen.dart';
+import '../../features/members/presentation/screens/member_form_screen.dart';
 import '../../features/worship/presentation/screens/worship_dashboard_screen.dart';
 import '../../features/worship/presentation/screens/create_scale_screen.dart';
 import '../../features/worship/presentation/screens/scale_detail_screen.dart';
@@ -179,10 +180,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const MemberListScreen(),
             routes: [
               GoRoute(
+                path: 'create',
+                builder: (context, state) => const MemberFormScreen(),
+              ),
+              GoRoute(
                 path: ':id',
                 builder: (context, state) => MemberDetailScreen(
                   id: state.pathParameters['id'] ?? '',
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => MemberFormScreen(
+                      memberId: state.pathParameters['id'],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

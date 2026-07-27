@@ -18,7 +18,9 @@ class AppRoutes {
   static const String schedulesCreate = '/schedules/create';
   static String scheduleDetail(String id) => '/schedules/$id';
   static const String members = '/members';
+  static const String membersCreate = '/members/create';
   static String memberDetail(String id) => '/members/$id';
+  static String membersEdit(String id) => '/members/$id/edit';
   static const String finance = '/finance';
   static const String financeTransactions = '/finance/transactions';
   static const String financeReports = '/finance/reports';

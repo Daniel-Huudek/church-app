@@ -27,11 +27,23 @@ class MemberListNotifier extends StateNotifier<AsyncState<List<MemberModel>>> {
   Future<void> load() async {
     state = AsyncState(data: state.data, loading: true);
     try {
-      final members = await _api.list();
+      final members = await _api.list(limit: 100);
       state = AsyncState(data: members, loading: false);
     } catch (e) {
       state = AsyncState(data: state.data, loading: false, error: formatError(e));
     }
+  }
+
+  Future<MemberModel> create(Map<String, dynamic> data) async {
+    final member = await _api.create(data);
+    await load();
+    return member;
+  }
+
+  Future<MemberModel> update(String id, Map<String, dynamic> data) async {
+    final member = await _api.update(id, data);
+    await load();
+    return member;
   }
 }
 
