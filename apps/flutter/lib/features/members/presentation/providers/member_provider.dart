@@ -14,6 +14,10 @@ final memberListProvider = StateNotifierProvider.autoDispose<MemberListNotifier,
   return MemberListNotifier(ref.read(memberApiProvider));
 });
 
+final ministryListProvider = FutureProvider.autoDispose<List<MinistryModel>>((ref) {
+  return ref.read(memberApiProvider).listMinistries();
+});
+
 class MemberListNotifier extends StateNotifier<AsyncState<List<MemberModel>>> {
   final MemberApi _api;
 

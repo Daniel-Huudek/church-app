@@ -1,47 +1,143 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
+import { UnauthorizedError, ForbiddenError } from './errors.js';
 
-const ALLOWED_ROLES = {
+export const ALLOWED_ROLES = {
   ADMINISTRADOR: 'ADMINISTRADOR',
   PASTOR: 'PASTOR',
   FINANCEIRO: 'FINANCEIRO',
   LIDER: 'LIDER',
+  LIDER_LOUVOR: 'LIDER_LOUVOR',
+  LOUVOR: 'LOUVOR',
   MEMBRO: 'MEMBRO',
+  VISITANTE: 'VISITANTE',
 } as const;
 
-type Role = keyof typeof ALLOWED_ROLES;
+export type Role = keyof typeof ALLOWED_ROLES;
 
-export function authorize(...allowedRoles: Role[]) {
+export type AuthUser = {
+  userId: string;
+  email: string;
+  role: Role;
+  permissions: string[];
+};
+
+type RequestWithUser = FastifyRequest & { user?: AuthUser };
+
+function asRequestWithUser(request: FastifyRequest): RequestWithUser {
+  return request as RequestWithUser;
+}
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  return secret;
+}
+
+function decodeToken(authHeader: string | undefined): AuthUser {
+  if (!authHeader) {
+    throw new UnauthorizedError('Unauthorized');
+  }
+
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  const decoded = jwt.verify(token, getJwtSecret()) as AuthUser;
+
+  if (!decoded?.userId || !decoded?.role) {
+    throw new UnauthorizedError('Invalid token');
+  }
+
+  return {
+    userId: decoded.userId,
+    email: decoded.email,
+    role: decoded.role,
+    permissions: decoded.permissions ?? [],
+  };
+}
+
+/** Verifies JWT from Authorization header and attaches request.user */
+export function authenticate() {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    const authHeader = request.headers.authorization;
-    if (!authHeader) {
-      return reply.status(401).send({ success: false, message: 'Unauthorized' });
-    }
-
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error('JWT_SECRET environment variable is not set');
-    }
-
     try {
-      const token = authHeader.replace('Bearer ', '');
-      const decoded = jwt.verify(token, secret) as { userId: string; email: string; role: Role; permissions: string[] };
-
-      if (!allowedRoles.includes(decoded.role)) {
-        return reply.status(403).send({ success: false, message: 'Forbidden' });
-      }
-
-      request.user = decoded;
+      asRequestWithUser(request).user = decodeToken(request.headers.authorization);
     } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ success: false, message: error.message });
+      }
       return reply.status(401).send({ success: false, message: 'Invalid token' });
     }
   };
 }
 
+/** Requires authenticated user with one of the allowed roles */
+export function authorize(...allowedRoles: Role[]) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const req = asRequestWithUser(request);
+      const user = req.user?.userId
+        ? req.user
+        : decodeToken(request.headers.authorization);
+
+      if (!allowedRoles.includes(user.role as Role)) {
+        return reply.status(403).send({ success: false, message: 'Forbidden' });
+      }
+
+      req.user = user;
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ success: false, message: error.message });
+      }
+      return reply.status(401).send({ success: false, message: 'Invalid token' });
+    }
+  };
+}
+
+/**
+ * Gateway helper: assumes request.user already set by @fastify/jwt authenticate.
+ * Returns 403 if role is not allowed.
+ */
+export function requireRoles(...allowedRoles: Role[]) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const role = asRequestWithUser(request).user?.role as Role | undefined;
+    if (!role || !allowedRoles.includes(role)) {
+      return reply.status(403).send({ success: false, message: 'Forbidden' });
+    }
+  };
+}
+
+/** Throws if request has no authenticated userId */
+export function requireAuthUser(request: FastifyRequest): AuthUser {
+  const user = asRequestWithUser(request).user;
+  if (!user?.userId) {
+    throw new UnauthorizedError('Unauthorized');
+  }
+  return {
+    userId: user.userId,
+    email: user.email ?? '',
+    role: (user.role as Role) ?? 'MEMBRO',
+    permissions: user.permissions ?? [],
+  };
+}
+
 export function getUserId(request: FastifyRequest): string | undefined {
-  return request.user?.userId;
+  return asRequestWithUser(request).user?.userId;
 }
 
 export function getUserRole(request: FastifyRequest): string | undefined {
-  return request.user?.role;
+  return asRequestWithUser(request).user?.role;
+}
+
+export function assertFinanceWriteRole(role: string) {
+  const allowed: Role[] = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'];
+  if (!allowed.includes(role as Role)) {
+    throw new ForbiddenError('Insufficient permissions for finance operations');
+  }
+}
+
+export function assertUserAdminRole(role: string) {
+  const allowed: Role[] = ['ADMINISTRADOR', 'PASTOR'];
+  if (!allowed.includes(role as Role)) {
+    throw new ForbiddenError('Insufficient permissions for user administration');
+  }
 }

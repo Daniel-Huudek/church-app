@@ -48,6 +48,21 @@ export class NotificationService {
     return { success: true, data };
   }
 
+  async getUnreadCount(recipientId: string) {
+    const unread = await this.prisma.notification.count({
+      where: { recipientId, isRead: false },
+    });
+    return { success: true, data: { unread } };
+  }
+
+  async markAllAsRead(recipientId: string) {
+    await this.prisma.notification.updateMany({
+      where: { recipientId, isRead: false },
+      data: { isRead: true },
+    });
+    return { success: true };
+  }
+
   private async sendWhatsAppMessage(phone: string, message: string) {
     const response = await fetch(`${this.evolutionApiUrl}/message/sendText/default`, {
       method: 'POST',

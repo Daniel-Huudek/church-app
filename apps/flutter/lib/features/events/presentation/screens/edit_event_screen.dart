@@ -15,29 +15,63 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _dateCtrl = TextEditingController();
-  final _timeCtrl = TextEditingController();
+  final _startCtrl = TextEditingController();
+  final _endCtrl = TextEditingController();
   final _locCtrl = TextEditingController();
+  String _type = 'WORSHIP';
   bool _saving = false;
+
+  static const _eventTypes = [
+    ('WORSHIP', 'Culto', '✝️'),
+    ('EVENT', 'Evento', '🎉'),
+    ('REHEARSAL', 'Ensaio', '🎵'),
+  ];
 
   @override
   void dispose() {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _dateCtrl.dispose();
-    _timeCtrl.dispose();
+    _startCtrl.dispose();
+    _endCtrl.dispose();
     _locCtrl.dispose();
     super.dispose();
   }
 
+  String _datePayload() {
+    final value = _dateCtrl.text.trim();
+    final parts = value.split('/');
+    if (parts.length == 3) {
+      final day = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
+      final rawYear = int.tryParse(parts[2]);
+      if (day != null && month != null && rawYear != null) {
+        final year = rawYear < 100 ? 2000 + rawYear : rawYear;
+        return DateTime(year, month, day).toIso8601String();
+      }
+    }
+    final parsed = DateTime.tryParse(value);
+    return parsed?.toIso8601String() ?? value;
+  }
+
   void _handleSave() async {
+    if (_titleCtrl.text.trim().isEmpty ||
+        _dateCtrl.text.trim().isEmpty ||
+        _startCtrl.text.trim().isEmpty ||
+        _endCtrl.text.trim().isEmpty) {
+      return;
+    }
     setState(() => _saving = true);
     try {
       await ref.read(eventListProvider.notifier).update(widget.id, {
         'title': _titleCtrl.text.trim(),
-        'description': _descCtrl.text.trim(),
-        'date': _dateCtrl.text.trim(),
-        'startTime': _timeCtrl.text.trim(),
-        'location': _locCtrl.text.trim(),
+        if (_descCtrl.text.trim().isNotEmpty)
+          'description': _descCtrl.text.trim(),
+        'type': _type,
+        'date': _datePayload(),
+        'startTime': _startCtrl.text.trim(),
+        'endTime': _endCtrl.text.trim(),
+        if (_locCtrl.text.trim().isNotEmpty) 'location': _locCtrl.text.trim(),
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,8 +107,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     final event = detail.event;
     if (event != null && _titleCtrl.text.isEmpty) {
       _titleCtrl.text = event.title;
+      _type = event.type;
       _dateCtrl.text = event.date.toIso8601String().substring(0, 10);
-      _timeCtrl.text = event.startTime;
+      _startCtrl.text = event.startTime;
+      _endCtrl.text = event.endTime ?? '';
       _locCtrl.text = event.location ?? '';
       _descCtrl.text = event.description ?? '';
     }
@@ -112,9 +148,38 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         children: [
           _field('Título', _titleCtrl, 'Nome do evento', t1, t2, card, border),
           const SizedBox(height: 20),
-          _field('Data', _dateCtrl, 'DD/MM/YY', t1, t2, card, border),
+          Text('Tipo de Evento', style: TextStyle(fontSize: 14, color: t2)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _eventTypes.map((e) {
+              final isSelected = _type == e.$1;
+              return GestureDetector(
+                onTap: () => setState(() => _type = e.$1),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF008CFF) : card,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF008CFF) : border,
+                    ),
+                  ),
+                  child: Text('${e.$3} ${e.$2}',
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: isSelected ? Colors.white : t1)),
+                ),
+              );
+            }).toList(),
+          ),
           const SizedBox(height: 20),
-          _field('Horário', _timeCtrl, '19:00', t1, t2, card, border),
+          _field('Data', _dateCtrl, 'AAAA-MM-DD ou DD/MM/AAAA', t1, t2, card, border),
+          const SizedBox(height: 20),
+          _field('Início', _startCtrl, '19:00', t1, t2, card, border),
+          const SizedBox(height: 20),
+          _field('Término', _endCtrl, '21:00', t1, t2, card, border),
           const SizedBox(height: 20),
           _field('Local', _locCtrl, 'Endereço do evento', t1, t2, card, border),
           const SizedBox(height: 20),

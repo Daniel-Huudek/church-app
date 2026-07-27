@@ -1,7 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { financialClient } from '../http-client';
-import { getAuthHeader, validate } from '@church-app/shared';
+import { getAuthHeader, validate, requireRoles } from '@church-app/shared';
 import { z } from 'zod';
+
+const financeWrite = requireRoles('ADMINISTRADOR', 'PASTOR', 'FINANCEIRO');
+const financeRead = requireRoles('ADMINISTRADOR', 'PASTOR', 'FINANCEIRO');
 
 const transactionSchema = z.object({
   type: z.enum(['INCOME', 'EXPENSE', 'TITHE', 'OFFERING']),
@@ -33,7 +36,7 @@ const monthlyCloseSchema = z.object({
 });
 
 export async function financeRoutes(fastify: FastifyInstance) {
-  fastify.get('/transactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/transactions', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     const { page, limit, type, status, categoryId, costCenterId, startDate, endDate, search } = request.query as Record<string, string>;
     let url = `/finance/transactions?page=${page || 1}&limit=${limit || 20}`;
     if (type) url += `&type=${type}`;
@@ -51,7 +54,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get<{ Params: { id: string } }>('/transactions/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get<{ Params: { id: string } }>('/transactions/:id', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     try {
       const data = await financialClient.get(`/finance/transactions/${request.params.id}`, getAuthHeader(request));
       await reply.send(data);
@@ -60,7 +63,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post('/transactions', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post('/transactions', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     const body = validate(transactionSchema, request.body);
     try {
       const data = await financialClient.post('/finance/transactions', body, getAuthHeader(request));
@@ -70,7 +73,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.put<{ Params: { id: string } }>('/transactions/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.put<{ Params: { id: string } }>('/transactions/:id', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     const body = validate(transactionSchema.partial(), request.body);
     try {
       const data = await financialClient.put(`/finance/transactions/${request.params.id}`, body, getAuthHeader(request));
@@ -80,7 +83,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.delete<{ Params: { id: string } }>('/transactions/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.delete<{ Params: { id: string } }>('/transactions/:id', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     try {
       const data = await financialClient.delete(`/finance/transactions/${request.params.id}`, getAuthHeader(request));
       await reply.send(data);
@@ -89,7 +92,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post<{ Params: { id: string } }>('/transactions/:id/confirm', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post<{ Params: { id: string } }>('/transactions/:id/confirm', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     try {
       const data = await financialClient.post(`/finance/transactions/${request.params.id}/confirm`, {}, getAuthHeader(request));
       await reply.send(data);
@@ -98,7 +101,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post<{ Params: { id: string } }>('/transactions/:id/cancel', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post<{ Params: { id: string } }>('/transactions/:id/cancel', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     try {
       const data = await financialClient.post(`/finance/transactions/${request.params.id}/cancel`, {}, getAuthHeader(request));
       await reply.send(data);
@@ -107,7 +110,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post<{ Params: { id: string } }>('/transactions/:id/attachments', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post<{ Params: { id: string } }>('/transactions/:id/attachments', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     try {
       const data = await financialClient.post(`/finance/transactions/${request.params.id}/attachments`, request.body, getAuthHeader(request));
       await reply.status(201).send(data);
@@ -116,7 +119,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get<{ Params: { id: string } }>('/transactions/:id/audit', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get<{ Params: { id: string } }>('/transactions/:id/audit', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     const { page, limit } = request.query as Record<string, string>;
     try {
       const data = await financialClient.get(`/finance/transactions/${request.params.id}/audit?page=${page || 1}&limit=${limit || 20}`, getAuthHeader(request));
@@ -126,7 +129,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/categories', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/categories', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     try {
       const data = await financialClient.get('/finance/categories', getAuthHeader(request));
       await reply.send(data);
@@ -135,7 +138,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post('/categories', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post('/categories', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     const body = validate(categorySchema, request.body);
     try {
       const data = await financialClient.post('/finance/categories', body, getAuthHeader(request));
@@ -145,7 +148,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.put<{ Params: { id: string } }>('/categories/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.put<{ Params: { id: string } }>('/categories/:id', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     const body = validate(categorySchema.partial(), request.body);
     try {
       const data = await financialClient.put(`/finance/categories/${request.params.id}`, body, getAuthHeader(request));
@@ -155,7 +158,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/cost-centers', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/cost-centers', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     try {
       const data = await financialClient.get('/finance/cost-centers', getAuthHeader(request));
       await reply.send(data);
@@ -164,7 +167,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post('/cost-centers', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post('/cost-centers', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     const body = validate(costCenterSchema, request.body);
     try {
       const data = await financialClient.post('/finance/cost-centers', body, getAuthHeader(request));
@@ -174,7 +177,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.put<{ Params: { id: string } }>('/cost-centers/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.put<{ Params: { id: string } }>('/cost-centers/:id', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     const body = validate(costCenterSchema.partial(), request.body);
     try {
       const data = await financialClient.put(`/finance/cost-centers/${request.params.id}`, body, getAuthHeader(request));
@@ -184,7 +187,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/dashboard', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/dashboard', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     try {
       const data = await financialClient.get('/finance/dashboard', getAuthHeader(request));
       await reply.send(data);
@@ -193,7 +196,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/dashboard/balance', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/dashboard/balance', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     try {
       const data = await financialClient.get('/finance/dashboard/balance', getAuthHeader(request));
       await reply.send(data);
@@ -202,7 +205,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/dashboard/cash-flow', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/dashboard/cash-flow', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     try {
       const data = await financialClient.get('/finance/dashboard/cash-flow', getAuthHeader(request));
       await reply.send(data);
@@ -211,7 +214,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/reports/monthly', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/reports/monthly', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     const { year, month } = request.query as Record<string, string>;
     try {
       const data = await financialClient.get(`/finance/reports/monthly?year=${year || new Date().getFullYear()}&month=${month || new Date().getMonth() + 1}`, getAuthHeader(request));
@@ -221,7 +224,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post('/monthly-close', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post('/monthly-close', { preHandler: [fastify.authenticate, financeWrite] }, async (request, reply) => {
     const body = validate(monthlyCloseSchema, request.body);
     try {
       const data = await financialClient.post('/finance/monthly-close', body, getAuthHeader(request));
@@ -231,7 +234,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/monthly-close', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/monthly-close', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     try {
       const data = await financialClient.get('/finance/monthly-close', getAuthHeader(request));
       await reply.send(data);
@@ -240,7 +243,7 @@ export async function financeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/audit', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/audit', { preHandler: [fastify.authenticate, financeRead] }, async (request, reply) => {
     const { page, limit } = request.query as Record<string, string>;
     try {
       const data = await financialClient.get(`/finance/audit?page=${page || 1}&limit=${limit || 20}`, getAuthHeader(request));

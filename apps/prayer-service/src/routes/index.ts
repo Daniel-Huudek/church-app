@@ -1,10 +1,10 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { validate, parsePagination } from '@church-app/shared';
+import { validate, parsePagination, authenticate, requireAuthUser } from '@church-app/shared';
 import { z } from 'zod';
 import { PrayerService } from '../services/prayer.service';
 
 const prayerSchema = z.object({
-  authorId: z.string().uuid(),
+  authorId: z.string().uuid().optional(),
   title: z.string().min(1).max(200),
   content: z.string().min(1),
   categoryId: z.string().uuid().optional(),
@@ -14,12 +14,12 @@ const prayerSchema = z.object({
 });
 
 const commentSchema = z.object({
-  authorId: z.string().uuid(),
+  authorId: z.string().uuid().optional(),
   content: z.string().min(1),
 });
 
 const reactionSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
   type: z.enum(['PRAYING', 'AMEN', 'THANKS']),
 });
 
@@ -32,6 +32,9 @@ const categorySchema = z.object({
 export async function prayerRoutes(fastify: FastifyInstance) {
   const service = new PrayerService(fastify.prisma);
 
+  // Identity always comes from JWT, never from client-supplied userId
+  fastify.addHook('preHandler', authenticate());
+
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const { page, limit } = parsePagination(request.query);
     const { categoryId, isUrgent } = request.query as Record<string, string | undefined>;
@@ -43,9 +46,10 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/my', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, page, limit } = request.query as Record<string, string | undefined>;
+    const { userId } = requireAuthUser(request);
+    const { page, limit } = request.query as Record<string, string | undefined>;
     const pagination = parsePagination({ page, limit });
-    const data = await service.findMyPrayers(userId ?? '', pagination);
+    const data = await service.findMyPrayers(userId, pagination);
     return reply.send(data);
   });
 
@@ -56,9 +60,10 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/favorites', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, page, limit } = request.query as Record<string, string | undefined>;
+    const { userId } = requireAuthUser(request);
+    const { page, limit } = request.query as Record<string, string | undefined>;
     const pagination = parsePagination({ page, limit });
-    const data = await service.getFavorites(userId ?? '', pagination);
+    const data = await service.getFavorites(userId, pagination);
     return reply.send(data);
   });
 
@@ -74,51 +79,54 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.query as Record<string, string | undefined>;
-    const data = await service.findById(request.params.id, userId ?? '');
+    const { userId } = requireAuthUser(request);
+    const data = await service.findById(request.params.id, userId);
     return reply.send(data);
   });
 
   fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { userId } = requireAuthUser(request);
     const body = validate(prayerSchema, request.body);
-    const data = await service.create(body);
+    const data = await service.create({ ...body, authorId: userId });
     return reply.status(201).send(data);
   });
 
   fastify.put('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId, role } = request.query as Record<string, string | undefined>;
+    const { userId, role } = requireAuthUser(request);
     const body = validate(prayerSchema.partial(), request.body);
-    const data = await service.update(request.params.id, userId ?? '', body, role);
+    const data = await service.update(request.params.id, userId, body, role);
     return reply.send(data);
   });
 
   fastify.delete('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId, role } = request.query as Record<string, string | undefined>;
-    await service.delete(request.params.id, userId ?? '', role);
+    const { userId, role } = requireAuthUser(request);
+    await service.delete(request.params.id, userId, role);
     return reply.send({ success: true });
   });
 
   fastify.post('/:id/answer', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.body as { userId?: string };
-    const data = await service.markAnswered(request.params.id, userId ?? '');
+    const { userId } = requireAuthUser(request);
+    const data = await service.markAnswered(request.params.id, userId);
     return reply.send(data);
   });
 
   fastify.post('/:id/comments', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const { userId } = requireAuthUser(request);
     const body = validate(commentSchema, request.body);
-    const data = await service.addComment(request.params.id, body.authorId, body.content);
+    const data = await service.addComment(request.params.id, userId, body.content);
     return reply.status(201).send(data);
   });
 
   fastify.post('/:id/react', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const { userId } = requireAuthUser(request);
     const body = validate(reactionSchema, request.body);
-    const data = await service.toggleReaction(request.params.id, body.userId, body.type);
+    const data = await service.toggleReaction(request.params.id, userId, body.type);
     return reply.send(data);
   });
 
   fastify.post('/:id/intercede', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.body as { userId?: string };
-    const data = await service.addIntercessor(request.params.id, userId ?? '');
+    const { userId } = requireAuthUser(request);
+    const data = await service.addIntercessor(request.params.id, userId);
     return reply.send(data);
   });
 
@@ -128,8 +136,8 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/:id/favorite', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    const { userId } = request.body as { userId?: string };
-    const data = await service.toggleFavorite(request.params.id, userId ?? '');
+    const { userId } = requireAuthUser(request);
+    const data = await service.toggleFavorite(request.params.id, userId);
     return reply.send(data);
   });
 }

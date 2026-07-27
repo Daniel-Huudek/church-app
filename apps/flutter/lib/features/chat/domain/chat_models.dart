@@ -55,7 +55,7 @@ class ChatMessageModel {
     required this.createdAt,
   });
 
-  bool get isMine => false;
+  bool isMineFor(String userId) => senderId == userId;
 
   factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
     return ChatMessageModel(

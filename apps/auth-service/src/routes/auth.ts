@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { validate } from '@church-app/shared';
+import { validate, authenticate, authorize, requireAuthUser, assertUserAdminRole } from '@church-app/shared';
 import { z } from 'zod';
 import { AuthService } from '../services/auth.service';
-import { UnauthorizedError } from '@church-app/shared';
+import { UnauthorizedError, ForbiddenError } from '@church-app/shared';
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
 const registerSchema = z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6) });
@@ -10,6 +10,16 @@ const googleCallbackSchema = z.object({ code: z.string() });
 const googleTokenSchema = z.object({ token: z.string() });
 const refreshSchema = z.object({ refreshToken: z.string() });
 const permissionsSchema = z.object({ permissions: z.array(z.string()) });
+const profileUpdateSchema = z.object({
+  role: z.string().optional(),
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  avatar: z.string().optional(),
+});
+const roleUpdateSchema = z.object({ permissions: z.array(z.string()) });
+
+const adminOnly = authorize('ADMINISTRADOR', 'PASTOR');
+const requireAuth = authenticate();
 
 export async function authRoutes(fastify: FastifyInstance) {
   const authService = new AuthService(fastify.prisma);
@@ -27,7 +37,8 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/google/callback', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { code } = validate(googleCallbackSchema, request.query);
+    const raw = { ...(request.query as object), ...(request.body as object) };
+    const { code } = validate(googleCallbackSchema, raw);
     const result = await authService.handleGoogleCallback(code);
     return reply.send(result);
   });
@@ -47,51 +58,70 @@ export async function authRoutes(fastify: FastifyInstance) {
   fastify.post('/logout', async (request: FastifyRequest, reply: FastifyReply) => {
     const authHeader = request.headers.authorization;
     if (!authHeader) throw new UnauthorizedError();
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace(/^Bearer\s+/i, '');
     await authService.logout(token);
     return reply.send({ success: true, message: 'Logged out successfully' });
   });
 
-  fastify.put('/:userId/permissions', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+  // Static admin routes BEFORE /:id
+  fastify.get('/roles', { preHandler: [adminOnly] }, async (_request, reply) => {
+    const result = await authService.getAllRoles();
+    return reply.send({ success: true, data: result });
+  });
+
+  fastify.put('/roles/:name', { preHandler: [adminOnly] }, async (request: FastifyRequest<{ Params: { name: string } }>, reply) => {
+    const { permissions } = validate(roleUpdateSchema, request.body);
+    const result = await authService.updateRole(request.params.name, permissions);
+    return reply.send({ success: true, data: result });
+  });
+
+  fastify.post('/roles/reset', { preHandler: [adminOnly] }, async (_request, reply) => {
+    const result = await authService.resetRoles();
+    return reply.send({ success: true, data: result });
+  });
+
+  fastify.get('/', { preHandler: [adminOnly] }, async (_request: FastifyRequest, _reply: FastifyReply) => {
+    const result = await authService.getAllUsers();
+    return _reply.send({ success: true, data: result });
+  });
+
+  fastify.put('/:userId/permissions', { preHandler: [adminOnly] }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     const body = validate(permissionsSchema, request.body);
     const result = await authService.setUserPermissions(request.params.userId, body.permissions);
     return reply.send({ success: true, data: result });
   });
 
-  fastify.get('/', async (_request: FastifyRequest, _reply: FastifyReply) => {
-    const result = await authService.getAllUsers();
-    return _reply.send({ success: true, data: result });
-  });
-
-  fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, _reply: FastifyReply) => {
-    const result = await authService.getUserById(request.params.id);
-    return _reply.send({ success: true, data: result });
-  });
-
-  fastify.get('/:userId/permissions', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+  fastify.get('/:userId/permissions', { preHandler: [adminOnly] }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     const result = await authService.getUserPermissions(request.params.userId);
     return reply.send({ success: true, data: result });
   });
 
-  fastify.put('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, _reply: FastifyReply) => {
-    const body = request.body as { role?: string; name?: string; email?: string; avatar?: string };
-    const result = await authService.updateUser(request.params.id, body);
+  // Any authenticated user can fetch basic profile (prayer enrichment, etc.)
+  fastify.get('/:id', { preHandler: [requireAuth] }, async (request: FastifyRequest<{ Params: { id: string } }>, _reply: FastifyReply) => {
+    const result = await authService.getUserById(request.params.id);
     return _reply.send({ success: true, data: result });
   });
 
-  fastify.get('/roles', async (_request, reply) => {
-    const result = await authService.getAllRoles();
-    return reply.send({ success: true, data: result });
-  });
+  fastify.put('/:id', { preHandler: [requireAuth] }, async (request: FastifyRequest<{ Params: { id: string } }>, _reply: FastifyReply) => {
+    const actor = requireAuthUser(request);
+    const body = validate(profileUpdateSchema, request.body);
+    const isSelf = actor.userId === request.params.id;
+    const wantsRoleChange = body.role !== undefined;
+    const isAdmin = ['ADMINISTRADOR', 'PASTOR'].includes(actor.role);
 
-  fastify.put('/roles/:name', async (request: FastifyRequest<{ Params: { name: string } }>, reply) => {
-    const { permissions } = request.body as { permissions: string[] };
-    const result = await authService.updateRole(request.params.name, permissions);
-    return reply.send({ success: true, data: result });
-  });
+    if (!isSelf || wantsRoleChange) {
+      assertUserAdminRole(actor.role);
+    }
 
-  fastify.post('/roles/reset', async (_request, reply) => {
-    const result = await authService.resetRoles();
-    return reply.send({ success: true, data: result });
+    if (isSelf && wantsRoleChange && !isAdmin) {
+      throw new ForbiddenError('Cannot change own role');
+    }
+
+    const safeBody = isAdmin
+      ? body
+      : { name: body.name, email: body.email, avatar: body.avatar };
+
+    const result = await authService.updateUser(request.params.id, safeBody);
+    return _reply.send({ success: true, data: result });
   });
 }

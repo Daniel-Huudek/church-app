@@ -13,34 +13,20 @@ class EventCard extends StatelessWidget {
   });
 
   static const _typeLabels = {
-    'CULTO': 'Culto',
-    'REUNIAO': 'Reunião',
-    'ESTUDO': 'Estudo',
-    'EVENTO_SOCIAL': 'Evento Social',
-    'EVENTO_ESPECIAL': 'Evento Especial',
-    'ESCOLA_DOMINICAL': 'Escola Dominical',
-    'JEJUM': 'Jejum',
-    'VIGILIA': 'Vigília',
-    'RETIRO': 'Retiro',
-    'OUTRO': 'Outro',
+    'WORSHIP': 'Culto',
+    'EVENT': 'Evento',
+    'REHEARSAL': 'Ensaio',
   };
 
   static const _typeColors = {
-    'CULTO': AppColors.primary,
-    'REUNIAO': AppColors.primary500,
-    'ESTUDO': AppColors.success,
-    'EVENTO_SOCIAL': AppColors.warning,
-    'EVENTO_ESPECIAL': Color(0xFFEC4899),
-    'ESCOLA_DOMINICAL': Color(0xFF06B6D4),
-    'JEJUM': AppColors.neutral500,
-    'VIGILIA': AppColors.primary800,
-    'RETIRO': Color(0xFF059669),
-    'OUTRO': AppColors.neutral400,
+    'WORSHIP': AppColors.primary,
+    'EVENT': AppColors.warning,
+    'REHEARSAL': AppColors.success,
   };
 
   String get _type => event.type;
   Color get _typeColor => _typeColors[_type] ?? AppColors.neutral400;
-  String get _typeLabel => _typeLabels[_type] ?? 'Outro';
+  String get _typeLabel => _typeLabels[_type] ?? 'Evento';
   String get _title => event.title;
   String get _date => event.date.toIso8601String();
   String get _time => event.startTime;
