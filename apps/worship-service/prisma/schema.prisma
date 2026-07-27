@@ -87,6 +87,7 @@ model SongTag {
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([songId, tagId])
+  @@index([tagId])
 }
 
 model Playlist {
@@ -143,6 +144,7 @@ model WorshipEventSong {
   song         Song         @relation(fields: [songId], references: [id])
 
   @@index([worshipEventId])
+  @@index([songId])
 }
 
 model WorshipEventMusician {
@@ -157,6 +159,7 @@ model WorshipEventMusician {
   worshipEvent WorshipEvent @relation(fields: [worshipEventId], references: [id], onDelete: Cascade)
 
   @@index([worshipEventId])
+  @@index([memberId])
 }
 
 model Favorite {
@@ -169,6 +172,7 @@ model Favorite {
 
   @@unique([userId, songId])
   @@index([userId])
+  @@index([songId])
 }
 
 model SongHistory {
