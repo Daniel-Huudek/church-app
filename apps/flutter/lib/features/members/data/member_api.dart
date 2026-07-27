@@ -1,6 +1,7 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/config/api_config.dart';
 import '../domain/member_model.dart';
+import '../domain/birthday_model.dart';
 
 class MemberApi {
   final ApiClient _client;
@@ -56,5 +57,14 @@ class MemberApi {
   Future<List<MinistryModel>> listMinistries() async {
     final response = await _client.get(ApiConfig.ministries);
     return _client.unwrapList(response.data, MinistryModel.fromJson);
+  }
+
+  Future<BirthdayListResult> listBirthdays({String period = 'week'}) async {
+    final response = await _client.get(
+      ApiConfig.membersBirthdays,
+      queryParameters: {'period': period},
+    );
+    final data = _client.unwrapData(response.data);
+    return BirthdayListResult.fromJson(data);
   }
 }

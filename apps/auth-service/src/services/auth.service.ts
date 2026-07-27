@@ -1,7 +1,7 @@
 import { PrismaClient, User, Role, Permission as PrismaPermission } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { AppError, UnauthorizedError, ConflictError, logger } from '@church-app/shared';
+import { AppError, UnauthorizedError, ConflictError } from '@church-app/shared';
 
 interface TokenPayload {
   userId: string;

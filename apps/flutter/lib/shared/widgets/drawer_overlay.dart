@@ -121,6 +121,14 @@ class _DrawerOverlayState extends State<DrawerOverlay>
                     },
                   ),
                   _drawerItem(
+                    icon: Icons.cake_rounded,
+                    label: 'Aniversariantes',
+                    onTap: () {
+                      context.go(AppRoutes.birthdays);
+                      widget.onClose();
+                    },
+                  ),
+                  _drawerItem(
                     icon: Icons.attach_money_rounded,
                     label: 'Finanças',
                     onTap: () {

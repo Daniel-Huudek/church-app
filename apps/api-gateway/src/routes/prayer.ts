@@ -43,7 +43,9 @@ async function enrichWithAuthors(data: any, authHeader: Record<string, string>):
     try {
       const res: any = await authClient.get(`/auth/${id}`, authHeader);
       userMap[id] = { name: res.data.name, avatar: res.data.avatar };
-    } catch {}
+    } catch {
+      // ignore author lookup failures
+    }
   }));
 
   for (const item of itemsArr) {
