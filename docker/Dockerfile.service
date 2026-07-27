@@ -1,11 +1,9 @@
 # syntax=docker/dockerfile:1
-# Shared multi-stage image for all Node microservices.
+# Low-RAM multi-stage image for VPS/Dokploy (~4GB).
+# SERIAL builds only — parallel builds will OOM a 4GB box.
 #
-# docker build -f docker/Dockerfile.service \
-#   --build-arg SERVICE=auth-service \
-#   --build-arg PORT=3001 \
-#   --build-arg PACKAGE_NAME=@church-app/auth-service \
-#   --build-arg HAS_PRISMA=true .
+#   ./scripts/docker-build-vps.sh
+#   DOCKER_BUILDKIT=1 docker compose build --parallel 1
 
 ARG SERVICE
 ARG PORT=3000
@@ -17,10 +15,12 @@ RUN apk add --no-cache openssl wget \
   && corepack enable \
   && corepack prepare pnpm@10.12.1 --activate
 WORKDIR /app
-ENV HUSKY=0
-ENV CI=1
+# Cap Node heap so one build cannot eat the whole VPS
+ENV HUSKY=0 \
+    CI=1 \
+    NODE_OPTIONS=--max-old-space-size=384
 
-# ── deps: cached unless lockfile / package.json change ────────────────────────
+# ── deps (cached unless lockfile / package.json change) ───────────────────────
 FROM base AS deps
 ARG SERVICE
 ARG PACKAGE_NAME
@@ -30,10 +30,12 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store \
+    && pnpm config set network-concurrency 2 \
+    && pnpm config set child-concurrency 1 \
     && pnpm fetch --frozen-lockfile \
     && pnpm install --frozen-lockfile --offline --ignore-scripts --filter "${PACKAGE_NAME}..."
 
-# ── build: shared package + esbuild bundle ────────────────────────────────────
+# ── build: fat JS bundle (deps inlined; only @prisma/client stays external) ───
 FROM deps AS build
 ARG SERVICE
 ARG PACKAGE_NAME
@@ -43,49 +45,58 @@ COPY packages/tsconfig/ ./packages/tsconfig/
 COPY packages/shared/ ./packages/shared/
 RUN pnpm --filter @church-app/shared build
 
-# Copy full service tree (src, prisma, tsconfig, start.sh). node_modules ignored via .dockerignore
 COPY apps/${SERVICE}/ ./apps/${SERVICE}/
-
-# esbuild is build-time only (root in this stage; not copied to runner)
 RUN npm install -g esbuild@0.25.5 --no-fund --no-audit
 
 WORKDIR /app/apps/${SERVICE}
+# prisma generate needed so esbuild can type-resolve / so engines exist for copy hints
 RUN if [ "$HAS_PRISMA" = "true" ] && [ -f prisma/schema.prisma ]; then \
       pnpm exec prisma generate; \
     fi \
- && esbuild src/index.ts \
-      --bundle \
-      --platform=node \
-      --target=node22 \
-      --format=esm \
-      --outfile=dist/index.js \
-      --packages=external
-
-WORKDIR /app
-# Portable prod package (no eslint/tsx/typescript). Then drop sources and regenerate Prisma client in-place.
-RUN HUSKY=0 pnpm --filter "${PACKAGE_NAME}" deploy --prod --legacy /deploy \
- && mkdir -p /deploy/dist \
- && cp -R "apps/${SERVICE}/dist/." /deploy/dist/ \
- && cp "apps/${SERVICE}/start.sh" /deploy/start.sh \
- && chmod +x /deploy/start.sh \
- && if [ -d "apps/${SERVICE}/prisma" ]; then \
-      mkdir -p /deploy/prisma \
-      && cp -R "apps/${SERVICE}/prisma/." /deploy/prisma/; \
-    fi \
- && rm -rf /deploy/src /deploy/tsconfig.json /deploy/eslint* /deploy/.eslintrc* \
- && if [ "$HAS_PRISMA" = "true" ] && [ -f /deploy/prisma/schema.prisma ]; then \
-      cd /deploy && ./node_modules/.bin/prisma generate; \
+ && if [ "$HAS_PRISMA" = "true" ]; then \
+      esbuild src/index.ts \
+        --bundle --platform=node --target=node22 --format=esm \
+        --outfile=dist/index.js \
+        --external:@prisma/client \
+        --banner:js="import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);"; \
+    else \
+      esbuild src/index.ts \
+        --bundle --platform=node --target=node22 --format=esm \
+        --outfile=dist/index.js \
+        --banner:js="import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);"; \
     fi
 
-# ── runner: small production image ────────────────────────────────────────────
+# Minimal artifact — no pnpm deploy (that step alone can freeze a 4GB VPS)
+RUN mkdir -p /out/dist \
+ && cp dist/index.js /out/dist/index.js \
+ && cp start.sh /out/start.sh \
+ && chmod +x /out/start.sh \
+ && cp package.json /out/package.json \
+ && if [ -d prisma ]; then cp -R prisma /out/prisma; fi
+
+# ── runner: tiny runtime (fat bundle + optional prisma CLI via npm) ───────────
 FROM node:22-alpine AS runner
 ARG PORT
+ARG HAS_PRISMA=true
 RUN apk add --no-cache openssl wget
 WORKDIR /app
-ENV NODE_ENV=production
-ENV PORT=${PORT}
-COPY --from=build /deploy ./
-RUN chown -R node:node /app
+ENV NODE_ENV=production \
+    PORT=${PORT} \
+    NODE_OPTIONS=--max-old-space-size=64
+COPY --from=build /out ./
+
+# Only Prisma packages are needed at runtime (everything else is in the bundle).
+# A tiny npm install here is far cheaper than pnpm deploy of the whole graph.
+RUN if [ "$HAS_PRISMA" = "true" ] && [ -f prisma/schema.prisma ]; then \
+      PRISMA_VER="$(node -p "require('./package.json').dependencies.prisma || require('./package.json').dependencies['@prisma/client'] || '5.22.0'")" \
+      && npm install --omit=dev --no-audit --no-fund --maxsockets=2 \
+           "@prisma/client@${PRISMA_VER}" "prisma@${PRISMA_VER}" \
+      && ./node_modules/.bin/prisma generate \
+      && npm cache clean --force; \
+    fi \
+ && rm -f package.json \
+ && chown -R node:node /app
+
 USER node
 EXPOSE ${PORT}
 CMD ["./start.sh"]
