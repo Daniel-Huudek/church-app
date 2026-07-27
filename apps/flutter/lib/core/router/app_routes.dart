@@ -20,7 +20,11 @@ class AppRoutes {
   static const String members = '/members';
   static const String membersCreate = '/members/create';
   static String memberDetail(String id) => '/members/$id';
+<<<<<<< HEAD
   static String membersEdit(String id) => '/members/$id/edit';
+=======
+  static const String birthdays = '/birthdays';
+>>>>>>> origin/main
   static const String finance = '/finance';
   static const String financeTransactions = '/finance/transactions';
   static const String financeReports = '/finance/reports';

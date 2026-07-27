@@ -14,11 +14,24 @@ README.md
 *.log
 .DS_Store
 Thumbs.db
+coverage
+.vscode
+*.tgz
 
 # Monorepo — exclude everything not needed for Docker build
 apps/flutter/
+apps/mobile/
+apps/mobile2/
 packages/eslint-config/
 apps/*/node_modules
 apps/*/dist
 packages/*/node_modules
 packages/*/dist
+scripts/
+docs/
+docker/postgres/
+*.test.ts
+*.spec.ts
+vitest.config.*
+eas.json
+app.json

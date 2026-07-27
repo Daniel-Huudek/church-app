@@ -20,7 +20,11 @@ import '../../features/schedules/presentation/screens/schedule_detail_screen.dar
 import '../../features/schedules/presentation/screens/create_schedule_screen.dart';
 import '../../features/members/presentation/screens/member_list_screen.dart';
 import '../../features/members/presentation/screens/member_detail_screen.dart';
+<<<<<<< HEAD
 import '../../features/members/presentation/screens/member_form_screen.dart';
+=======
+import '../../features/members/presentation/screens/birthdays_screen.dart';
+>>>>>>> origin/main
 import '../../features/worship/presentation/screens/worship_dashboard_screen.dart';
 import '../../features/worship/presentation/screens/create_scale_screen.dart';
 import '../../features/worship/presentation/screens/scale_detail_screen.dart';
@@ -198,6 +202,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ],
               ),
             ],
+          ),
+          GoRoute(
+            path: AppRoutes.birthdays,
+            builder: (context, state) => const BirthdaysScreen(),
           ),
           GoRoute(
             path: AppRoutes.finance,
