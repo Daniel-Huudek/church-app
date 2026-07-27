@@ -32,11 +32,13 @@ church-app/
 │   ├── tsconfig/ -> @church-app/tsconfig  # Base TS config (estendida por todos)
 │   └── eslint-config/ -> @church-app/eslint-config  # ESLint config
 ├── docker/
-│   └── postgres/init.sql          # Cria 9 databases no startup
-├── docker-compose.yml             # serviços backend + postgres
-└── .github/workflows/ci.yml       # CI: lint, test, build, security-audit, docker-build (em evolução)
+│   ├── Dockerfile.service         # Imagem multi-stage compartilhada
+│   ├── start-service.sh           # Entrypoint de produção
+│   └── postgres/init.sql          # Cria databases no startup
+├── docker-bake.hcl                # Build paralelo (buildx bake)
+├── docker-compose.yml             # Microserviços + postgres
+└── .github/workflows/ci.yml       # CI: lint, test, build, security-audit, docker-build
 ```
-
 ## Microserviços (apps/*/)
 
 Cada serviço segue o mesmo padrão:
@@ -47,13 +49,12 @@ apps/<service>/
 ├── src/
 │   ├── index.ts                   # Bootstrap Fastify + Prisma
 │   ├── routes/                    # Rotas Fastify
-│   ├── services/                  # Lógica de negócio
-│   └── shared/                    # (removido — agora usa @church-app/shared)
-├── Dockerfile                     # node:22-alpine
-├── start.sh                       # prisma migrate deploy + tsx src/index.ts
+│   └── services/                  # Lógica de negócio
+├── start.sh                       # prisma migrate deploy + node dist/index.js
 └── package.json                   # dependências + scripts dev/build/lint/test
 ```
 
+Imagem Docker compartilhada: `docker/Dockerfile.service` (multi-stage, args `SERVICE` / `PORT` / `PACKAGE_NAME` / `HAS_PRISMA`).
 ## Regras para edição
 
 ### Imports
@@ -62,9 +63,11 @@ apps/<service>/
 - `import { User, Member, Event } from '@church-app/types';`
 
 ### Container
-- O WORKDIR final é `/app/apps/<service>` em todos os Dockerfiles
-- SEMPRE usar `USER node` antes do `CMD`
+- Imagem única multi-stage: `docker/Dockerfile.service` (args `SERVICE`, `PORT`, `PACKAGE_NAME`, `HAS_PRISMA`)
+- Build: `pnpm docker:build` (Compose Bake) ou `pnpm docker:bake`
+- O WORKDIR final da imagem é `/app` (artefato `pnpm deploy`); processo roda com `USER node`
 - `RUN chown -R node:node /app` antes de `USER node`
+- Runtime: `node dist/index.js` (bundle esbuild); migrations via `prisma migrate deploy`
 
 ### Banco de Dados
 - Cada serviço tem seu próprio banco PostgreSQL (ex: `auth_db`, `member_db`, etc.)

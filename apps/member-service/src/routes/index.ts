@@ -82,6 +82,16 @@ export async function memberRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true, data });
   });
 
+  fastify.get('/birthdays', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { period } = request.query as { period?: string };
+    const allowed = ['today', 'week', 'month'] as const;
+    const selected = allowed.includes(period as typeof allowed[number])
+      ? (period as typeof allowed[number])
+      : 'week';
+    const data = await service.findBirthdays(selected);
+    return reply.send(data);
+  });
+
   fastify.post('/import', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as { records?: unknown[] };
     const data = await service.importCsv(body?.records || []);

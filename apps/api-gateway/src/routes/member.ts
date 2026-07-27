@@ -99,6 +99,17 @@ export async function memberRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.get('/birthdays', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const { period } = request.query as { period?: string };
+    const qs = period ? `?period=${encodeURIComponent(period)}` : '';
+    try {
+      const data = await memberClient.get(`/members/birthdays${qs}`, getAuthHeader(request));
+      await reply.send(data);
+    } catch (error: any) {
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+    }
+  });
+
   fastify.post('/import', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(importSchema, request.body);
     try {
