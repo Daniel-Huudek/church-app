@@ -75,6 +75,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (location == AppRoutes.dashboard && !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) {
           return AppRoutes.home;
         }
+        // Diáconos: view for DIACONO; create/edit for leaders/admins/pastors
+        if (location.startsWith(AppRoutes.deacons) &&
+            !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'DIACONO', 'LIDER_DIACONOS'])) {
+          return AppRoutes.home;
+        }
+        if (location == AppRoutes.deaconsCreate &&
+            !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS'])) {
+          return AppRoutes.deacons;
+        }
       }
       return null;
     },

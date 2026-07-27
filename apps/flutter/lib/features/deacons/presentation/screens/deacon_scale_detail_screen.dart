@@ -200,11 +200,11 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
                           children: [
                             TextButton(
                               onPressed: () => _confirm(position, true),
-                              child: const Text('Confirmar'),
+                              child: Text(isMine ? 'Confirmar presença' : 'Confirmar'),
                             ),
                             TextButton(
                               onPressed: () => _confirm(position, false),
-                              child: const Text('Cancelar'),
+                              child: Text(isMine ? 'Indisponível' : 'Cancelar'),
                             ),
                           ],
                         ),
