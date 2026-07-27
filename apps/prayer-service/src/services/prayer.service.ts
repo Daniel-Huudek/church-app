@@ -156,7 +156,7 @@ export class PrayerService {
       await this.prisma.userFavorite.delete({ where: { id: existing.id } });
       return { success: true, data: { action: 'removed' } };
     }
-    const data = await this.prisma.userFavorite.create({ data: { prayerId, userId } });
+    await this.prisma.userFavorite.create({ data: { prayerId, userId } });
     return { success: true, data: { action: 'added' } };
   }
 

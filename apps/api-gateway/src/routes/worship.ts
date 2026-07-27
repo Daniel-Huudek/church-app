@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { worshipClient } from '../http-client';
 
 export async function worshipRoutes(fastify: FastifyInstance) {
