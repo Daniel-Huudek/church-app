@@ -2,7 +2,12 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: apps/api-gateway/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: api-gateway
+        PORT: "3030"
+        PACKAGE_NAME: "@church-app/api-gateway"
+        HAS_PRISMA: "false"
     container_name: church-app-api-gateway
     restart: unless-stopped
     ports:
@@ -61,7 +66,12 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: apps/auth-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: auth-service
+        PORT: "3001"
+        PACKAGE_NAME: "@church-app/auth-service"
+        HAS_PRISMA: "true"
     container_name: church-app-auth-service
     restart: unless-stopped
     environment:
@@ -92,7 +102,12 @@ services:
   member-service:
     build:
       context: .
-      dockerfile: apps/member-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: member-service
+        PORT: "3006"
+        PACKAGE_NAME: "@church-app/member-service"
+        HAS_PRISMA: "true"
     container_name: church-app-member-service
     restart: unless-stopped
     environment:
@@ -118,7 +133,12 @@ services:
   schedule-service:
     build:
       context: .
-      dockerfile: apps/schedule-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: schedule-service
+        PORT: "3003"
+        PACKAGE_NAME: "@church-app/schedule-service"
+        HAS_PRISMA: "true"
     container_name: church-app-schedule-service
     restart: unless-stopped
     environment:
@@ -144,7 +164,12 @@ services:
   event-service:
     build:
       context: .
-      dockerfile: apps/event-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: event-service
+        PORT: "3004"
+        PACKAGE_NAME: "@church-app/event-service"
+        HAS_PRISMA: "true"
     container_name: church-app-event-service
     restart: unless-stopped
     environment:
@@ -170,7 +195,12 @@ services:
   notification-service:
     build:
       context: .
-      dockerfile: apps/notification-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: notification-service
+        PORT: "3005"
+        PACKAGE_NAME: "@church-app/notification-service"
+        HAS_PRISMA: "true"
     container_name: church-app-notification-service
     restart: unless-stopped
     environment:
@@ -198,7 +228,12 @@ services:
   prayer-service:
     build:
       context: .
-      dockerfile: apps/prayer-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: prayer-service
+        PORT: "3007"
+        PACKAGE_NAME: "@church-app/prayer-service"
+        HAS_PRISMA: "true"
     container_name: church-app-prayer-service
     restart: unless-stopped
     environment:
@@ -224,7 +259,12 @@ services:
   financial-service:
     build:
       context: .
-      dockerfile: apps/financial-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: financial-service
+        PORT: "3008"
+        PACKAGE_NAME: "@church-app/financial-service"
+        HAS_PRISMA: "true"
     container_name: church-app-financial-service
     restart: unless-stopped
     environment:
@@ -250,7 +290,12 @@ services:
   worship-service:
     build:
       context: .
-      dockerfile: apps/worship-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: worship-service
+        PORT: "3010"
+        PACKAGE_NAME: "@church-app/worship-service"
+        HAS_PRISMA: "true"
     container_name: church-app-worship-service
     ports:
       - "3010"
@@ -278,7 +323,12 @@ services:
   chat-service:
     build:
       context: .
-      dockerfile: apps/chat-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: chat-service
+        PORT: "3002"
+        PACKAGE_NAME: "@church-app/chat-service"
+        HAS_PRISMA: "true"
     container_name: church-app-chat-service
     restart: unless-stopped
     environment:

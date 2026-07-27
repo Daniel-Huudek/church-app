@@ -3,6 +3,7 @@ lockfileVersion: '9.0'
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
+  injectWorkspacePackages: true
 
 overrides:
   metro: 0.81.5
@@ -109,6 +110,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
+      prisma:
+        specifier: ^5.9.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -134,9 +138,6 @@ importers:
       eslint:
         specifier: ^8.56.0
         version: 8.57.1
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -161,6 +162,9 @@ importers:
       fastify:
         specifier: ^4.26.0
         version: 4.29.1
+      prisma:
+        specifier: ^5.8.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -174,9 +178,6 @@ importers:
       eslint:
         specifier: ^8.56.0
         version: 8.57.1
-      prisma:
-        specifier: ^5.8.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -204,6 +205,9 @@ importers:
       fastify:
         specifier: ^4.26.0
         version: 4.29.1
+      prisma:
+        specifier: ^5.9.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -214,9 +218,6 @@ importers:
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.41
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -250,6 +251,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
+      prisma:
+        specifier: ^5.9.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -269,9 +273,6 @@ importers:
       eslint:
         specifier: ^8.56.0
         version: 8.57.1
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -308,6 +309,9 @@ importers:
       multipart:
         specifier: ^0.1.5
         version: 0.1.5
+      prisma:
+        specifier: ^5.9.0
+        version: 5.22.0
       sharp:
         specifier: ^0.33.2
         version: 0.33.5
@@ -330,9 +334,6 @@ importers:
       eslint:
         specifier: ^8.56.0
         version: 8.57.1
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -357,6 +358,9 @@ importers:
       fastify:
         specifier: ^4.26.0
         version: 4.29.1
+      prisma:
+        specifier: ^5.9.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -367,9 +371,6 @@ importers:
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.41
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -394,6 +395,9 @@ importers:
       fastify:
         specifier: ^4.26.0
         version: 4.29.1
+      prisma:
+        specifier: ^5.9.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -413,9 +417,6 @@ importers:
       eslint:
         specifier: ^8.56.0
         version: 8.57.1
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -440,6 +441,9 @@ importers:
       fastify:
         specifier: ^4.26.0
         version: 4.29.1
+      prisma:
+        specifier: ^5.9.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -450,9 +454,6 @@ importers:
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.41
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
@@ -477,6 +478,9 @@ importers:
       fastify:
         specifier: ^4.26.0
         version: 4.29.1
+      prisma:
+        specifier: ^5.0.0
+        version: 5.22.0
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -493,9 +497,6 @@ importers:
       eslint:
         specifier: ^8.56.0
         version: 8.57.1
-      prisma:
-        specifier: ^5.0.0
-        version: 5.22.0
       tsx:
         specifier: ^4.7.0
         version: 4.22.3
