@@ -85,6 +85,20 @@ export async function memberRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.post('/ministries', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const body = validate(z.object({
+      name: z.string().min(1),
+      description: z.string().optional(),
+      leaderId: z.string().uuid().optional(),
+    }), request.body);
+    try {
+      const data = await memberClient.post('/ministries', body, getAuthHeader(request));
+      await reply.status(201).send(data);
+    } catch (error: any) {
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+    }
+  });
+
   fastify.get('/birthdays', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { period } = request.query as { period?: string };
     const qs = period ? `?period=${encodeURIComponent(period)}` : '';

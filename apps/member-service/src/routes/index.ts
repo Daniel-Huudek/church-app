@@ -54,7 +54,7 @@ const historySchema = z.object({
 const ministrySchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  leaderId: z.string().uuid(),
+  leaderId: z.string().uuid().optional(),
 });
 
 export async function memberRoutes(fastify: FastifyInstance) {

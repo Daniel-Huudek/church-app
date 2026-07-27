@@ -28,6 +28,9 @@ import '../../features/worship/presentation/screens/create_repertorio_screen.dar
 import '../../features/worship/presentation/screens/fetch_song_screen.dart';
 import '../../features/worship/presentation/screens/song_detail_screen.dart';
 import '../../features/worship/presentation/screens/edit_song_screen.dart';
+import '../../features/deacons/presentation/screens/deacon_dashboard_screen.dart';
+import '../../features/deacons/presentation/screens/create_deacon_scale_screen.dart';
+import '../../features/deacons/presentation/screens/deacon_scale_detail_screen.dart';
 import '../../features/finance/presentation/screens/finance_dashboard_screen.dart';
 import '../../features/finance/presentation/screens/finance_transactions_screen.dart';
 import '../../features/finance/presentation/screens/finance_reports_screen.dart';
@@ -73,6 +76,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (location == AppRoutes.dashboard && !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) {
           return AppRoutes.home;
         }
+        // Diáconos: view for DIACONO; create/edit for leaders/admins/pastors
+        if (location.startsWith(AppRoutes.deacons) &&
+            !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'DIACONO', 'LIDER_DIACONOS'])) {
+          return AppRoutes.home;
+        }
+        if (location == AppRoutes.deaconsCreate &&
+            !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS'])) {
+          return AppRoutes.deacons;
+        }
       }
       return null;
     },
@@ -87,7 +99,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(
-          hideNav: state.matchedLocation == AppRoutes.prayersCreate || state.matchedLocation.startsWith(AppRoutes.worship) || state.matchedLocation.startsWith(AppRoutes.finance),
+          hideNav: state.matchedLocation == AppRoutes.prayersCreate || state.matchedLocation.startsWith(AppRoutes.worship) || state.matchedLocation.startsWith(AppRoutes.deacons) || state.matchedLocation.startsWith(AppRoutes.finance),
           child: child,
         ),
         routes: [
@@ -236,6 +248,22 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => EditSongScreen(songId: state.pathParameters['id']!),
                   ),
                 ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.deacons,
+            builder: (context, state) => const DeaconDashboardScreen(),
+            routes: [
+              GoRoute(
+                path: 'create',
+                builder: (context, state) => const CreateDeaconScaleScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => DeaconScaleDetailScreen(
+                  id: state.pathParameters['id'] ?? '',
+                ),
               ),
             ],
           ),

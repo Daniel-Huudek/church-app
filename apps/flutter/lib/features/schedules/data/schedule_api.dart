@@ -7,10 +7,12 @@ class ScheduleApi {
 
   ScheduleApi(this._client);
 
-  Future<List<ScheduleModel>> list({int page = 1}) async {
+  Future<List<ScheduleModel>> list({int page = 1, String? ministryId}) async {
+    final params = <String, dynamic>{'page': page, 'limit': 50};
+    if (ministryId != null) params['ministryId'] = ministryId;
     final response = await _client.get(
       ApiConfig.schedules,
-      queryParameters: {'page': page},
+      queryParameters: params,
     );
     return _client.unwrapList(response.data, ScheduleModel.fromJson);
   }
@@ -25,12 +27,13 @@ class ScheduleApi {
     return ScheduleModel.fromJson(_client.unwrapData(response.data));
   }
 
-  Future<void> confirmPresence(String scheduleId, String positionId) async {
+  Future<void> confirmPresence(String scheduleId, String positionId, {bool confirmed = true}) async {
     await _client.post(
       '${ApiConfig.schedules}/confirm',
       data: {
         'scheduleId': scheduleId,
         'positionId': positionId,
+        'confirmed': confirmed,
       },
     );
   }

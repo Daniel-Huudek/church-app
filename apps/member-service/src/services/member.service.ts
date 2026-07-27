@@ -305,7 +305,7 @@ export class MemberService {
     return { success: true, data };
   }
 
-  async createMinistry(body: { name: string; description?: string; leaderId: string }) {
+  async createMinistry(body: { name: string; description?: string; leaderId?: string }) {
     const data = await this.prisma.ministry.create({ data: body, include: { leader: true } });
     return { success: true, data };
   }

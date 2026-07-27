@@ -185,7 +185,7 @@ export class AuthService {
   async updateUser(userId: string, data: { role?: string; name?: string; email?: string; avatar?: string }) {
     const updateData: any = {};
     if (data.role) {
-      const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'MEMBRO', 'VISITANTE'];
+      const validRoles = ['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'LIDER_DIACONOS', 'DIACONO', 'MEMBRO', 'VISITANTE'];
       if (!validRoles.includes(data.role)) throw new AppError('Invalid role', 400);
       updateData.role = data.role;
     }
@@ -241,6 +241,8 @@ export class AuthService {
       { name: 'LIDER', perms: ['members_write','members_delete','events_write','events_delete','prayers_write','prayers_delete'] },
       { name: 'LIDER_LOUVOR', perms: ['events_write','events_delete'] },
       { name: 'LOUVOR', perms: [] },
+      { name: 'LIDER_DIACONOS', perms: ['events_write','schedules_write'] },
+      { name: 'DIACONO', perms: ['schedules_read'] },
       { name: 'MEMBRO', perms: ['prayers_write','prayers_delete'] },
       { name: 'VISITANTE', perms: [] },
     ];

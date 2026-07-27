@@ -125,12 +125,12 @@ model Ministry {
   id          String   @id @default(uuid())
   name        String
   description String?
-  leaderId    String   @unique
+  leaderId    String?  @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
 
-  leader      Member   @relation("MinistryLeader", fields: [leaderId], references: [id])
+  leader      Member?  @relation("MinistryLeader", fields: [leaderId], references: [id])
   members     Member[] @relation("MinistryMembers")
 
   @@map("ministries")

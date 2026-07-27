@@ -45,6 +45,8 @@ class RoleDefinitionsService {
     RoleDefinition(name: 'LIDER', permissions: ['members_read','members_write','members_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','schedules_read','schedules_write']),
     RoleDefinition(name: 'LIDER_LOUVOR', permissions: ['events_read','events_write','events_delete','schedules_read']),
     RoleDefinition(name: 'LOUVOR', permissions: ['events_read','schedules_read']),
+    RoleDefinition(name: 'LIDER_DIACONOS', permissions: ['events_read','events_write','schedules_read','schedules_write']),
+    RoleDefinition(name: 'DIACONO', permissions: ['events_read','schedules_read']),
     RoleDefinition(name: 'MEMBRO', permissions: ['events_read','prayers_read','prayers_write','prayers_delete','schedules_read']),
     RoleDefinition(name: 'VISITANTE', permissions: ['events_read','prayers_read','prayers_write']),
   ];

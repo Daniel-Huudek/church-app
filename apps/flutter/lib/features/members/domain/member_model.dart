@@ -1,5 +1,6 @@
 class MemberModel {
   final String id;
+  final String? userId;
   final String name;
   final String? email;
   final String? phone;
@@ -16,6 +17,7 @@ class MemberModel {
 
   const MemberModel({
     required this.id,
+    this.userId,
     required this.name,
     this.email,
     this.phone,
@@ -41,6 +43,7 @@ class MemberModel {
   factory MemberModel.fromJson(Map<String, dynamic> json) {
     return MemberModel(
       id: json['id'] as String,
+      userId: json['userId'] as String?,
       name: json['name'] as String,
       email: json['email'] as String?,
       phone: json['phone'] as String?,
@@ -68,6 +71,7 @@ class MemberModel {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'userId': userId,
     'name': name,
     'email': email,
     'phone': phone,

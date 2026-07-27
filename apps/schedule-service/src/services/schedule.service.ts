@@ -4,11 +4,13 @@ import { NotFoundError } from '@church-app/shared';
 export class ScheduleService {
   constructor(private prisma: PrismaClient) {}
 
-  async findAll({ page = 1, limit = 20 }: { page?: number; limit?: number }) {
+  async findAll({ page = 1, limit = 20, ministryId }: { page?: number; limit?: number; ministryId?: string }) {
     const skip = (page - 1) * limit;
+    const where: { deletedAt: null; ministryId?: string } = { deletedAt: null };
+    if (ministryId) where.ministryId = ministryId;
     const [data, total] = await Promise.all([
-      this.prisma.schedule.findMany({ skip, take: limit, where: { deletedAt: null }, include: { positions: true } }),
-      this.prisma.schedule.count({ where: { deletedAt: null } }),
+      this.prisma.schedule.findMany({ skip, take: limit, where, include: { positions: true }, orderBy: { date: 'desc' } }),
+      this.prisma.schedule.count({ where }),
     ]);
     return { success: true, data: { data, total, page, limit, totalPages: Math.ceil(total / limit) } };
   }

@@ -33,6 +33,9 @@ class AppRoutes {
   static const String worshipRepertorioFetch = '/worship/repertorio/fetch';
   static String worshipSongDetail(String id) => '/worship/songs/$id';
   static String worshipSongEdit(String id) => '/worship/songs/$id/edit';
+  static const String deacons = '/deacons';
+  static const String deaconsCreate = '/deacons/create';
+  static String deaconDetail(String id) => '/deacons/$id';
   static const String notifications = '/notifications';
   static const String chat = '/chat';
   static String chatDetail(String id) => '/chat/$id';

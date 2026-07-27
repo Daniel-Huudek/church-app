@@ -105,6 +105,14 @@ class _DrawerOverlayState extends State<DrawerOverlay>
                     },
                   ),
                   _drawerItem(
+                    icon: Icons.volunteer_activism_rounded,
+                    label: 'Diáconos',
+                    onTap: () {
+                      context.go(AppRoutes.deacons);
+                      widget.onClose();
+                    },
+                  ),
+                  _drawerItem(
                     icon: Icons.assignment_rounded,
                     label: 'Escalas',
                     onTap: () {

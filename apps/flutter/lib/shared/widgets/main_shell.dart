@@ -36,7 +36,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               isDark: isDark,
               onClose: () => setState(() => _drawerVisible = false),
             ),
-          if (user != null && !currentRoute.startsWith(AppRoutes.worship) && !currentRoute.startsWith(AppRoutes.finance) && !currentRoute.startsWith(AppRoutes.bible) && !currentRoute.startsWith(AppRoutes.calendar) && currentRoute != AppRoutes.dashboard && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'FINANCEIRO']))
+          if (user != null && !currentRoute.startsWith(AppRoutes.worship) && !currentRoute.startsWith(AppRoutes.deacons) && !currentRoute.startsWith(AppRoutes.finance) && !currentRoute.startsWith(AppRoutes.bible) && !currentRoute.startsWith(AppRoutes.calendar) && currentRoute != AppRoutes.dashboard && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'LIDER_DIACONOS', 'DIACONO', 'FINANCEIRO']))
             Positioned(
               right: 0,
               top: 0,
@@ -52,6 +52,15 @@ class _MainShellState extends ConsumerState<MainShell> {
                         grad: const [AppColors.primary, AppColors.primaryDark],
                         onTap: () => context.go(AppRoutes.worship),
                       ),
+                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'DIACONO', 'LIDER_DIACONOS'])) ...[
+                      const SizedBox(height: 10),
+                      _sideButton(
+                        icon: Icons.volunteer_activism_rounded,
+                        label: 'Diáconos',
+                        grad: const [Color(0xFF0EA5E9), Color(0xFF0284C7)],
+                        onTap: () => context.go(AppRoutes.deacons),
+                      ),
+                    ],
                     if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) ...[
                       const SizedBox(height: 10),
                       _sideButton(
