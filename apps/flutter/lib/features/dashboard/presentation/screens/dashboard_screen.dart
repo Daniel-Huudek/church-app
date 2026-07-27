@@ -42,22 +42,12 @@ class DashboardScreen extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 72, 20, 120),
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Aniversariantes da semana',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: t1,
-                          fontWeight: FontWeight.w700,
-                        ),
+            Text(
+              'Aniversariantes da semana',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: t1,
+                    fontWeight: FontWeight.w700,
                   ),
-                ),
-                TextButton(
-                  onPressed: () => context.go(AppRoutes.birthdays),
-                  child: const Text('Ver todos'),
-                ),
-              ],
             ),
             const SizedBox(height: AppSpacing.sm),
             birthdays.when(
