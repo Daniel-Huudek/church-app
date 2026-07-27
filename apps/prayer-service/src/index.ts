@@ -35,4 +35,14 @@ async function bootstrap() {
   logger.info(`Prayer service running on port ${port}`);
 }
 
-bootstrap().catch((err) => { logger.error('Failed', err); process.exit(1); }).finally(() => prisma.$disconnect());
+
+process.on('SIGTERM', async () => {
+  try { await prisma.$disconnect(); } catch { /* ignore */ }
+  process.exit(0);
+});
+process.on('SIGINT', async () => {
+  try { await prisma.$disconnect(); } catch { /* ignore */ }
+  process.exit(0);
+});
+
+bootstrap().catch((err) => { logger.error('Failed', err); process.exit(1); });

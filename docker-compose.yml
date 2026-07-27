@@ -29,7 +29,7 @@ services:
       - "traefik.http.services.api-gateway.loadbalancer.server.port=3030"
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3030
       - AUTH_SERVICE_URL=http://auth-service:3001
       - MEMBER_SERVICE_URL=http://member-service:3006
@@ -68,9 +68,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   auth-service:
@@ -86,7 +86,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=112
       - PORT=3001
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/auth_db
       - JWT_SECRET=${JWT_SECRET}
@@ -105,9 +105,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 160m
+    mem_reservation: 48m
     cpus: 0.20
 
   member-service:
@@ -123,7 +123,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3006
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/member_db
       - JWT_SECRET=${JWT_SECRET}
@@ -137,9 +137,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   schedule-service:
@@ -155,7 +155,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3003
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/schedule_db
       - JWT_SECRET=${JWT_SECRET}
@@ -169,9 +169,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   event-service:
@@ -187,7 +187,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3004
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/event_db
       - JWT_SECRET=${JWT_SECRET}
@@ -201,9 +201,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   notification-service:
@@ -219,7 +219,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3005
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/notification_db
       - JWT_SECRET=${JWT_SECRET}
@@ -235,9 +235,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   prayer-service:
@@ -253,7 +253,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3007
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/prayer_db
       - JWT_SECRET=${JWT_SECRET}
@@ -267,9 +267,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   financial-service:
@@ -285,7 +285,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3008
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/financial_db
       - JWT_SECRET=${JWT_SECRET}
@@ -299,9 +299,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   worship-service:
@@ -317,7 +317,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3010
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/worship_db
       - JWT_SECRET=${JWT_SECRET}
@@ -332,9 +332,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   chat-service:
@@ -350,7 +350,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=64
+      - NODE_OPTIONS=--max-old-space-size=96
       - PORT=3002
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/chat_db
       - JWT_SECRET=${JWT_SECRET}
@@ -364,9 +364,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
-    mem_limit: 96m
-    mem_reservation: 32m
+      start_period: 120s
+    mem_limit: 128m
+    mem_reservation: 48m
     cpus: 0.20
 
   postgres-db:

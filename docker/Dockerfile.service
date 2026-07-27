@@ -88,7 +88,7 @@ RUN apk add --no-cache openssl wget
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=${PORT} \
-    NODE_OPTIONS=--max-old-space-size=64
+    NODE_OPTIONS=--max-old-space-size=96
 COPY --from=build /out ./
 RUN chown -R node:node /app
 USER node
