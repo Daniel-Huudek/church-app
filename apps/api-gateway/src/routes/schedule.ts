@@ -30,8 +30,11 @@ const substituteSchema = z.object({
 export async function scheduleRoutes(fastify: FastifyInstance) {
   fastify.get('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { page, limit } = parsePagination(request.query);
+    const { ministryId } = request.query as Record<string, string | undefined>;
     try {
-      const data = await scheduleClient.get(`/schedules?page=${page}&limit=${limit}`, getAuthHeader(request));
+      let url = `/schedules?page=${page}&limit=${limit}`;
+      if (ministryId) url += `&ministryId=${encodeURIComponent(ministryId)}`;
+      const data = await scheduleClient.get(url, getAuthHeader(request));
       await reply.send(data);
     } catch (error: any) {
       await reply.status(error.statusCode || 500).send({ success: false, message: error.message });

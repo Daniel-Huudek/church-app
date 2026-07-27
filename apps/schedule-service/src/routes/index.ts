@@ -15,7 +15,8 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
 
   fastify.get('/', async (request: FastifyRequest, _reply) => {
     const { page, limit } = parsePagination(request.query);
-    return service.findAll({ page, limit });
+    const { ministryId } = request.query as Record<string, string | undefined>;
+    return service.findAll({ page, limit, ministryId });
   });
 
   fastify.get('/:id', async (request: FastifyRequest<{ Params: { id: string } }>, _reply) => {

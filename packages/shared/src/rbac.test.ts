@@ -39,6 +39,8 @@ describe('rbac', () => {
   it('exposes expected roles', () => {
     expect(ALLOWED_ROLES.ADMINISTRADOR).toBe('ADMINISTRADOR');
     expect(ALLOWED_ROLES.LOUVOR).toBe('LOUVOR');
+    expect(ALLOWED_ROLES.DIACONO).toBe('DIACONO');
+    expect(ALLOWED_ROLES.LIDER_DIACONOS).toBe('LIDER_DIACONOS');
   });
 
   it('authorize allows matching role', async () => {

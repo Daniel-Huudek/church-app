@@ -12,6 +12,8 @@ class MemberApi {
     int limit = 20,
     String? status,
     String? search,
+    String? role,
+    String? ministryId,
   }) async {
     final params = <String, dynamic>{
       'page': page,
@@ -19,6 +21,8 @@ class MemberApi {
     };
     if (status != null) params['status'] = status;
     if (search != null) params['name'] = search;
+    if (role != null) params['role'] = role;
+    if (ministryId != null) params['ministryId'] = ministryId;
 
     final response = await _client.get(
       ApiConfig.members,
@@ -56,5 +60,16 @@ class MemberApi {
   Future<List<MinistryModel>> listMinistries() async {
     final response = await _client.get(ApiConfig.ministries);
     return _client.unwrapList(response.data, MinistryModel.fromJson);
+  }
+
+  Future<MinistryModel> createMinistry({required String name, String? description}) async {
+    final response = await _client.post(
+      ApiConfig.ministries,
+      data: {
+        'name': name,
+        if (description != null) 'description': description,
+      },
+    );
+    return MinistryModel.fromJson(_client.unwrapData(response.data));
   }
 }
