@@ -76,7 +76,7 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(authProvider).user;
     final canCreate = user != null &&
-        user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_DIACONOS']);
+        user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS']);
 
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
     final card = isDark ? const Color(0xFF1A1A2E) : Colors.white;
