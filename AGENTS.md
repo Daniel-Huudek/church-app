@@ -64,10 +64,11 @@ Imagem Docker compartilhada: `docker/Dockerfile.service` (multi-stage, args `SER
 
 ### Container
 - Imagem única multi-stage: `docker/Dockerfile.service` (args `SERVICE`, `PORT`, `PACKAGE_NAME`, `HAS_PRISMA`)
-- Build: `pnpm docker:build` (Compose Bake) ou `pnpm docker:bake`
-- O WORKDIR final da imagem é `/app` (artefato `pnpm deploy`); processo roda com `USER node`
+- **VPS ~4GB / Dokploy:** build **serial** — `pnpm docker:build:vps` ou `docker compose build --parallel 1` (nunca bake paralelo)
+- Build: `pnpm docker:build` (serial) / `pnpm docker:bake` (só em máquina forte / CI)
+- Runtime: bundle esbuild + `node dist/index.js`; migrations via `prisma migrate deploy`
+- Heap: build `NODE_OPTIONS=--max-old-space-size=384`, runtime `64`; serviços `mem_limit: 96m`
 - `RUN chown -R node:node /app` antes de `USER node`
-- Runtime: `node dist/index.js` (bundle esbuild); migrations via `prisma migrate deploy`
 
 ### Banco de Dados
 - Cada serviço tem seu próprio banco PostgreSQL (ex: `auth_db`, `member_db`, etc.)

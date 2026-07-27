@@ -1,6 +1,6 @@
-# Docker Buildx Bake — parallel, cached builds for all microservices
-# Usage: docker buildx bake -f docker-bake.hcl
-# Or:    pnpm docker:build
+# Docker Buildx Bake — prefer SERIAL on VPS (see scripts/docker-build-vps.sh).
+# Parallel bake can OOM a 4GB machine. Use compose --parallel 1 on Dokploy.
+# Usage (CI / strong machines only): docker buildx bake -f docker-bake.hcl
 
 variable "TAG" {
   default = "latest"

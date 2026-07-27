@@ -1,3 +1,12 @@
+# Church App — Docker Compose
+#
+# VPS / Dokploy (~4GB RAM): NEVER build all services in parallel.
+#   ./scripts/docker-build-vps.sh
+#   # or:
+#   DOCKER_BUILDKIT=1 docker compose build --parallel 1 && docker compose up -d
+#
+# Parallel bake (COMPOSE_BAKE / buildx bake) can freeze a 4GB VPS.
+
 services:
   api-gateway:
     build:
