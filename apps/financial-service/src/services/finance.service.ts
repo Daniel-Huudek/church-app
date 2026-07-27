@@ -1,19 +1,11 @@
-import { PrismaClient, TransactionType, TransactionStatus } from '@prisma/client';
-import { NotFoundError, BadRequestError, ForbiddenError } from '@church-app/shared';
+import { PrismaClient, TransactionType } from '@prisma/client';
+import { NotFoundError, BadRequestError } from '@church-app/shared';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
-
-interface PaginatedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 export class FinanceService {
   constructor(private prisma: PrismaClient) {}
@@ -132,7 +124,7 @@ export class FinanceService {
   }
 
   // Attachments
-  async addAttachment(transactionId: string, file: { filename: string; buffer: Buffer; mimetype: string }, userId: string) {
+  async addAttachment(transactionId: string, file: { filename: string; buffer: Buffer; mimetype: string }, _userId: string) {
     const transaction = await this.prisma.transaction.findFirst({ where: { id: transactionId, deletedAt: null } });
     if (!transaction) throw new NotFoundError('Transaction not found');
 

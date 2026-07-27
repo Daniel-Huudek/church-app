@@ -25,7 +25,7 @@ export class NotificationService {
     });
 
     try {
-      const result = await this.sendWhatsAppMessage(body.phone, body.message);
+      await this.sendWhatsAppMessage(body.phone, body.message);
       await this.prisma.notification.update({ where: { id: notification.id }, data: { status: 'SENT', sentAt: new Date() } });
       logger.info('WhatsApp message sent', { notificationId: notification.id, phone: body.phone });
       return { success: true, data: notification };

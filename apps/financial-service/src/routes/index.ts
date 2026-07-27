@@ -11,7 +11,9 @@ function setUserFromToken(request: FastifyRequest) {
     const token = authHeader.replace('Bearer ', '');
     const decoded = jwt.verify(token, process.env.JWT_SECRET || '') as { userId: string; role: string };
     (request as any).user = decoded;
-  } catch {}
+  } catch {
+    // invalid token — leave request unauthenticated
+  }
 }
 
 function getUser(request: FastifyRequest) {

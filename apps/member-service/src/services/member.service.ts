@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { NotFoundError, ConflictError } from '@church-app/shared';
+import { NotFoundError } from '@church-app/shared';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,14 +14,6 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
-
-interface PaginatedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 export class MemberService {
   constructor(private prisma: PrismaClient) {}
@@ -155,7 +147,7 @@ export class MemberService {
     const existing = await this.prisma.member.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundError('Member not found');
 
-    const { address, documents, familyMembers, ministerialHistory, ...memberData } = body;
+    const { address, ...memberData } = body;
     const data = await this.prisma.member.update({
       where: { id },
       data: {
