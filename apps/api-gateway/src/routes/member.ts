@@ -76,6 +76,15 @@ export async function memberRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.get('/ministries', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    try {
+      const data = await memberClient.get('/ministries', getAuthHeader(request));
+      await reply.send(data);
+    } catch (error: any) {
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+    }
+  });
+
   fastify.post('/import', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(importSchema, request.body);
     try {

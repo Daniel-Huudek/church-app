@@ -30,6 +30,28 @@ export async function notificationRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.get('/unread-count', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const { recipientId } = request.query as Record<string, string | undefined>;
+    const targetRecipientId = recipientId || request.user.userId;
+    try {
+      const data = await notificationClient.get(`/notifications/unread-count?recipientId=${encodeURIComponent(targetRecipientId)}`, getAuthHeader(request));
+      await reply.send(data);
+    } catch (error: any) {
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+    }
+  });
+
+  fastify.post('/read-all', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const body = request.body as { recipientId?: string } | undefined;
+    const targetRecipientId = body?.recipientId || request.user.userId;
+    try {
+      const data = await notificationClient.post('/notifications/read-all', { recipientId: targetRecipientId }, getAuthHeader(request));
+      await reply.send(data);
+    } catch (error: any) {
+      await reply.status(error.statusCode || 500).send({ success: false, message: error.message });
+    }
+  });
+
   fastify.post('/', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const body = validate(notificationSchema, request.body);
     try {

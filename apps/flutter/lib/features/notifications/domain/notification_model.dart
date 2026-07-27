@@ -4,6 +4,7 @@ class NotificationModel {
   final String recipientId;
   final String message;
   final String status;
+  final bool isRead;
   final DateTime createdAt;
 
   const NotificationModel({
@@ -12,10 +13,11 @@ class NotificationModel {
     required this.recipientId,
     required this.message,
     this.status = 'PENDING',
+    this.isRead = false,
     required this.createdAt,
   });
 
-  bool get isUnread => status == 'PENDING';
+  bool get isUnread => !isRead;
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
@@ -24,6 +26,7 @@ class NotificationModel {
       recipientId: json['recipientId'] as String,
       message: json['message'] as String,
       status: json['status'] as String? ?? 'PENDING',
+      isRead: json['isRead'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -34,6 +37,7 @@ class NotificationModel {
     'recipientId': recipientId,
     'message': message,
     'status': status,
+    'isRead': isRead,
     'createdAt': createdAt.toIso8601String(),
   };
 }

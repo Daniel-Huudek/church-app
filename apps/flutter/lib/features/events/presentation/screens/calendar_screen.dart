@@ -460,11 +460,10 @@ class _EventTile extends StatelessWidget {
 
   String _typeLabel(String type) {
     const labels = {
-      'CULTO': 'Culto', 'REUNIAO': 'Reunião', 'ESTUDO': 'Estudo',
-      'EVENTO_SOCIAL': 'Evento', 'EVENTO_ESPECIAL': 'Especial',
-      'ESCOLA_DOMINICAL': 'E. Dominical', 'JEJUM': 'Jejum',
-      'VIGILIA': 'Vigília', 'RETIRO': 'Retiro', 'OUTRO': 'Outro',
+      'WORSHIP': 'Culto',
+      'EVENT': 'Evento',
+      'REHEARSAL': 'Ensaio',
     };
-    return labels[type] ?? 'Outro';
+    return labels[type] ?? 'Evento';
   }
 }

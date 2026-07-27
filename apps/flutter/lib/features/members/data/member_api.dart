@@ -52,4 +52,9 @@ class MemberApi {
     );
     return _client.unwrapList(response.data, MemberModel.fromJson);
   }
+
+  Future<List<MinistryModel>> listMinistries() async {
+    final response = await _client.get(ApiConfig.ministries);
+    return _client.unwrapList(response.data, MinistryModel.fromJson);
+  }
 }

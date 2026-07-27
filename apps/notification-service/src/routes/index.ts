@@ -19,6 +19,10 @@ const bulkSchema = z.object({
   message: z.string().min(1),
 });
 
+const recipientQuerySchema = z.object({
+  recipientId: z.string().uuid(),
+});
+
 const notifyRoles = authorize('ADMINISTRADOR', 'PASTOR', 'LIDER', 'FINANCEIRO');
 
 export async function notificationRoutes(fastify: FastifyInstance) {
@@ -37,6 +41,16 @@ export async function notificationRoutes(fastify: FastifyInstance) {
   fastify.post('/bulk', { preHandler: [notifyRoles] }, async (request: FastifyRequest, _reply) => {
     const body = validate(bulkSchema, request.body);
     return service.sendBulk(body);
+  });
+
+  fastify.get('/unread-count', async (request: FastifyRequest, _reply) => {
+    const query = validate(recipientQuerySchema, request.query);
+    return service.getUnreadCount(query.recipientId);
+  });
+
+  fastify.post('/read-all', async (request: FastifyRequest, _reply) => {
+    const body = validate(recipientQuerySchema, request.body);
+    return service.markAllAsRead(body.recipientId);
   });
 
   fastify.get('/history/:recipientId', async (request: FastifyRequest<{ Params: { recipientId: string } }>, _reply) => {

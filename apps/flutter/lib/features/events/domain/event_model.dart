@@ -55,7 +55,7 @@ class EventModel {
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
-      type: json['type'] as String? ?? 'EVENTO',
+      type: json['type'] as String? ?? 'EVENT',
       date: DateTime.parse(json['date'] as String),
       startTime: json['startTime'] as String? ?? '00:00',
       endTime: json['endTime'] as String?,

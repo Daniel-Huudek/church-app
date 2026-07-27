@@ -25,7 +25,7 @@ export class NotificationService {
     });
 
     try {
-      const result = await this.sendWhatsAppMessage(body.phone, body.message);
+      await this.sendWhatsAppMessage(body.phone, body.message);
       await this.prisma.notification.update({ where: { id: notification.id }, data: { status: 'SENT', sentAt: new Date() } });
       logger.info('WhatsApp message sent', { notificationId: notification.id, phone: body.phone });
       return { success: true, data: notification };
@@ -46,6 +46,21 @@ export class NotificationService {
   async getHistory(recipientId: string) {
     const data = await this.prisma.notification.findMany({ where: { recipientId }, orderBy: { createdAt: 'desc' } });
     return { success: true, data };
+  }
+
+  async getUnreadCount(recipientId: string) {
+    const unread = await this.prisma.notification.count({
+      where: { recipientId, isRead: false },
+    });
+    return { success: true, data: { unread } };
+  }
+
+  async markAllAsRead(recipientId: string) {
+    await this.prisma.notification.updateMany({
+      where: { recipientId, isRead: false },
+      data: { isRead: true },
+    });
+    return { success: true };
   }
 
   private async sendWhatsAppMessage(phone: string, message: string) {

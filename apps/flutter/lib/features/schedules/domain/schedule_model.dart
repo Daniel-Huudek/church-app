@@ -26,6 +26,7 @@ class ScheduleModel {
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
+    final rawPositions = json['positions'];
     return ScheduleModel(
       id: json['id'] as String,
       eventId: json['eventId'] as String?,
@@ -36,7 +37,7 @@ class ScheduleModel {
       startTime: json['startTime'] as String,
       endTime: json['endTime'] as String,
       status: json['status'] as String? ?? 'PENDENTE',
-      positions: json['positions'] as int? ?? 0,
+      positions: rawPositions is List ? rawPositions.length : (rawPositions as int?) ?? 0,
       confirmed: json['confirmed'] as int? ?? 0,
     );
   }
