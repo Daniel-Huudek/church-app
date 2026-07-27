@@ -39,9 +39,5 @@ for pkg in shared tsconfig; do
 done
 
 echo "Context prepared at: $OUTDIR"
-echo "Build with: docker build -t church-app-$SERVICE -f apps/$SERVICE/Dockerfile \"$OUTDIR\""
-
-# Usage in docker-compose:
-# build:
-#   context: /tmp/docker-context/auth-service
-#   dockerfile: Dockerfile
+echo "Build with: docker build -t church-app-$SERVICE -f docker/Dockerfile.service --build-arg SERVICE=$SERVICE --build-arg PACKAGE_NAME=@church-app/$SERVICE \"$OUTDIR\""
+echo "Or: pnpm docker:bake"

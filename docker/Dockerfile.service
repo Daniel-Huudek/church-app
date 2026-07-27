@@ -1,0 +1,91 @@
+# syntax=docker/dockerfile:1
+# Shared multi-stage image for all Node microservices.
+#
+# docker build -f docker/Dockerfile.service \
+#   --build-arg SERVICE=auth-service \
+#   --build-arg PORT=3001 \
+#   --build-arg PACKAGE_NAME=@church-app/auth-service \
+#   --build-arg HAS_PRISMA=true .
+
+ARG SERVICE
+ARG PORT=3000
+ARG PACKAGE_NAME
+ARG HAS_PRISMA=true
+
+FROM node:22-alpine AS base
+RUN apk add --no-cache openssl wget \
+  && corepack enable \
+  && corepack prepare pnpm@10.12.1 --activate
+WORKDIR /app
+ENV HUSKY=0
+ENV CI=1
+
+# ── deps: cached unless lockfile / package.json change ────────────────────────
+FROM base AS deps
+ARG SERVICE
+ARG PACKAGE_NAME
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml .npmrc ./
+COPY apps/${SERVICE}/package.json ./apps/${SERVICE}/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store \
+    && pnpm fetch --frozen-lockfile \
+    && pnpm install --frozen-lockfile --offline --ignore-scripts --filter "${PACKAGE_NAME}..."
+
+# ── build: shared package + esbuild bundle ────────────────────────────────────
+FROM deps AS build
+ARG SERVICE
+ARG PACKAGE_NAME
+ARG HAS_PRISMA
+
+COPY packages/tsconfig/ ./packages/tsconfig/
+COPY packages/shared/ ./packages/shared/
+RUN pnpm --filter @church-app/shared build
+
+# Copy full service tree (src, prisma, tsconfig, start.sh). node_modules ignored via .dockerignore
+COPY apps/${SERVICE}/ ./apps/${SERVICE}/
+
+# esbuild is build-time only (root in this stage; not copied to runner)
+RUN npm install -g esbuild@0.25.5 --no-fund --no-audit
+
+WORKDIR /app/apps/${SERVICE}
+RUN if [ "$HAS_PRISMA" = "true" ] && [ -f prisma/schema.prisma ]; then \
+      pnpm exec prisma generate; \
+    fi \
+ && esbuild src/index.ts \
+      --bundle \
+      --platform=node \
+      --target=node22 \
+      --format=esm \
+      --outfile=dist/index.js \
+      --packages=external
+
+WORKDIR /app
+# Portable prod package (no eslint/tsx/typescript). Then drop sources and regenerate Prisma client in-place.
+RUN HUSKY=0 pnpm --filter "${PACKAGE_NAME}" deploy --prod --legacy /deploy \
+ && mkdir -p /deploy/dist \
+ && cp -R "apps/${SERVICE}/dist/." /deploy/dist/ \
+ && cp "apps/${SERVICE}/start.sh" /deploy/start.sh \
+ && chmod +x /deploy/start.sh \
+ && if [ -d "apps/${SERVICE}/prisma" ]; then \
+      mkdir -p /deploy/prisma \
+      && cp -R "apps/${SERVICE}/prisma/." /deploy/prisma/; \
+    fi \
+ && rm -rf /deploy/src /deploy/tsconfig.json /deploy/eslint* /deploy/.eslintrc* \
+ && if [ "$HAS_PRISMA" = "true" ] && [ -f /deploy/prisma/schema.prisma ]; then \
+      cd /deploy && ./node_modules/.bin/prisma generate; \
+    fi
+
+# ── runner: small production image ────────────────────────────────────────────
+FROM node:22-alpine AS runner
+ARG PORT
+RUN apk add --no-cache openssl wget
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=${PORT}
+COPY --from=build /deploy ./
+RUN chown -R node:node /app
+USER node
+EXPOSE ${PORT}
+CMD ["./start.sh"]
