@@ -49,7 +49,7 @@ COPY apps/${SERVICE}/ ./apps/${SERVICE}/
 RUN npm install -g esbuild@0.25.5 --no-fund --no-audit
 
 WORKDIR /app/apps/${SERVICE}
-# prisma generate needed so esbuild can type-resolve / so engines exist for copy hints
+# prisma generate needed so engines exist for the schema used at runtime
 RUN if [ "$HAS_PRISMA" = "true" ] && [ -f prisma/schema.prisma ]; then \
       pnpm exec prisma generate; \
     fi \
@@ -66,13 +66,15 @@ RUN if [ "$HAS_PRISMA" = "true" ] && [ -f prisma/schema.prisma ]; then \
         --banner:js="import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);"; \
     fi
 
-# Minimal artifact — no pnpm deploy (that step alone can freeze a 4GB VPS)
+# Minimal artifact — never ship the workspace package.json (npm cannot parse workspace:*)
 RUN mkdir -p /out/dist \
  && cp dist/index.js /out/dist/index.js \
  && cp start.sh /out/start.sh \
  && chmod +x /out/start.sh \
- && cp package.json /out/package.json \
- && if [ -d prisma ]; then cp -R prisma /out/prisma; fi
+ && if [ -d prisma ]; then cp -R prisma /out/prisma; fi \
+ && if [ "$HAS_PRISMA" = "true" ]; then \
+      node -e 'const p=require("./package.json"); const v=p.dependencies.prisma||p.dependencies["@prisma/client"]||"5.22.0"; require("fs").writeFileSync("/out/package.json", JSON.stringify({name:"church-app-runtime",private:true,dependencies:{"@prisma/client":v,prisma:v}},null,2));'; \
+    fi
 
 # ── runner: tiny runtime (fat bundle + optional prisma CLI via npm) ───────────
 FROM node:22-alpine AS runner
@@ -85,16 +87,13 @@ ENV NODE_ENV=production \
     NODE_OPTIONS=--max-old-space-size=64
 COPY --from=build /out ./
 
-# Only Prisma packages are needed at runtime (everything else is in the bundle).
-# A tiny npm install here is far cheaper than pnpm deploy of the whole graph.
-RUN if [ "$HAS_PRISMA" = "true" ] && [ -f prisma/schema.prisma ]; then \
-      PRISMA_VER="$(node -p "require('./package.json').dependencies.prisma || require('./package.json').dependencies['@prisma/client'] || '5.22.0'")" \
-      && npm install --omit=dev --no-audit --no-fund --maxsockets=2 \
-           "@prisma/client@${PRISMA_VER}" "prisma@${PRISMA_VER}" \
+# package.json here (if present) only lists prisma — no workspace: protocol
+RUN if [ "$HAS_PRISMA" = "true" ] && [ -f prisma/schema.prisma ] && [ -f package.json ]; then \
+      npm install --omit=dev --no-audit --no-fund --maxsockets=2 \
       && ./node_modules/.bin/prisma generate \
-      && npm cache clean --force; \
+      && npm cache clean --force \
+      && rm -f package.json package-lock.json; \
     fi \
- && rm -f package.json \
  && chown -R node:node /app
 
 USER node
