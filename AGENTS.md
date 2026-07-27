@@ -3,7 +3,7 @@
 ## Stack
 
 - **Runtime:** Node.js 22
-- **Package manager:** pnpm 11 (workspaces)
+- **Package manager:** pnpm 10.12 (workspaces)
 - **Backend:** Fastify v4 + TypeScript
 - **ORM:** Prisma (PostgreSQL — banco por serviço)
 - **Validação:** Zod
@@ -24,16 +24,17 @@ church-app/
 │   ├── notification-service/      # Notificações WhatsApp (porta 3005)
 │   ├── prayer-service/            # Pedidos de oração (porta 3007)
 │   ├── financial-service/         # Finanças (porta 3008)
+│   ├── chat-service/              # Chat (porta 3002)
+│   ├── worship-service/           # Louvor (porta 3010)
 │   └── flutter/                   # App mobile (Dart/Flutter)
 ├── packages/                      # Pacotes compartilhados
 │   ├── shared/   -> @church-app/shared    # errors, logger, validation, http-client, rbac
-│   ├── types/    -> @church-app/types     # Tipos de domínio (User, Member, Event, etc.)
 │   ├── tsconfig/ -> @church-app/tsconfig  # Base TS config (estendida por todos)
 │   └── eslint-config/ -> @church-app/eslint-config  # ESLint config
 ├── docker/
-│   └── postgres/init.sql          # Cria 7 databases no startup
-├── docker-compose.yml             # 9 serviços (8 apps + postgres)
-└── .github/workflows/ci.yml       # CI: lint, test, build, security-audit, docker-build
+│   └── postgres/init.sql          # Cria 9 databases no startup
+├── docker-compose.yml             # serviços backend + postgres
+└── .github/workflows/ci.yml       # CI: lint, test, build, security-audit, docker-build (em evolução)
 ```
 
 ## Microserviços (apps/*/)
