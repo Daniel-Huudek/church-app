@@ -10,7 +10,15 @@ Site institucional público baseado no layout Figma da **IPI Avaré**.
 
 Header com dropdowns (Nossa Igreja, O que cremos, IPI Comunica) e footer com barra azul.
 
-Dados editáveis em `src/data/church.ts`. Foto do pastor em `public/pastor.jpg`.
+## Conteúdo (CMS)
+
+O site lê `GET /website` da API. Administradores/pastores editam no app Flutter:
+
+**Painel administrativo → Site**
+
+Fallback local em `src/data/church.ts` se a API estiver offline.
+
+Variável opcional: `VITE_API_URL` (default `http://localhost:3030`).
 
 ## Desenvolvimento
 

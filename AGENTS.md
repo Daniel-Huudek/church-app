@@ -87,6 +87,7 @@ Imagem Docker: `docker/Dockerfile.service` (args `SERVICE=api` / `PORT=3030` / `
 ### Rotas
 - API expõe: `/auth/*`, `/members/*`, `/events/*`, `/schedules/*`, `/notifications/*`, `/prayers/*`, `/finance/*`, `/users/*`, `/worship/*`, `/chats/*`
 - Health: `GET /health`
+- Website CMS: `GET /website` (público), `PUT /website` (ADMINISTRADOR/PASTOR)
 
 ### Padrões de código
 - Fastify + async/await

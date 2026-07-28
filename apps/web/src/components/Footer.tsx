@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { church } from '../data/church';
+import { useChurch } from '../church-context';
 import '../styles/footer.css';
 
 function FooterLink({ href, children }: { href: string; children: string }) {
-  if (href.startsWith('/#' ) || href.startsWith('#')) {
+  if (href.startsWith('/#') || href.startsWith('#')) {
     return <a href={href}>{children}</a>;
   }
   if (href.startsWith('/')) {
@@ -13,6 +13,8 @@ function FooterLink({ href, children }: { href: string; children: string }) {
 }
 
 export function Footer() {
+  const church = useChurch();
+
   return (
     <footer className="site-footer" id="conectar">
       <div className="container">
@@ -52,9 +54,7 @@ export function Footer() {
         </div>
       </div>
       <div className="site-footer__bar">
-        <p className="site-footer__copy">
-          Todos os direitos reservados. {church.fullName}.
-        </p>
+        <p className="site-footer__copy">Todos os direitos reservados. {church.fullName}.</p>
       </div>
     </footer>
   );

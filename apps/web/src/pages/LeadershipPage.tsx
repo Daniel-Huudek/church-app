@@ -1,8 +1,8 @@
-import { church } from '../data/church';
+import { useChurch } from '../church-context';
 import '../styles/pages.css';
 
 export function LeadershipPage() {
-  const { leadership } = church;
+  const { leadership } = useChurch();
 
   return (
     <section className="page-leadership" aria-labelledby="leadership-title">

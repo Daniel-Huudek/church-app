@@ -1,59 +1,6 @@
-export type SocialIcon = 'facebook' | 'instagram' | 'youtube';
+import type { WebsiteContentPayload } from './schema.js';
 
-export type NavChild = {
-  label: string;
-  href: string;
-};
-
-export type NavItem = {
-  label: string;
-  href: string;
-  children?: NavChild[];
-};
-
-export type ChurchContent = {
-  brand: string;
-  logoLabel: string;
-  fullName: string;
-  about: string;
-  nav: NavItem[];
-  social: Array<{ label: string; href: string; icon: SocialIcon }>;
-  series: {
-    title: string;
-    subtitle: string;
-    caption: string;
-  };
-  events: Array<{ title: string; date: string; time: string }>;
-  weeklyWord: {
-    text: string;
-    reference: string;
-  };
-  news: Array<{ id: string; title: string }>;
-  streams: Array<{ id: string; title: string }>;
-  faith: {
-    titlePrefix: string;
-    titleAccent: string;
-    paragraphs: string[];
-  };
-  leadership: {
-    titlePrefix: string;
-    titleAccent: string;
-    name: string;
-    role: string;
-    image: string;
-    bio: string;
-  };
-  usefulLinks: Array<{ label: string; href: string }>;
-  address: {
-    line: string;
-    email: string;
-    emailHref: string;
-    mapUrl: string;
-    mapEmbed: string;
-  };
-};
-
-export const defaultChurchContent: ChurchContent = {
+export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
   brand: 'IPI Avaré',
   logoLabel: 'PRIMEIRA IPI AVARÉ',
   fullName: '1ª Igreja Presbiteriana Independente de Avaré',
@@ -151,6 +98,3 @@ export const defaultChurchContent: ChurchContent = {
       'https://maps.google.com/maps?q=Rua%20Goi%C3%A1s%201142%20Avar%C3%A9%20SP&t=&z=16&ie=UTF8&iwloc=&output=embed',
   },
 };
-
-/** @deprecated Prefer useChurch() — kept for fallback imports */
-export const church = defaultChurchContent;

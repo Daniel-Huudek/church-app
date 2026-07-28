@@ -1,7 +1,9 @@
-import { church } from '../data/church';
+import { useChurch } from '../church-context';
 import '../styles/sections.css';
 
 export function Streams() {
+  const church = useChurch();
+
   return (
     <section className="section" id="transmissoes" aria-labelledby="transmissoes-title">
       <div className="container">

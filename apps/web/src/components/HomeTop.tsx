@@ -1,7 +1,9 @@
-import { church } from '../data/church';
+import { useChurch } from '../church-context';
 import '../styles/home.css';
 
 export function HomeTop() {
+  const church = useChurch();
+
   return (
     <section className="home-top" id="topo" aria-label="Destaques">
       <div className="container home-top__grid">
@@ -25,7 +27,7 @@ export function HomeTop() {
           </div>
           <ul className="events-panel__list">
             {church.events.map((event) => (
-              <li className="events-panel__item" key={`${event.title}-${event.date}`}>
+              <li className="events-panel__item" key={`${event.title}-${event.date}-${event.time}`}>
                 <div className="events-panel__thumb" aria-hidden="true" />
                 <div>
                   <h3>{event.title}</h3>

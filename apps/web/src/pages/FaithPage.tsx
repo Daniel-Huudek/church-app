@@ -1,7 +1,9 @@
-import { church } from '../data/church';
+import { useChurch } from '../church-context';
 import '../styles/pages.css';
 
 export function FaithPage() {
+  const church = useChurch();
+
   return (
     <section className="page-faith" aria-labelledby="faith-title">
       <div className="container page-faith__inner">

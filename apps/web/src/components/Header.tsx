@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { church } from '../data/church';
+import { useChurch } from '../church-context';
 import '../styles/header.css';
 
 function SocialIcon({ icon }: { icon: 'facebook' | 'instagram' | 'youtube' }) {
@@ -39,6 +39,7 @@ function isHashLink(href: string) {
 }
 
 export function Header() {
+  const church = useChurch();
   const [open, setOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 

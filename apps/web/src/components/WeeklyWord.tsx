@@ -1,7 +1,9 @@
-import { church } from '../data/church';
+import { useChurch } from '../church-context';
 import '../styles/sections.css';
 
 export function WeeklyWord() {
+  const church = useChurch();
+
   return (
     <section className="weekly-word" id="palavra" aria-labelledby="palavra-title">
       <div className="container">
