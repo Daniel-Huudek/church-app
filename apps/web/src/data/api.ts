@@ -1,6 +1,16 @@
 import { defaultChurchContent, type ChurchContent } from '../data/church';
 
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ||
+declare global {
+  interface Window {
+    __ENV__?: {
+      API_URL?: string;
+    };
+  }
+}
+
+const API_URL =
+  (typeof window !== 'undefined' ? window.__ENV__?.API_URL : undefined)?.replace(/\/$/, '') ||
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ||
   'http://localhost:3030';
 
 function isChurchContent(value: unknown): value is ChurchContent {
