@@ -1,0 +1,16 @@
+:root {
+  --ink: #0b1526;
+  --ink-soft: #152238;
+  --sky: #1c3f66;
+  --brand: #008cff;
+  --brand-deep: #0066cc;
+  --beacon: #e8b84a;
+  --beacon-soft: #f6d98a;
+  --bg: #f3f6fa;
+  --surface: #ffffff;
+  --text: #142033;
+  --muted: #5b6b7f;
+  --line: rgba(11, 21, 38, 0.1);
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+}

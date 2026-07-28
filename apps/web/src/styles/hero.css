@@ -1,0 +1,129 @@
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-items: end;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(ellipse 80% 55% at 70% 18%, rgba(232, 184, 74, 0.28), transparent 58%),
+    radial-gradient(ellipse 55% 45% at 18% 75%, rgba(0, 140, 255, 0.22), transparent 60%),
+    linear-gradient(165deg, #07101d 0%, #122742 42%, #1a3a5c 72%, #0f2038 100%);
+}
+
+.hero__skyline {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero__skyline svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero__beacon {
+  position: absolute;
+  top: 12%;
+  right: 18%;
+  width: min(42vw, 340px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(246, 217, 138, 0.55) 0%, rgba(232, 184, 74, 0.12) 42%, transparent 70%);
+  animation: beacon-pulse 5.5s ease-in-out infinite;
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  padding-block: clamp(7rem, 18vh, 10rem) clamp(4rem, 10vh, 6.5rem);
+}
+
+.hero__brand {
+  margin-bottom: 1.75rem;
+  opacity: 0;
+  animation: rise-in 0.9s ease forwards 0.15s;
+}
+
+.hero__brand img {
+  width: clamp(11rem, 28vw, 18rem);
+  height: auto;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.35));
+}
+
+.hero__brand-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hero__headline {
+  margin: 0;
+  max-width: 14ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.8vw, 2.55rem);
+  font-weight: 500;
+  line-height: 1.18;
+  color: rgba(255, 255, 255, 0.94);
+  opacity: 0;
+  animation: rise-in 0.9s ease forwards 0.35s;
+}
+
+.hero__support {
+  margin: 1.1rem 0 0;
+  max-width: 32rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
+  opacity: 0;
+  animation: rise-in 0.9s ease forwards 0.5s;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 2rem;
+  opacity: 0;
+  animation: rise-in 0.9s ease forwards 0.65s;
+}
+
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes beacon-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@media (max-width: 640px) {
+  .hero__beacon {
+    right: -8%;
+    top: 8%;
+    width: 70vw;
+  }
+}

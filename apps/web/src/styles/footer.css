@@ -1,0 +1,32 @@
+.site-footer {
+  background: var(--ink);
+  color: rgba(255, 255, 255, 0.72);
+  padding: 2.5rem 0 2rem;
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.site-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.site-footer__brand img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.site-footer__copy {
+  margin: 0;
+  font-size: 0.9rem;
+}

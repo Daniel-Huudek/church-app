@@ -9,17 +9,19 @@
 - **Validação:** Zod
 - **Auth:** JWT (jsonwebtoken + @fastify/jwt) + bcryptjs + Google OAuth
 - **Mobile:** Flutter 3.5+ (Riverpod + GoRouter + Dio)
+- **Web:** Vite + React + TypeScript (`apps/web` — site público IPI Avaré)
 - **Infra:** Docker Compose + Traefik + PostgreSQL 16
 
 ## Monorepo Structure
 
 ```
 church-app/
-├── apps/                          # Backend + Mobile
+├── apps/                          # Backend + Mobile + Web
 │   ├── api/                       # Monólito modular (porta 3030)
 │   │   ├── prisma/                # Schema unificado + migrations
 │   │   └── src/modules/           # Domínios: auth, members, events, …
-│   └── flutter/                   # App mobile (Dart/Flutter)
+│   ├── flutter/                   # App mobile (Dart/Flutter)
+│   └── web/                       # Site público IPI Avaré (porta 5173)
 ├── packages/                      # Pacotes compartilhados
 │   ├── shared/   -> @church-app/shared    # errors, logger, validation, http-client, rbac
 │   ├── tsconfig/ -> @church-app/tsconfig  # Base TS config (estendida por todos)

@@ -1,6 +1,6 @@
 # Church App - Sistema de Gerenciamento para Igrejas
 
-Plataforma completa de gerenciamento para igrejas com **API monólito modular** e app Flutter.
+Plataforma completa de gerenciamento para igrejas com **API monólito modular**, app Flutter e site público.
 
 ## Stack
 
@@ -19,6 +19,10 @@ Plataforma completa de gerenciamento para igrejas com **API monólito modular** 
 - Dio (HTTP)
 - Flutter Secure Storage + Google Sign-In
 
+### Web (site público)
+- Vite + React + TypeScript
+- Site institucional da Primeira IPI Avaré (porta 5173)
+
 ## Estrutura
 
 ```
@@ -26,6 +30,7 @@ Plataforma completa de gerenciamento para igrejas com **API monólito modular** 
   /api                  - API monólito modular (porta 3030)
     /src/modules        - Domínios: auth, members, events, schedules, …
   /flutter              - App mobile Flutter
+  /web                  - Site público da igreja (Vite/React)
 
 /packages
   /shared           - Utilitários compartilhados (@church-app/shared)
@@ -57,6 +62,9 @@ pnpm --filter @church-app/api db:generate
 # Rodar a API em modo desenvolvimento
 pnpm --filter @church-app/api dev
 
+# Site público da igreja
+pnpm --filter @church-app/web dev
+
 # Build
 pnpm build
 
@@ -69,6 +77,7 @@ docker compose up -d
 | Serviço | Porta | Descrição |
 |---------|-------|-----------|
 | API | 3030 | Auth JWT, membros, eventos, escalas, oração, finanças, louvor, chat, notificações |
+| Web | 5173 | Site público (cultos, sobre, ministérios, visita) |
 
 Rotas públicas (compatíveis com o app Flutter): `/auth`, `/users`, `/members`, `/events`, `/schedules`, `/prayers`, `/finance`, `/worship`, `/chats`, `/notifications`.
 
