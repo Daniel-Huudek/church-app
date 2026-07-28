@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useChurch } from '../church-context';
+import { BrandLogo } from './BrandLogo';
 import '../styles/header.css';
 
 function SocialIcon({ icon }: { icon: 'facebook' | 'instagram' | 'youtube' }) {
@@ -59,7 +60,7 @@ export function Header() {
     <header className="site-header">
       <div className="container site-header__inner">
         <Link className="site-header__brand" to="/" aria-label={church.brand}>
-          <img src="/logo.png" alt="" width={38} height={38} />
+          <BrandLogo src={church.logoUrl} width={38} height={38} />
           <strong>
             Primeira
             <br />

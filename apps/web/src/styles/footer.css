@@ -22,7 +22,6 @@
   width: 2.2rem;
   height: 2.2rem;
   object-fit: contain;
-  filter: invert(1);
 }
 
 .site-footer__brand strong {

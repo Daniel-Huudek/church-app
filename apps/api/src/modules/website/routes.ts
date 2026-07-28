@@ -5,7 +5,7 @@ import { uploadWebsiteImage, type WebsiteUploadKind } from '../../lib/s3.js';
 import { WebsiteService } from './service.js';
 import { websiteContentSchema } from './schema.js';
 
-const uploadKindSchema = z.enum(['leadership', 'series', 'news', 'general']);
+const uploadKindSchema = z.enum(['leadership', 'series', 'news', 'streams', 'events', 'logo', 'general']);
 
 export async function websiteRoutes(fastify: FastifyInstance) {
   const service = new WebsiteService(fastify.prisma);

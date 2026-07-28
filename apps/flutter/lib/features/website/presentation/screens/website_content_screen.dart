@@ -21,6 +21,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
   late final TextEditingController _brand;
   late final TextEditingController _fullName;
   late final TextEditingController _about;
+  late final TextEditingController _logoUrl;
   late final TextEditingController _addressLine;
   late final TextEditingController _email;
   late final TextEditingController _facebook;
@@ -39,6 +40,8 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
   late final TextEditingController _faithParagraphs;
 
   final List<_EventDraft> _events = [];
+  final List<_MediaDraft> _news = [];
+  final List<_MediaDraft> _streams = [];
 
   @override
   void initState() {
@@ -46,6 +49,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     _brand = TextEditingController();
     _fullName = TextEditingController();
     _about = TextEditingController();
+    _logoUrl = TextEditingController();
     _addressLine = TextEditingController();
     _email = TextEditingController();
     _facebook = TextEditingController();
@@ -67,7 +71,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
   @override
   void dispose() {
     for (final c in [
-      _brand, _fullName, _about, _addressLine, _email, _facebook, _instagram, _youtube,
+      _brand, _fullName, _about, _logoUrl, _addressLine, _email, _facebook, _instagram, _youtube,
       _seriesTitle, _seriesSubtitle, _seriesCaption, _seriesImage, _weeklyText, _weeklyRef,
       _leaderName, _leaderRole, _leaderImage, _leaderBio, _faithParagraphs,
     ]) {
@@ -75,6 +79,12 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     }
     for (final e in _events) {
       e.dispose();
+    }
+    for (final n in _news) {
+      n.dispose();
+    }
+    for (final s in _streams) {
+      s.dispose();
     }
     super.dispose();
   }
@@ -85,6 +95,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     _brand.text = '${content['brand'] ?? ''}';
     _fullName.text = '${content['fullName'] ?? ''}';
     _about.text = '${content['about'] ?? ''}';
+    _logoUrl.text = '${content['logoUrl'] ?? '/logo.png'}';
 
     final address = Map<String, dynamic>.from((content['address'] as Map?) ?? {});
     _addressLine.text = '${address['line'] ?? ''}';
@@ -120,24 +131,48 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     final paragraphs = (faith['paragraphs'] as List?)?.map((e) => '$e').toList() ?? [];
     _faithParagraphs.text = paragraphs.join('\n\n');
 
+    _replaceEvents(content['events'] as List?);
+    _replaceMedia(_news, content['news'] as List?, prefix: 'n');
+    _replaceMedia(_streams, content['streams'] as List?, prefix: 's');
+
+    _initialized = true;
+  }
+
+  void _replaceEvents(List? raw) {
     for (final e in _events) {
       e.dispose();
     }
     _events.clear();
-    final events = (content['events'] as List?) ?? [];
-    for (final item in events) {
+    for (final item in raw ?? const []) {
       final map = Map<String, dynamic>.from(item as Map);
       _events.add(_EventDraft(
         title: '${map['title'] ?? ''}',
         date: '${map['date'] ?? ''}',
         time: '${map['time'] ?? ''}',
+        image: '${map['image'] ?? ''}',
       ));
     }
-    if (_events.isEmpty) {
-      _events.add(_EventDraft());
-    }
+    if (_events.isEmpty) _events.add(_EventDraft());
+  }
 
-    _initialized = true;
+  void _replaceMedia(List<_MediaDraft> target, List? raw, {required String prefix}) {
+    for (final item in target) {
+      item.dispose();
+    }
+    target.clear();
+    var index = 1;
+    for (final item in raw ?? const []) {
+      final map = Map<String, dynamic>.from(item as Map);
+      target.add(_MediaDraft(
+        id: '${map['id'] ?? '$prefix$index'}',
+        title: '${map['title'] ?? ''}',
+        image: '${map['image'] ?? ''}',
+      ));
+      index += 1;
+    }
+    if (target.isEmpty) {
+      target.add(_MediaDraft(id: '${prefix}1'));
+    }
   }
 
   Map<String, dynamic> _buildPayload(Map<String, dynamic> current) {
@@ -176,6 +211,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
       ...current,
       'brand': _brand.text.trim(),
       'logoLabel': current['logoLabel'] ?? 'PRIMEIRA IPI AVARÉ',
+      'logoUrl': _logoUrl.text.trim().isEmpty ? '/logo.png' : _logoUrl.text.trim(),
       'fullName': _fullName.text.trim(),
       'about': _about.text.trim(),
       'address': address,
@@ -199,14 +235,27 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
                 'title': e.title.text.trim(),
                 'date': e.date.text.trim(),
                 'time': e.time.text.trim(),
+                'image': e.image.text.trim(),
               })
           .where((e) => (e['title'] as String).isNotEmpty)
+          .toList(),
+      'news': _news
+          .map((e) => {
+                'id': e.id,
+                'title': e.title.text.trim().isEmpty ? 'Notícia' : e.title.text.trim(),
+                'image': e.image.text.trim(),
+              })
+          .toList(),
+      'streams': _streams
+          .map((e) => {
+                'id': e.id,
+                'title': e.title.text.trim().isEmpty ? 'Transmissão' : e.title.text.trim(),
+                'image': e.image.text.trim(),
+              })
           .toList(),
       'leadership': leadership,
       'faith': faith,
       'nav': current['nav'] ?? [],
-      'news': current['news'] ?? [],
-      'streams': current['streams'] ?? [],
       'usefulLinks': current['usefulLinks'] ?? [],
     };
   }
@@ -243,12 +292,10 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
       final result = await api.uploadImage(
         filePath: file.path,
         filename: file.name,
-        kind: kind,
+        kind: kind.split(':').first,
       );
       final url = '${result['url'] ?? ''}';
-      if (url.isEmpty) {
-        throw Exception('Upload sem URL pública');
-      }
+      if (url.isEmpty) throw Exception('Upload sem URL pública');
       setState(() => target.text = url);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -268,6 +315,292 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     } finally {
       if (mounted) setState(() => _uploadingKind = null);
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(websiteContentProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkBg : const Color(0xFFF8FAFC);
+    final card = isDark ? AppColors.darkCard : Colors.white;
+    final t1 = isDark ? AppColors.darkText : AppColors.lightText;
+    final t2 = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+    ref.listen(websiteContentProvider, (previous, next) {
+      if (!_initialized && !next.loading && next.data.isNotEmpty) {
+        setState(() => _hydrate(next.data));
+      }
+    });
+
+    return Scaffold(
+      backgroundColor: bg,
+      appBar: AppBar(
+        title: const Text('Conteúdo do site'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: state.loading || _saving || state.data.isEmpty ? null : () => _save(state.data),
+            child: _saving
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Salvar'),
+          ),
+        ],
+      ),
+      body: state.loading && !_initialized
+          ? const Center(child: CircularProgressIndicator())
+          : state.error != null && !_initialized
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(state.error!, textAlign: TextAlign.center, style: TextStyle(color: t2)),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: () => ref.read(websiteContentProvider.notifier).load(),
+                          child: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+                    children: [
+                      Text(
+                        'Todas as imagens do site podem ser enviadas para o AWS S3 por aqui.',
+                        style: TextStyle(color: t2),
+                      ),
+                      const SizedBox(height: 12),
+                      _section(
+                        card: card,
+                        title: 'Identidade',
+                        children: [
+                          _field(_brand, 'Nome curto (marca)', t1, requiredField: true),
+                          _field(_fullName, 'Nome completo', t1, requiredField: true),
+                          _field(_about, 'Sobre (rodapé)', t1, maxLines: 4, requiredField: true),
+                          _imageField(
+                            controller: _logoUrl,
+                            kind: 'logo',
+                            label: 'Logo (URL)',
+                            t1: t1,
+                            t2: t2,
+                          ),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Contato',
+                        children: [
+                          _field(_addressLine, 'Endereço', t1, requiredField: true),
+                          _field(_email, 'E-mail', t1, requiredField: true, keyboard: TextInputType.emailAddress),
+                          _field(_facebook, 'Facebook (URL)', t1),
+                          _field(_instagram, 'Instagram (URL)', t1),
+                          _field(_youtube, 'YouTube (URL)', t1),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Série em destaque (home)',
+                        children: [
+                          _field(_seriesSubtitle, 'Subtítulo', t1, requiredField: true),
+                          _field(_seriesTitle, 'Título', t1, requiredField: true),
+                          _field(_seriesCaption, 'Legenda', t1, requiredField: true),
+                          _imageField(
+                            controller: _seriesImage,
+                            kind: 'series',
+                            label: 'Imagem do banner',
+                            t1: t1,
+                            t2: t2,
+                          ),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Palavra da semana',
+                        children: [
+                          _field(_weeklyText, 'Texto bíblico', t1, maxLines: 5, requiredField: true),
+                          _field(_weeklyRef, 'Referência', t1, requiredField: true),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Eventos e programações',
+                        children: [
+                          ..._events.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final event = entry.value;
+                            return _boxedItem(
+                              border: border,
+                              title: 'Evento ${index + 1}',
+                              onDelete: _events.length > 1
+                                  ? () => setState(() => _events.removeAt(index).dispose())
+                                  : null,
+                              children: [
+                                _field(event.title, 'Título', t1, requiredField: true),
+                                _field(event.date, 'Data', t1, requiredField: true),
+                                _field(event.time, 'Horário', t1, requiredField: true),
+                                _imageField(
+                                  controller: event.image,
+                                  kind: 'events:$index',
+                                  label: 'Miniatura',
+                                  t1: t1,
+                                  t2: t2,
+                                ),
+                              ],
+                            );
+                          }),
+                          TextButton.icon(
+                            onPressed: () => setState(() => _events.add(_EventDraft())),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Adicionar evento'),
+                          ),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Notícias',
+                        children: [
+                          ..._news.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            return _boxedItem(
+                              border: border,
+                              title: 'Notícia ${index + 1}',
+                              onDelete: _news.length > 1
+                                  ? () => setState(() => _news.removeAt(index).dispose())
+                                  : null,
+                              children: [
+                                _field(item.title, 'Título', t1),
+                                _imageField(
+                                  controller: item.image,
+                                  kind: 'news:$index',
+                                  label: 'Imagem',
+                                  t1: t1,
+                                  t2: t2,
+                                ),
+                              ],
+                            );
+                          }),
+                          TextButton.icon(
+                            onPressed: () => setState(
+                              () => _news.add(_MediaDraft(id: 'n${DateTime.now().millisecondsSinceEpoch}')),
+                            ),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Adicionar notícia'),
+                          ),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Transmissões',
+                        children: [
+                          ..._streams.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            return _boxedItem(
+                              border: border,
+                              title: 'Transmissão ${index + 1}',
+                              onDelete: _streams.length > 1
+                                  ? () => setState(() => _streams.removeAt(index).dispose())
+                                  : null,
+                              children: [
+                                _field(item.title, 'Título', t1),
+                                _imageField(
+                                  controller: item.image,
+                                  kind: 'streams:$index',
+                                  label: 'Capa / thumbnail',
+                                  t1: t1,
+                                  t2: t2,
+                                ),
+                              ],
+                            );
+                          }),
+                          TextButton.icon(
+                            onPressed: () => setState(
+                              () => _streams.add(_MediaDraft(id: 's${DateTime.now().millisecondsSinceEpoch}')),
+                            ),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Adicionar transmissão'),
+                          ),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Nossa liderança',
+                        children: [
+                          _field(_leaderName, 'Nome', t1, requiredField: true),
+                          _field(_leaderRole, 'Cargo / função', t1, requiredField: true),
+                          _imageField(
+                            controller: _leaderImage,
+                            kind: 'leadership',
+                            label: 'Foto',
+                            t1: t1,
+                            t2: t2,
+                          ),
+                          _field(_leaderBio, 'Biografia', t1, maxLines: 8, requiredField: true),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Afirmação de fé',
+                        children: [
+                          Text(
+                            'Separe os parágrafos com uma linha em branco.',
+                            style: TextStyle(color: t2, fontSize: 13),
+                          ),
+                          const SizedBox(height: 8),
+                          _field(_faithParagraphs, 'Parágrafos', t1, maxLines: 14, requiredField: true),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      FilledButton(
+                        onPressed: state.loading || _saving || state.data.isEmpty
+                            ? null
+                            : () => _save(state.data),
+                        child: Text(_saving ? 'Salvando...' : 'Publicar no site'),
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  Widget _boxedItem({
+    required Color border,
+    required String title,
+    required List<Widget> children,
+    VoidCallback? onDelete,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: border),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600))),
+                if (onDelete != null)
+                  IconButton(onPressed: onDelete, icon: const Icon(Icons.delete_outline_rounded)),
+              ],
+            ),
+            ...children,
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _imageField({
@@ -324,204 +657,6 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(websiteContentProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.darkBg : const Color(0xFFF8FAFC);
-    final card = isDark ? AppColors.darkCard : Colors.white;
-    final t1 = isDark ? AppColors.darkText : AppColors.lightText;
-    final t2 = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
-
-    ref.listen(websiteContentProvider, (previous, next) {
-      if (!_initialized && !next.loading && next.data.isNotEmpty) {
-        setState(() => _hydrate(next.data));
-      }
-    });
-
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text('Conteúdo do site'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: state.loading || _saving || state.data.isEmpty
-                ? null
-                : () => _save(state.data),
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Salvar'),
-          ),
-        ],
-      ),
-      body: state.loading && !_initialized
-          ? const Center(child: CircularProgressIndicator())
-          : state.error != null && !_initialized
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(state.error!, textAlign: TextAlign.center, style: TextStyle(color: t2)),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: () => ref.read(websiteContentProvider.notifier).load(),
-                          child: const Text('Tentar novamente'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
-                    children: [
-                      Text(
-                        'O que você salvar aqui aparece no site público da igreja.',
-                        style: TextStyle(color: t2),
-                      ),
-                      const SizedBox(height: 12),
-                      _section(
-                        card: card,
-                        title: 'Identidade',
-                        children: [
-                          _field(_brand, 'Nome curto (marca)', t1, requiredField: true),
-                          _field(_fullName, 'Nome completo', t1, requiredField: true),
-                          _field(_about, 'Sobre (rodapé)', t1, maxLines: 4, requiredField: true),
-                        ],
-                      ),
-                      _section(
-                        card: card,
-                        title: 'Contato',
-                        children: [
-                          _field(_addressLine, 'Endereço', t1, requiredField: true),
-                          _field(_email, 'E-mail', t1, requiredField: true, keyboard: TextInputType.emailAddress),
-                          _field(_facebook, 'Facebook (URL)', t1),
-                          _field(_instagram, 'Instagram (URL)', t1),
-                          _field(_youtube, 'YouTube (URL)', t1),
-                        ],
-                      ),
-                      _section(
-                        card: card,
-                        title: 'Série em destaque (home)',
-                        children: [
-                          _field(_seriesSubtitle, 'Subtítulo', t1, requiredField: true),
-                          _field(_seriesTitle, 'Título', t1, requiredField: true),
-                          _field(_seriesCaption, 'Legenda', t1, requiredField: true),
-                          _imageField(
-                            controller: _seriesImage,
-                            kind: 'series',
-                            label: 'URL da imagem do banner',
-                            t1: t1,
-                            t2: t2,
-                          ),
-                        ],
-                      ),
-                      _section(
-                        card: card,
-                        title: 'Palavra da semana',
-                        children: [
-                          _field(_weeklyText, 'Texto bíblico', t1, maxLines: 5, requiredField: true),
-                          _field(_weeklyRef, 'Referência', t1, requiredField: true),
-                        ],
-                      ),
-                      _section(
-                        card: card,
-                        title: 'Eventos e programações',
-                        children: [
-                          ..._events.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final event = entry.value;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text('Evento ${index + 1}', style: TextStyle(fontWeight: FontWeight.w600, color: t1)),
-                                        ),
-                                        if (_events.length > 1)
-                                          IconButton(
-                                            onPressed: () => setState(() {
-                                              _events.removeAt(index).dispose();
-                                            }),
-                                            icon: const Icon(Icons.delete_outline_rounded),
-                                          ),
-                                      ],
-                                    ),
-                                    _field(event.title, 'Título', t1, requiredField: true),
-                                    _field(event.date, 'Data', t1, requiredField: true),
-                                    _field(event.time, 'Horário', t1, requiredField: true),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                          TextButton.icon(
-                            onPressed: () => setState(() => _events.add(_EventDraft())),
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Adicionar evento'),
-                          ),
-                        ],
-                      ),
-                      _section(
-                        card: card,
-                        title: 'Nossa liderança',
-                        children: [
-                          _field(_leaderName, 'Nome', t1, requiredField: true),
-                          _field(_leaderRole, 'Cargo / função', t1, requiredField: true),
-                          _imageField(
-                            controller: _leaderImage,
-                            kind: 'leadership',
-                            label: 'URL da foto',
-                            t1: t1,
-                            t2: t2,
-                          ),
-                          _field(_leaderBio, 'Biografia', t1, maxLines: 8, requiredField: true),
-                        ],
-                      ),
-                      _section(
-                        card: card,
-                        title: 'Afirmação de fé',
-                        children: [
-                          Text(
-                            'Separe os parágrafos com uma linha em branco.',
-                            style: TextStyle(color: t2, fontSize: 13),
-                          ),
-                          const SizedBox(height: 8),
-                          _field(_faithParagraphs, 'Parágrafos', t1, maxLines: 14, requiredField: true),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      FilledButton(
-                        onPressed: state.loading || _saving || state.data.isEmpty
-                            ? null
-                            : () => _save(state.data),
-                        child: Text(_saving ? 'Salvando...' : 'Publicar no site'),
-                      ),
-                    ],
-                  ),
-                ),
-    );
-  }
-
   Widget _section({
     required Color card,
     required String title,
@@ -573,18 +708,36 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
 }
 
 class _EventDraft {
-  _EventDraft({String title = '', String date = '', String time = ''})
+  _EventDraft({String title = '', String date = '', String time = '', String image = ''})
       : title = TextEditingController(text: title),
         date = TextEditingController(text: date),
-        time = TextEditingController(text: time);
+        time = TextEditingController(text: time),
+        image = TextEditingController(text: image);
 
   final TextEditingController title;
   final TextEditingController date;
   final TextEditingController time;
+  final TextEditingController image;
 
   void dispose() {
     title.dispose();
     date.dispose();
     time.dispose();
+    image.dispose();
+  }
+}
+
+class _MediaDraft {
+  _MediaDraft({required this.id, String title = '', String image = ''})
+      : title = TextEditingController(text: title),
+        image = TextEditingController(text: image);
+
+  final String id;
+  final TextEditingController title;
+  final TextEditingController image;
+
+  void dispose() {
+    title.dispose();
+    image.dispose();
   }
 }

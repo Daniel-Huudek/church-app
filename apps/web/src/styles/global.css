@@ -141,6 +141,13 @@ button {
   border-radius: 0.35rem;
 }
 
+.media-card--photo {
+  background-color: #111;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 @media (max-width: 900px) {
   .card-grid {
     grid-template-columns: repeat(2, 1fr);

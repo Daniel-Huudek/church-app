@@ -25,7 +25,6 @@
   width: 2.35rem;
   height: 2.35rem;
   object-fit: contain;
-  filter: invert(1);
 }
 
 .site-header__brand strong {

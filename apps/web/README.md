@@ -16,8 +16,18 @@ O site lê `GET /website` da API. Administradores/pastores editam no app Flutter
 
 **Painel administrativo → Site**
 
-Imagens (banner / liderança) sobem para **AWS S3** via `POST /website/uploads`.
-Ver `docs/aws-s3-website-uploads.md`.
+## Imagens editáveis no app
+
+Todas sobem para S3 pelo botão **Enviar imagem (S3)**:
+
+| Slot | Campo CMS |
+|------|-----------|
+| Logo (header/footer) | `logoUrl` |
+| Banner da série | `series.image` |
+| Miniaturas de eventos | `events[].image` |
+| Notícias | `news[].image` |
+| Transmissões | `streams[].image` |
+| Foto da liderança | `leadership.image` |
 
 Fallback local em `src/data/church.ts` se a API estiver offline.
 

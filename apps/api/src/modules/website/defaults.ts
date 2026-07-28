@@ -3,6 +3,7 @@ import type { WebsiteContentPayload } from './schema.js';
 export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
   brand: 'IPI Avaré',
   logoLabel: 'PRIMEIRA IPI AVARÉ',
+  logoUrl: '/logo.png',
   fullName: '1ª Igreja Presbiteriana Independente de Avaré',
   about:
     'A 1ª Igreja IPI de Avaré com o objetivo de levar a todos o amor e a salvação que existem em Jesus Cristo.',
@@ -42,26 +43,26 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
     image: '',
   },
   events: [
-    { title: 'Projeto Ipi Avaré', date: '3 de agosto de 2025', time: '12:00' },
-    { title: 'Projeto Ipi Avaré', date: '10 de agosto de 2025', time: '12:00' },
-    { title: 'Projeto Ipi Avaré', date: '17 de agosto de 2025', time: '12:00' },
-    { title: 'Projeto Ipi Avaré', date: '24 de agosto de 2025', time: '12:00' },
+    { title: 'Projeto Ipi Avaré', date: '3 de agosto de 2025', time: '12:00', image: '' },
+    { title: 'Projeto Ipi Avaré', date: '10 de agosto de 2025', time: '12:00', image: '' },
+    { title: 'Projeto Ipi Avaré', date: '17 de agosto de 2025', time: '12:00', image: '' },
+    { title: 'Projeto Ipi Avaré', date: '24 de agosto de 2025', time: '12:00', image: '' },
   ],
   weeklyWord: {
     text: 'Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento com a destra da minha justiça.',
     reference: 'Isaías 41:10',
   },
   news: [
-    { id: 'n1', title: 'Notícia 1' },
-    { id: 'n2', title: 'Notícia 2' },
-    { id: 'n3', title: 'Notícia 3' },
-    { id: 'n4', title: 'Notícia 4' },
+    { id: 'n1', title: 'Notícia 1', image: '' },
+    { id: 'n2', title: 'Notícia 2', image: '' },
+    { id: 'n3', title: 'Notícia 3', image: '' },
+    { id: 'n4', title: 'Notícia 4', image: '' },
   ],
   streams: [
-    { id: 's1', title: 'Transmissão 1' },
-    { id: 's2', title: 'Transmissão 2' },
-    { id: 's3', title: 'Transmissão 3' },
-    { id: 's4', title: 'Transmissão 4' },
+    { id: 's1', title: 'Transmissão 1', image: '' },
+    { id: 's2', title: 'Transmissão 2', image: '' },
+    { id: 's3', title: 'Transmissão 3', image: '' },
+    { id: 's4', title: 'Transmissão 4', image: '' },
   ],
   faith: {
     titlePrefix: 'Afirmação de Fé da',

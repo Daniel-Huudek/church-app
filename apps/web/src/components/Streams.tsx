@@ -11,11 +11,18 @@ export function Streams() {
           Nossas Transmissões
         </h2>
         <ul className="card-grid">
-          {church.streams.map((item) => (
-            <li key={item.id}>
-              <article className="media-card" aria-label={item.title} />
-            </li>
-          ))}
+          {church.streams.map((item) => {
+            const image = item.image?.trim();
+            return (
+              <li key={item.id}>
+                <article
+                  className={`media-card${image ? ' media-card--photo' : ''}`}
+                  aria-label={item.title}
+                  style={image ? { backgroundImage: `url(${image})` } : undefined}
+                />
+              </li>
+            );
+          })}
         </ul>
         <div className="more-wrap">
           <a className="btn btn-outline" href="#transmissoes">

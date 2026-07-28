@@ -31,19 +31,26 @@ export function HomeTop() {
             </a>
           </div>
           <ul className="events-panel__list">
-            {church.events.map((event) => (
-              <li className="events-panel__item" key={`${event.title}-${event.date}-${event.time}`}>
-                <div className="events-panel__thumb" aria-hidden="true" />
-                <div>
-                  <h3>{event.title}</h3>
-                  <p className="events-panel__meta">
-                    {event.date}
-                    <br />
-                    {event.time}
-                  </p>
-                </div>
-              </li>
-            ))}
+            {church.events.map((event) => {
+              const thumb = event.image?.trim();
+              return (
+                <li className="events-panel__item" key={`${event.title}-${event.date}-${event.time}`}>
+                  <div
+                    className={`events-panel__thumb${thumb ? ' events-panel__thumb--photo' : ''}`}
+                    style={thumb ? { backgroundImage: `url(${thumb})` } : undefined}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <h3>{event.title}</h3>
+                    <p className="events-panel__meta">
+                      {event.date}
+                      <br />
+                      {event.time}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </aside>
       </div>

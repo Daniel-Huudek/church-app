@@ -21,11 +21,13 @@ const eventSchema = z.object({
   title: z.string().min(1),
   date: z.string().min(1),
   time: z.string().min(1),
+  image: z.string().optional().default(''),
 });
 
 const mediaItemSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
+  image: z.string().optional().default(''),
 });
 
 const linkSchema = z.object({
@@ -36,6 +38,7 @@ const linkSchema = z.object({
 export const websiteContentSchema = z.object({
   brand: z.string().min(1),
   logoLabel: z.string().min(1),
+  logoUrl: z.string().optional().default('/logo.png'),
   fullName: z.string().min(1),
   about: z.string().min(1),
   nav: z.array(navItemSchema).min(1),

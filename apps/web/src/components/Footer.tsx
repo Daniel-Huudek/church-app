@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useChurch } from '../church-context';
+import { BrandLogo } from './BrandLogo';
 import '../styles/footer.css';
 
 function FooterLink({ href, children }: { href: string; children: string }) {
@@ -21,7 +22,7 @@ export function Footer() {
         <div className="site-footer__grid">
           <div>
             <Link className="site-footer__brand" to="/">
-              <img src="/logo.png" alt="" width={36} height={36} />
+              <BrandLogo src={church.logoUrl} width={36} height={36} />
               <strong>IPI Avaré</strong>
             </Link>
             <p className="site-footer__about">{church.about}</p>
