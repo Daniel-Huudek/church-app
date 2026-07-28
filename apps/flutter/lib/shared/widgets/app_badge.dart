@@ -14,7 +14,8 @@ class AppBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (Color bg, Color textColor) = _getColors();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final (Color bg, Color textColor) = _getColors(isDark);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -37,18 +38,28 @@ class AppBadge extends StatelessWidget {
     );
   }
 
-  (Color, Color) _getColors() {
+  (Color, Color) _getColors(bool isDark) {
     switch (variant) {
       case AppBadgeVariant.default_:
-        return (AppColors.primary100, AppColors.primary700);
+        return isDark
+            ? (AppColors.primary900.withValues(alpha: 0.45), AppColors.primary300)
+            : (AppColors.primary100, AppColors.primary700);
       case AppBadgeVariant.success:
-        return (const Color(0xFFD1FAE5), AppColors.success);
+        return isDark
+            ? (AppColors.success.withValues(alpha: 0.2), const Color(0xFF6EE7B7))
+            : (AppColors.successLight, AppColors.success);
       case AppBadgeVariant.warning:
-        return (const Color(0xFFFEF3C7), AppColors.warning);
+        return isDark
+            ? (AppColors.warning.withValues(alpha: 0.2), const Color(0xFFFCD34D))
+            : (AppColors.warningLight, AppColors.warning);
       case AppBadgeVariant.error:
-        return (const Color(0xFFFEE2E2), AppColors.error);
+        return isDark
+            ? (AppColors.error.withValues(alpha: 0.2), const Color(0xFFFCA5A5))
+            : (AppColors.errorLight, AppColors.error);
       case AppBadgeVariant.info:
-        return (const Color(0xFFDBEAFE), AppColors.info);
+        return isDark
+            ? (AppColors.info.withValues(alpha: 0.2), AppColors.primary300)
+            : (const Color(0xFFDBEAFE), AppColors.info);
     }
   }
 }

@@ -60,8 +60,8 @@ class _BibleVerseReaderScreenState extends ConsumerState<BibleVerseReaderScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1);
-    final accent = const Color(0xFFC8A45C);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightSurface;
+    final accent = AppColors.primary;
     final state = ref.watch(bibleChapterProvider);
     final book = BibleBook.all.firstWhere((b) => b.id == _bookId);
 
@@ -383,7 +383,7 @@ class _BibleVerseReaderScreenState extends ConsumerState<BibleVerseReaderScreen>
                         decoration: BoxDecoration(
                           color: isCurrent
                               ? accent
-                              : (isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1)),
+                              : (isDark ? AppColors.darkBg : AppColors.lightSurface),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         alignment: Alignment.center,
@@ -462,7 +462,7 @@ class _BibleVerseReaderScreenState extends ConsumerState<BibleVerseReaderScreen>
                         decoration: BoxDecoration(
                           color: isCurrent
                               ? accent
-                              : (isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1)),
+                              : (isDark ? AppColors.darkBg : AppColors.lightSurface),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         alignment: Alignment.center,

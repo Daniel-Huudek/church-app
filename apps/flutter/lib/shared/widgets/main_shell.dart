@@ -102,7 +102,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                             _sideButton(
                               icon: Icons.dashboard_rounded,
                               label: '',
-                              grad: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                              grad: const [AppColors.primary, AppColors.primaryDark],
                               onTap: () => context.go(AppRoutes.dashboard),
                               height: 56,
                             ),

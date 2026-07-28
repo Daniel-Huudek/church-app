@@ -41,9 +41,9 @@ class _BibleHomeScreenState extends State<BibleHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1);
-    final surface = isDark ? const Color(0xFF16161F) : Colors.white;
-    final accent = const Color(0xFFC8A45C);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightSurface;
+    final surface = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final accent = AppColors.primary;
     final accentLight = accent.withValues(alpha: 0.12);
 
     List<BibleBook> filtered = BibleBook.all;

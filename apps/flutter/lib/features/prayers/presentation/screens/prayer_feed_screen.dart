@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/theme/app_colors.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../providers/prayer_provider.dart';
-import '../../data/prayer_api.dart';
 import '../../domain/prayer_model.dart';
 import '../widgets/tab_button.dart';
 import '../widgets/prayer_card.dart';
@@ -73,7 +73,7 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
                   'content': contentCtrl.text.trim(),
                 });
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008CFF)),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               child: const Text('Salvar', style: TextStyle(color: Colors.white)),
             ),
             const SizedBox(height: 20),
@@ -91,7 +91,10 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
         content: Text('Tem certeza que deseja excluir "${prayer.title}"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Excluir', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir', style: TextStyle(color: AppColors.error)),
+          ),
         ],
       ),
     );
@@ -112,37 +115,36 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final insets = MediaQuery.of(context).padding;
     final state = ref.watch(prayerFeedProvider);
     final list = _filtered(state.data);
     final feedCount = state.data.length;
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightSurface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(20, insets.top + 20, 20, 8),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Orações',
                       style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: isDark
-                              ? const Color(0xFFF9FAFB)
-                              : const Color(0xFF111827))),
+                              ? AppColors.darkText
+                              : AppColors.lightText)),
                   const SizedBox(height: 4),
                   Text(_countText(state.data.length),
                       style: TextStyle(
                           fontSize: 14,
                           color: isDark
-                              ? const Color(0xFF9CA3AF)
-                              : const Color(0xFF6B7280))),
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary)),
                 ],
               ),
             ),
@@ -150,12 +152,21 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+                color: isDark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                ),
               ),
               child: Row(
                 children: [
-                  const Text('🔍', style: TextStyle(fontSize: 16)),
+                  Icon(
+                    Icons.search_rounded,
+                    size: 20,
+                    color: isDark
+                        ? AppColors.darkTextTertiary
+                        : AppColors.lightTextTertiary,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
@@ -241,7 +252,7 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
                       ? _buildEmpty(isDark, _activeTab == 1)
                       : RefreshIndicator(
                           onRefresh: _onRefresh,
-                          color: const Color(0xFF008CFF),
+                          color: AppColors.primary,
                           child: ListView.builder(
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                             itemCount: list.length,
@@ -266,8 +277,8 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/prayers/create'),
-        backgroundColor: const Color(0xFF008CFF),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: AppColors.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         child: Image.asset('assets/images/add.png',
             width: 24, height: 24, color: Colors.white),
       ),
@@ -287,14 +298,20 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
   Widget _buildEmpty(bool isDark, bool isMine) {
     return RefreshIndicator(
       onRefresh: _onRefresh,
-      color: const Color(0xFF008CFF),
+      color: AppColors.primary,
       child: ListView(
         children: [
           const SizedBox(height: 60),
           Center(
             child: Column(
               children: [
-                const Text('🙏', style: TextStyle(fontSize: 48)),
+                Icon(
+                  Icons.favorite_outline_rounded,
+                  size: 48,
+                  color: isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.lightTextTertiary,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   isMine
@@ -304,8 +321,8 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: isDark
-                          ? const Color(0xFFF9FAFB)
-                          : const Color(0xFF111827)),
+                          ? AppColors.darkText
+                          : AppColors.lightText),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -313,8 +330,8 @@ class _PrayerFeedScreenState extends ConsumerState<PrayerFeedScreen> {
                   style: TextStyle(
                       fontSize: 14,
                       color: isDark
-                          ? const Color(0xFF9CA3AF)
-                          : const Color(0xFF6B7280)),
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary),
                 ),
               ],
             ),

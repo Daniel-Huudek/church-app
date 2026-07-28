@@ -44,8 +44,8 @@ class TabItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: isFocused
               ? (isDark
-                  ? AppColors.neutral500.withValues(alpha: 0.15)
-                  : AppColors.neutral400.withValues(alpha: 0.15))
+                  ? AppColors.primary.withValues(alpha: 0.16)
+                  : AppColors.primary.withValues(alpha: 0.1))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
