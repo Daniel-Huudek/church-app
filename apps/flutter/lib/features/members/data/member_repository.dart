@@ -82,6 +82,8 @@ class MemberRepository {
   Future<MemberModel> update(String id, Map<String, dynamic> data) =>
       _api.update(id, data);
 
+  Future<void> delete(String id) => _api.delete(id);
+
   Future<List<MemberModel>> search(String query) => _api.search(query);
 
   Future<List<MinistryModel>> listMinistries() => _api.listMinistries();

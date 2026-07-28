@@ -74,6 +74,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (location.startsWith(AppRoutes.finance) && !user.hasPermission('finance_read')) {
           return AppRoutes.home;
         }
+        if ((location.startsWith(AppRoutes.members) || location == AppRoutes.birthdays) &&
+            !user.hasPermission('members_read')) {
+          return AppRoutes.home;
+        }
+        if ((location == AppRoutes.membersCreate ||
+                (location.startsWith('${AppRoutes.members}/') && location.endsWith('/edit'))) &&
+            !user.hasPermission('members_write')) {
+          return AppRoutes.members;
+        }
         if (location == AppRoutes.dashboard && !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) {
           return AppRoutes.home;
         }

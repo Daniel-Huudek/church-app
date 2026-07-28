@@ -50,6 +50,10 @@ class MemberApi {
     return MemberModel.fromJson(_client.unwrapData(response.data));
   }
 
+  Future<void> delete(String id) async {
+    await _client.delete('${ApiConfig.members}/$id');
+  }
+
   Future<List<MemberModel>> search(String query) async {
     final response = await _client.get(
       ApiConfig.membersSearch,

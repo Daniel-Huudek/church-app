@@ -114,8 +114,29 @@ export class AuthService {
     await this.prisma.refreshToken.deleteMany({ where: { token } });
   }
 
+  private async resolvePermissions(user: User): Promise<PrismaPermission[]> {
+    if (user.permissions?.length) {
+      return user.permissions as PrismaPermission[];
+    }
+    const config = await this.prisma.roleConfig.findUnique({ where: { name: user.role } });
+    if (config?.permissions?.length) {
+      return config.permissions.filter((p) =>
+        [
+          'users_read','users_write','users_delete','members_read','members_write','members_delete',
+          'members_export','members_import','ministries_read','ministries_write','ministries_delete',
+          'schedules_read','schedules_write','schedules_delete','events_read','events_write','events_delete',
+          'prayers_read','prayers_write','prayers_delete','prayers_comment','prayers_react',
+          'finance_read','finance_write','finance_delete','finance_export','finance_audit','finance_close',
+          'finance_reports','notifications_send',
+        ].includes(p)
+      ) as PrismaPermission[];
+    }
+    return [];
+  }
+
   private async generateTokens(user: User) {
-    const payload: TokenPayload = { userId: user.id, email: user.email, role: user.role, permissions: user.permissions as PrismaPermission[] };
+    const permissions = await this.resolvePermissions(user);
+    const payload: TokenPayload = { userId: user.id, email: user.email, role: user.role, permissions };
 
     const accessToken = jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn as jwt.SignOptions['expiresIn'] });
     const refreshTokenValue = crypto.randomUUID();
@@ -123,7 +144,7 @@ export class AuthService {
 
     await this.prisma.refreshToken.create({ data: { userId: user.id, token: refreshTokenValue, expiresAt } });
 
-    return { success: true, data: { accessToken, refreshToken: refreshTokenValue, user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar, permissions: user.permissions, createdAt: user.createdAt, updatedAt: user.updatedAt } } };
+    return { success: true, data: { accessToken, refreshToken: refreshTokenValue, user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar, permissions, createdAt: user.createdAt, updatedAt: user.updatedAt } } };
   }
 
   async setUserPermissions(userId: string, permissions: string[]) {
@@ -235,16 +256,16 @@ export class AuthService {
 
   private async _seedDefaultRoles() {
     const defaults: { name: string; perms: string[] }[] = [
-      { name: 'ADMINISTRADOR', perms: ['users_write','users_delete','members_write','members_delete','events_write','events_delete','prayers_write','prayers_delete','finance_write','finance_delete'] },
-      { name: 'PASTOR', perms: ['users_write','users_delete','members_write','members_delete','events_write','events_delete','prayers_write','prayers_delete','finance_write','finance_delete'] },
-      { name: 'FINANCEIRO', perms: ['finance_write','finance_delete'] },
-      { name: 'LIDER', perms: ['members_write','members_delete','events_write','events_delete','prayers_write','prayers_delete'] },
-      { name: 'LIDER_LOUVOR', perms: ['events_write','events_delete'] },
-      { name: 'LOUVOR', perms: [] },
-      { name: 'LIDER_DIACONOS', perms: ['events_write','schedules_write'] },
-      { name: 'DIACONO', perms: ['schedules_read'] },
-      { name: 'MEMBRO', perms: ['prayers_write','prayers_delete'] },
-      { name: 'VISITANTE', perms: [] },
+      { name: 'ADMINISTRADOR', perms: ['users_read','users_write','users_delete','members_read','members_write','members_delete','members_export','members_import','ministries_read','ministries_write','ministries_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','finance_read','finance_write','finance_delete','schedules_read','schedules_write','notifications_send'] },
+      { name: 'PASTOR', perms: ['users_read','users_write','users_delete','members_read','members_write','members_delete','members_export','members_import','ministries_read','ministries_write','ministries_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','finance_read','finance_write','finance_delete','schedules_read','schedules_write','notifications_send'] },
+      { name: 'FINANCEIRO', perms: ['members_read','events_read','prayers_read','schedules_read','finance_read','finance_write','finance_delete'] },
+      { name: 'LIDER', perms: ['members_read','members_write','members_delete','members_export','ministries_read','ministries_write','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','schedules_read','schedules_write'] },
+      { name: 'LIDER_LOUVOR', perms: ['events_read','events_write','events_delete','schedules_read','schedules_write'] },
+      { name: 'LOUVOR', perms: ['events_read','schedules_read'] },
+      { name: 'LIDER_DIACONOS', perms: ['events_read','events_write','schedules_read','schedules_write'] },
+      { name: 'DIACONO', perms: ['events_read','schedules_read'] },
+      { name: 'MEMBRO', perms: ['events_read','prayers_read','prayers_write','prayers_delete','schedules_read'] },
+      { name: 'VISITANTE', perms: ['events_read','prayers_read','prayers_write'] },
     ];
     for (const r of defaults) {
       await this.prisma.roleConfig.create({ data: { name: r.name, permissions: r.perms as any } });

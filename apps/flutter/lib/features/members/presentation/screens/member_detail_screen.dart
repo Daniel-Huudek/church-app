@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/app_badge.dart';
+import '../../../../shared/providers/auth_provider.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/router/app_routes.dart';
@@ -84,13 +85,7 @@ class MemberDetailScreen extends ConsumerWidget {
     final secondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await context.push(AppRoutes.membersEdit(id));
-          ref.read(memberDetailProvider(id).notifier).load();
-        },
-        child: const Icon(Icons.edit),
-      ),
+      floatingActionButton: _MemberDetailActions(id: id, member: member),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -114,6 +109,8 @@ class MemberDetailScreen extends ConsumerWidget {
                   children: [
                     AppAvatar(
                       name: member.name,
+                      imageUrl: member.avatar,
+                      authenticated: true,
                       size: 80,
                       showBorder: true,
                     ),
@@ -276,6 +273,67 @@ class MemberDetailScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+    );
+  }
+}
+
+class _MemberDetailActions extends ConsumerWidget {
+  final String id;
+  final MemberModel member;
+
+  const _MemberDetailActions({required this.id, required this.member});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final canWrite = user?.hasPermission('members_write') == true;
+    final canDelete = user?.hasPermission('members_delete') == true;
+    if (!canWrite && !canDelete) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (canDelete)
+          FloatingActionButton.small(
+            heroTag: 'member-delete',
+            backgroundColor: AppColors.error,
+            onPressed: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Excluir membro'),
+                  content: Text('Remover ${member.name} do cadastro?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Excluir')),
+                  ],
+                ),
+              );
+              if (ok != true || !context.mounted) return;
+              try {
+                await ref.read(memberListProvider.notifier).delete(id);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Membro excluído')));
+                context.go(AppRoutes.members);
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+              }
+            },
+            child: const Icon(Icons.delete_outline),
+          ),
+        if (canDelete && canWrite) const SizedBox(height: 12),
+        if (canWrite)
+          FloatingActionButton(
+            heroTag: 'member-edit',
+            onPressed: () async {
+              await context.push(AppRoutes.membersEdit(id));
+              ref.read(memberDetailProvider(id).notifier).load();
+            },
+            child: const Icon(Icons.edit),
+          ),
+      ],
     );
   }
 }

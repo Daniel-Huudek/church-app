@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../shared/utils/error_helper.dart';
 import '../../domain/member_model.dart';
 import '../providers/member_provider.dart';
 
@@ -178,11 +179,14 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     return data;
   }
 
-  Future<void> _save() async {
+  Future<void> _save({bool forceDuplicate = false}) async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      final payload = _payload();
+      final payload = {
+        ..._payload(),
+        if (forceDuplicate) 'forceDuplicate': true,
+      };
       if (widget.isEditing) {
         await ref.read(memberListProvider.notifier).update(widget.memberId!, payload);
         if (!mounted) return;
@@ -197,7 +201,31 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      final msg = formatError(e);
+      final isDuplicate = msg.toLowerCase().contains('duplic') ||
+          msg.toLowerCase().contains('conflito') ||
+          msg.contains('409');
+      if (isDuplicate && !forceDuplicate) {
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Possível duplicata'),
+            content: Text(msg.isNotEmpty
+                ? '$msg\n\nDeseja cadastrar mesmo assim?'
+                : 'Já existe um membro com dados parecidos. Deseja cadastrar mesmo assim?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Cadastrar mesmo assim')),
+            ],
+          ),
+        );
+        setState(() => _saving = false);
+        if (ok == true) {
+          await _save(forceDuplicate: true);
+        }
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $msg')));
       setState(() => _saving = false);
     }
   }
