@@ -143,3 +143,43 @@ export function assertUserAdminRole(role: string) {
     throw new ForbiddenError('Insufficient permissions for user administration');
   }
 }
+
+const ELEVATED_ROLES: Role[] = ['ADMINISTRADOR', 'PASTOR'];
+
+/**
+ * Requires JWT user to have at least one of the listed permissions.
+ * ADMINISTRADOR / PASTOR always pass (elevated church roles).
+ */
+export function authorizePermissions(...requiredPermissions: string[]) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const req = asRequestWithUser(request);
+      const user = req.user?.userId
+        ? req.user
+        : decodeToken(request.headers.authorization);
+
+      req.user = user;
+
+      if (ELEVATED_ROLES.includes(user.role as Role)) {
+        return;
+      }
+
+      const perms = user.permissions ?? [];
+      const allowed = requiredPermissions.some((p) => perms.includes(p));
+      if (!allowed) {
+        return reply.status(403).send({ success: false, message: 'Forbidden' });
+      }
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ success: false, message: error.message });
+      }
+      return reply.status(401).send({ success: false, message: 'Invalid token' });
+    }
+  };
+}
+
+/** True if user has permission or is elevated admin/pastor. */
+export function userHasPermission(user: AuthUser, permission: string): boolean {
+  if (ELEVATED_ROLES.includes(user.role as Role)) return true;
+  return (user.permissions ?? []).includes(permission);
+}

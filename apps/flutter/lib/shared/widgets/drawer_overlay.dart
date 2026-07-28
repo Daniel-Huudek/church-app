@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/config/theme/app_colors.dart';
 import '../../core/router/app_routes.dart';
+import '../providers/auth_provider.dart';
+import '../models/user_model.dart';
 
-class DrawerOverlay extends StatefulWidget {
+class DrawerOverlay extends ConsumerStatefulWidget {
   final bool isDark;
   final VoidCallback onClose;
 
   const DrawerOverlay({required this.isDark, required this.onClose});
 
   @override
-  State<DrawerOverlay> createState() => _DrawerOverlayState();
+  ConsumerState<DrawerOverlay> createState() => _DrawerOverlayState();
 }
 
-class _DrawerOverlayState extends State<DrawerOverlay>
+class _DrawerOverlayState extends ConsumerState<DrawerOverlay>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _slideAnim;
@@ -36,8 +39,15 @@ class _DrawerOverlayState extends State<DrawerOverlay>
     super.dispose();
   }
 
+  void _go(String route) {
+    context.go(route);
+    widget.onClose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authProvider).user;
+
     return GestureDetector(
       onTap: () {
         _controller.reverse().then((_) {
@@ -67,91 +77,68 @@ class _DrawerOverlayState extends State<DrawerOverlay>
                   _drawerItem(
                     icon: Icons.dashboard_rounded,
                     label: 'Dashboard',
-                    onTap: () {
-                      context.go(AppRoutes.home);
-                      widget.onClose();
-                    },
+                    onTap: () => _go(AppRoutes.home),
                   ),
                   _drawerItem(
                     icon: Icons.calendar_month_rounded,
                     label: 'Eventos',
-                    onTap: () {
-                      context.go(AppRoutes.calendar);
-                      widget.onClose();
-                    },
+                    onTap: () => _go(AppRoutes.calendar),
                   ),
                   _drawerItem(
                     icon: Icons.menu_book_rounded,
                     label: 'Oração',
-                    onTap: () {
-                      context.go(AppRoutes.prayers);
-                      widget.onClose();
-                    },
+                    onTap: () => _go(AppRoutes.prayers),
                   ),
                   _drawerItem(
                     icon: Icons.menu_book_rounded,
                     label: 'Bíblia',
-                    onTap: () {
-                      context.go(AppRoutes.bible);
-                      widget.onClose();
-                    },
+                    onTap: () => _go(AppRoutes.bible),
                   ),
                   _drawerItem(
                     icon: Icons.music_note_rounded,
                     label: 'Louvor',
-                    onTap: () {
-                      context.go(AppRoutes.worship);
-                      widget.onClose();
-                    },
+                    onTap: () => _go(AppRoutes.worship),
                   ),
-                  _drawerItem(
-                    icon: Icons.volunteer_activism_rounded,
-                    label: 'Diáconos',
-                    onTap: () {
-                      context.go(AppRoutes.deacons);
-                      widget.onClose();
-                    },
-                  ),
+                  if (_canSeeDeacons(user))
+                    _drawerItem(
+                      icon: Icons.volunteer_activism_rounded,
+                      label: 'Diáconos',
+                      onTap: () => _go(AppRoutes.deacons),
+                    ),
                   _drawerItem(
                     icon: Icons.assignment_rounded,
                     label: 'Escalas',
-                    onTap: () {
-                      context.go(AppRoutes.schedules);
-                      widget.onClose();
-                    },
+                    onTap: () => _go(AppRoutes.schedules),
                   ),
-                  _drawerItem(
-                    icon: Icons.people_rounded,
-                    label: 'Membros',
-                    onTap: () {
-                      context.go(AppRoutes.members);
-                      widget.onClose();
-                    },
-                  ),
-                  _drawerItem(
-                    icon: Icons.cake_rounded,
-                    label: 'Aniversariantes',
-                    onTap: () {
-                      context.go(AppRoutes.birthdays);
-                      widget.onClose();
-                    },
-                  ),
-                  _drawerItem(
-                    icon: Icons.attach_money_rounded,
-                    label: 'Finanças',
-                    onTap: () {
-                      context.go(AppRoutes.finance);
-                      widget.onClose();
-                    },
-                  ),
+                  if (user?.hasPermission('members_read') == true) ...[
+                    _drawerItem(
+                      icon: Icons.people_rounded,
+                      label: 'Membros',
+                      onTap: () => _go(AppRoutes.members),
+                    ),
+                    _drawerItem(
+                      icon: Icons.cake_rounded,
+                      label: 'Aniversariantes',
+                      onTap: () => _go(AppRoutes.birthdays),
+                    ),
+                  ],
+                  if (user?.hasPermission('finance_read') == true)
+                    _drawerItem(
+                      icon: Icons.attach_money_rounded,
+                      label: 'Finanças',
+                      onTap: () => _go(AppRoutes.finance),
+                    ),
                   _drawerItem(
                     icon: Icons.chat_rounded,
                     label: 'Chat',
-                    onTap: () {
-                      context.go(AppRoutes.chat);
-                      widget.onClose();
-                    },
+                    onTap: () => _go(AppRoutes.chat),
                   ),
+                  if (user?.hasPermission('users_read') == true)
+                    _drawerItem(
+                      icon: Icons.manage_accounts_rounded,
+                      label: 'Usuários',
+                      onTap: () => _go(AppRoutes.users),
+                    ),
                 ],
               ),
             ),
@@ -159,6 +146,11 @@ class _DrawerOverlayState extends State<DrawerOverlay>
         ),
       ),
     );
+  }
+
+  bool _canSeeDeacons(UserModel? user) {
+    if (user == null) return false;
+    return user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'DIACONO', 'LIDER_DIACONOS']);
   }
 
   Widget _drawerItem({
@@ -179,10 +171,8 @@ class _DrawerOverlayState extends State<DrawerOverlay>
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: widget.isDark
-                      ? AppColors.darkText
-                      : AppColors.lightText,
+                  fontSize: 15,
+                  color: widget.isDark ? AppColors.darkText : AppColors.lightText,
                 ),
               ),
             ],

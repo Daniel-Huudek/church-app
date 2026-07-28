@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import { NotFoundError } from '@church-app/shared';
+import { NotFoundError, ConflictError, BadRequestError } from '@church-app/shared';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import {
   BirthdayPeriod,
   birthdayOccurrenceInRange,
@@ -12,11 +11,29 @@ import {
   turningAge,
 } from './utils/birthday.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOADS_DIR = path.join(__dirname, '../../uploads');
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+
+const ALLOWED_PHOTO_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+
+function normalizeEmail(email?: string | null): string | undefined {
+  if (!email) return undefined;
+  const trimmed = email.trim().toLowerCase();
+  return trimmed || undefined;
+}
+
+function normalizePhone(phone?: string | null): string | undefined {
+  if (!phone) return undefined;
+  const digits = phone.replace(/\D/g, '');
+  return digits || undefined;
+}
 
 export class MemberService {
   constructor(private prisma: PrismaClient) {}
+
+  private withPublicAvatar<T extends { id: string; avatar?: string | null }>(member: T): T {
+    if (!member.avatar) return member;
+    return { ...member, avatar: `/members/${member.id}/avatar` };
+  }
 
   async findAll({ page = 1, limit = 20, name, email, status, role, ministryId, birthdayMonth }: {
     page?: number; limit?: number; name?: string; email?: string;
@@ -28,8 +45,36 @@ export class MemberService {
     if (status) where.status = status;
     if (role) where.role = role;
     if (ministryId) where.ministryId = ministryId;
-    if (birthdayMonth) {
-      where.dateOfBirth = { not: null };
+
+    if (birthdayMonth && birthdayMonth >= 1 && birthdayMonth <= 12) {
+      const candidates = await this.prisma.member.findMany({
+        where: { ...where, dateOfBirth: { not: null } },
+        select: { id: true, dateOfBirth: true },
+        orderBy: { name: 'asc' },
+      });
+      const matchingIds = candidates
+        .filter((m) => m.dateOfBirth && m.dateOfBirth.getUTCMonth() + 1 === birthdayMonth)
+        .map((m) => m.id);
+      const total = matchingIds.length;
+      const skip = (page - 1) * limit;
+      const pageIds = matchingIds.slice(skip, skip + limit);
+      const data = pageIds.length
+        ? await this.prisma.member.findMany({
+            where: { id: { in: pageIds } },
+            include: { ministry: true, address: true },
+            orderBy: { name: 'asc' },
+          })
+        : [];
+      return {
+        success: true,
+        data: {
+          data: data.map((m) => this.withPublicAvatar(m)),
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit) || 0,
+        },
+      };
     }
 
     const skip = (page - 1) * limit;
@@ -42,15 +87,16 @@ export class MemberService {
       this.prisma.member.count({ where }),
     ]);
 
-    let filteredData = data;
-    if (birthdayMonth) {
-      filteredData = data.filter((m) => {
-        if (!m.dateOfBirth) return false;
-        return m.dateOfBirth.getMonth() + 1 === birthdayMonth;
-      });
-    }
-
-    return { success: true, data: { data: filteredData, total: birthdayMonth ? filteredData.length : total, page, limit, totalPages: Math.ceil((birthdayMonth ? filteredData.length : total) / limit) } };
+    return {
+      success: true,
+      data: {
+        data: data.map((m) => this.withPublicAvatar(m)),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 0,
+      },
+    };
   }
 
   async search(query: string, { page = 1, limit = 20 }) {
@@ -68,7 +114,16 @@ export class MemberService {
       this.prisma.member.findMany({ skip, take: limit, where, include: { ministry: true } }),
       this.prisma.member.count({ where }),
     ]);
-    return { success: true, data: { data, total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      success: true,
+      data: {
+        data: data.map((m) => this.withPublicAvatar(m)),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 0,
+      },
+    };
   }
 
   async findById(id: string) {
@@ -77,7 +132,7 @@ export class MemberService {
       include: { ministry: true, address: true, documents: true, familyMembers: true, ministerialHistory: true },
     });
     if (!data) throw new NotFoundError('Member not found');
-    return { success: true, data };
+    return { success: true, data: this.withPublicAvatar(data) };
   }
 
   async findBirthdays(period: BirthdayPeriod = 'week', now = new Date()) {
@@ -98,7 +153,7 @@ export class MemberService {
         const occurrence = birthdayOccurrenceInRange(birth, start, end);
         if (!occurrence) return null;
         return {
-          ...member,
+          ...this.withPublicAvatar(member),
           birthdayThisYear: toDateOnlyIso(occurrence),
           turningAge: turningAge(birth, occurrence),
           isToday: isSameDay(occurrence, now),
@@ -124,11 +179,67 @@ export class MemberService {
     };
   }
 
-  async create(body: any) {
-    const { address, documents, familyMembers, ministerialHistory, ...memberData } = body;
+  async findDuplicates({ email, phone, name, excludeId }: {
+    email?: string; phone?: string; name?: string; excludeId?: string;
+  }) {
+    const or: any[] = [];
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizePhone(phone);
+    if (normalizedEmail) or.push({ email: { equals: normalizedEmail, mode: 'insensitive' } });
+    if (normalizedPhone) or.push({ phone: { contains: normalizedPhone } });
+    if (name?.trim()) or.push({ name: { equals: name.trim(), mode: 'insensitive' } });
+    if (or.length === 0) return [];
+
+    return this.prisma.member.findMany({
+      where: {
+        deletedAt: null,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+        OR: or,
+      },
+      select: { id: true, name: true, email: true, phone: true, status: true },
+      take: 10,
+    });
+  }
+
+  private async assertUserExists(userId?: string) {
+    if (!userId) return;
+    const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+    if (!user) throw new BadRequestError('userId does not reference an existing user');
+  }
+
+  private async assertEmailUnique(email?: string, excludeId?: string) {
+    const normalized = normalizeEmail(email);
+    if (!normalized) return;
+    const existing = await this.prisma.member.findFirst({
+      where: {
+        deletedAt: null,
+        email: { equals: normalized, mode: 'insensitive' },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+    });
+    if (existing) throw new ConflictError('Já existe um membro com este e-mail');
+  }
+
+  async create(body: any, changedBy?: string) {
+    const { address, documents, familyMembers, ministerialHistory, forceDuplicate, ...memberData } = body;
+    const email = normalizeEmail(memberData.email);
+    const phone = memberData.phone?.trim() || undefined;
+
+    await this.assertUserExists(memberData.userId);
+    await this.assertEmailUnique(email);
+
+    if (!forceDuplicate) {
+      const duplicates = await this.findDuplicates({ email, phone, name: memberData.name });
+      if (duplicates.length > 0) {
+        throw new ConflictError('Possível membro duplicado. Confirme com forceDuplicate=true se desejar continuar.');
+      }
+    }
+
     const data = await this.prisma.member.create({
       data: {
         ...memberData,
+        email,
+        phone,
         dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
         baptismDate: body.baptismDate ? new Date(body.baptismDate) : undefined,
         conversionDate: body.conversionDate ? new Date(body.conversionDate) : undefined,
@@ -140,15 +251,38 @@ export class MemberService {
       },
       include: { ministry: true, address: true, documents: true, familyMembers: true },
     });
-    await this.createAuditLog(data.id, 'CREATED', null, data, 'system');
-    return { success: true, data };
+    await this.createAuditLog(data.id, 'CREATED', null, data, changedBy);
+    return { success: true, data: this.withPublicAvatar(data) };
   }
 
-  async update(id: string, body: any) {
+  async update(id: string, body: any, changedBy?: string) {
     const existing = await this.prisma.member.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundError('Member not found');
 
-    const { address, ...memberData } = body;
+    const { address, forceDuplicate, ...memberData } = body;
+    if (memberData.userId !== undefined) await this.assertUserExists(memberData.userId);
+    if (memberData.email !== undefined) {
+      memberData.email = normalizeEmail(memberData.email);
+      await this.assertEmailUnique(memberData.email, id);
+    }
+
+    if (!forceDuplicate && (memberData.email || memberData.phone || memberData.name)) {
+      const duplicates = await this.findDuplicates({
+        email: memberData.email ?? existing.email ?? undefined,
+        phone: memberData.phone ?? existing.phone ?? undefined,
+        name: memberData.name ?? existing.name,
+        excludeId: id,
+      });
+      // Only block on email/phone matches for update, not name-only
+      const hard = duplicates.filter((d) =>
+        (memberData.email && d.email && normalizeEmail(d.email) === normalizeEmail(memberData.email)) ||
+        (memberData.phone && d.phone && normalizePhone(d.phone) === normalizePhone(memberData.phone))
+      );
+      if (hard.length > 0) {
+        throw new ConflictError('Conflito com outro membro (e-mail ou telefone). Use forceDuplicate=true para forçar.');
+      }
+    }
+
     const data = await this.prisma.member.update({
       where: { id },
       data: {
@@ -161,15 +295,18 @@ export class MemberService {
       },
       include: { ministry: true, address: true, documents: true, familyMembers: true },
     });
-    await this.createAuditLog(id, 'UPDATED', existing, data, body.changedBy);
-    return { success: true, data };
+    await this.createAuditLog(id, 'UPDATED', existing, data, changedBy);
+    return { success: true, data: this.withPublicAvatar(data) };
   }
 
-  async delete(id: string) {
+  async delete(id: string, changedBy?: string) {
     const existing = await this.prisma.member.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundError('Member not found');
-    await this.prisma.member.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } });
-    await this.createAuditLog(id, 'DELETED', existing, null, 'system');
+    await this.prisma.member.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false, status: 'EXCLUIDO' },
+    });
+    await this.createAuditLog(id, 'DELETED', existing, null, changedBy);
     return { success: true };
   }
 
@@ -179,10 +316,9 @@ export class MemberService {
       include: { ministry: true, address: true },
     });
     if (!data) throw new NotFoundError('Member not found');
-    return { success: true, data };
+    return { success: true, data: this.withPublicAvatar(data) };
   }
 
-  // Address
   async getAddress(memberId: string) {
     const member = await this.prisma.member.findFirst({ where: { id: memberId, deletedAt: null } });
     if (!member) throw new NotFoundError('Member not found');
@@ -201,7 +337,6 @@ export class MemberService {
     return { success: true, data };
   }
 
-  // Documents
   async getDocuments(memberId: string) {
     const member = await this.prisma.member.findFirst({ where: { id: memberId, deletedAt: null } });
     if (!member) throw new NotFoundError('Member not found');
@@ -216,12 +351,13 @@ export class MemberService {
     return { success: true, data };
   }
 
-  async deleteDocument(id: string) {
-    await this.prisma.document.delete({ where: { id } });
+  async deleteDocument(memberId: string, docId: string) {
+    const doc = await this.prisma.document.findFirst({ where: { id: docId, memberId } });
+    if (!doc) throw new NotFoundError('Document not found');
+    await this.prisma.document.delete({ where: { id: docId } });
     return { success: true };
   }
 
-  // Family
   async getFamilyMembers(memberId: string) {
     const member = await this.prisma.member.findFirst({ where: { id: memberId, deletedAt: null } });
     if (!member) throw new NotFoundError('Member not found');
@@ -236,12 +372,13 @@ export class MemberService {
     return { success: true, data };
   }
 
-  async deleteFamilyMember(id: string) {
-    await this.prisma.familyMember.delete({ where: { id } });
+  async deleteFamilyMember(memberId: string, familyId: string) {
+    const row = await this.prisma.familyMember.findFirst({ where: { id: familyId, memberId } });
+    if (!row) throw new NotFoundError('Family member not found');
+    await this.prisma.familyMember.delete({ where: { id: familyId } });
     return { success: true };
   }
 
-  // Ministerial History
   async getMinisterialHistory(memberId: string) {
     const member = await this.prisma.member.findFirst({ where: { id: memberId, deletedAt: null } });
     if (!member) throw new NotFoundError('Member not found');
@@ -265,25 +402,59 @@ export class MemberService {
     return { success: true, data };
   }
 
-  // Photo upload
-  async uploadPhoto(memberId: string, filename: string, buffer: Buffer) {
+  async uploadPhoto(memberId: string, filename: string, buffer: Buffer, mimeType?: string) {
     const member = await this.prisma.member.findFirst({ where: { id: memberId, deletedAt: null } });
     if (!member) throw new NotFoundError('Member not found');
 
+    const ext = path.extname(filename).toLowerCase() || '.jpg';
+    if (!ALLOWED_PHOTO_EXT.has(ext)) {
+      throw new BadRequestError('Formato de imagem inválido. Use jpg, png ou webp.');
+    }
+    if (mimeType && !mimeType.startsWith('image/')) {
+      throw new BadRequestError('Arquivo deve ser uma imagem');
+    }
+
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
-    const ext = path.extname(filename);
     const savedName = `member-${memberId}${ext}`;
     const filePath = path.join(UPLOADS_DIR, savedName);
     await fs.writeFile(filePath, buffer);
 
     const data = await this.prisma.member.update({
       where: { id: memberId },
-      data: { avatar: `/uploads/${savedName}` },
+      data: { avatar: savedName },
     });
-    return { success: true, data };
+    return { success: true, data: this.withPublicAvatar(data) };
   }
 
-  // Audit
+  async getAvatarFile(memberId: string): Promise<{ filePath: string; contentType: string }> {
+    const member = await this.prisma.member.findFirst({ where: { id: memberId, deletedAt: null } });
+    if (!member?.avatar) throw new NotFoundError('Avatar not found');
+
+    const savedName = member.avatar.startsWith('/uploads/')
+      ? path.basename(member.avatar)
+      : member.avatar.startsWith('/members/')
+        ? null
+        : path.basename(member.avatar);
+
+    // Prefer stored filename; fall back to scanning known extensions
+    const candidates = savedName
+      ? [path.join(UPLOADS_DIR, savedName)]
+      : [...ALLOWED_PHOTO_EXT].map((ext) => path.join(UPLOADS_DIR, `member-${memberId}${ext}`));
+
+    for (const filePath of candidates) {
+      try {
+        await fs.access(filePath);
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType =
+          ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+        return { filePath, contentType };
+      } catch {
+        /* try next */
+      }
+    }
+    throw new NotFoundError('Avatar file not found');
+  }
+
   async getAuditLogs(memberId: string) {
     const data = await this.prisma.auditLog.findMany({
       where: { memberId },
@@ -294,11 +465,10 @@ export class MemberService {
 
   private async createAuditLog(memberId: string, action: string, oldValue: any, newValue: any, changedBy?: string) {
     await this.prisma.auditLog.create({
-      data: { memberId, action, changedBy, oldValue, newValue },
+      data: { memberId, action, changedBy: changedBy || null, oldValue, newValue },
     });
   }
 
-  // Ministries
   async findAllMinistries() {
     const data = await this.prisma.ministry.findMany({
       where: { deletedAt: null },
@@ -308,21 +478,35 @@ export class MemberService {
   }
 
   async createMinistry(body: { name: string; description?: string; leaderId?: string }) {
+    if (body.leaderId) {
+      const leader = await this.prisma.member.findFirst({ where: { id: body.leaderId, deletedAt: null } });
+      if (!leader) throw new BadRequestError('leaderId does not reference an existing member');
+    }
     const data = await this.prisma.ministry.create({ data: body, include: { leader: true } });
     return { success: true, data };
   }
 
   async updateMinistry(id: string, body: Partial<{ name: string; description: string; leaderId: string }>) {
+    const existing = await this.prisma.ministry.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw new NotFoundError('Ministry not found');
+    if (body.leaderId) {
+      const leader = await this.prisma.member.findFirst({ where: { id: body.leaderId, deletedAt: null } });
+      if (!leader) throw new BadRequestError('leaderId does not reference an existing member');
+    }
     const data = await this.prisma.ministry.update({ where: { id }, data: body, include: { leader: true } });
     return { success: true, data };
   }
 
   async deleteMinistry(id: string) {
-    await this.prisma.ministry.update({ where: { id }, data: { deletedAt: new Date() } });
+    const existing = await this.prisma.ministry.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw new NotFoundError('Ministry not found');
+    await this.prisma.$transaction([
+      this.prisma.member.updateMany({ where: { ministryId: id }, data: { ministryId: null } }),
+      this.prisma.ministry.update({ where: { id }, data: { deletedAt: new Date(), leaderId: null } }),
+    ]);
     return { success: true };
   }
 
-  // Export
   async exportCsv() {
     const members = await this.prisma.member.findMany({
       where: { deletedAt: null },
@@ -341,21 +525,26 @@ export class MemberService {
     }));
   }
 
-  async importCsv(records: any[]) {
+  async importCsv(records: any[], changedBy?: string) {
     const results: any[] = [];
     for (const record of records) {
       try {
-        const data = await this.prisma.member.create({
-          data: {
-            name: record.name,
-            email: record.email,
-            phone: record.phone,
-            status: record.status || 'ATIVO',
-            role: record.role || 'MEMBRO',
-            isBaptized: record.isBaptized === 'true' || record.isBaptized === 'sim',
-          },
-        });
-        results.push({ success: true, data });
+        const status = ['ATIVO', 'INATIVO', 'AFASTADO', 'TRANSFERIDO', 'EXCLUIDO'].includes(record.status)
+          ? record.status
+          : 'ATIVO';
+        const role = ['MEMBRO', 'DIACONO', 'PRESBITERO', 'PASTOR'].includes(record.role)
+          ? record.role
+          : 'MEMBRO';
+        const created = await this.create({
+          name: record.name,
+          email: record.email,
+          phone: record.phone,
+          status,
+          role,
+          isBaptized: record.isBaptized === true || record.isBaptized === 'true' || record.isBaptized === 'sim',
+          forceDuplicate: true,
+        }, changedBy);
+        results.push({ success: true, data: created.data });
       } catch (error: any) {
         results.push({ success: false, name: record.name, error: error.message });
       }

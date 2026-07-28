@@ -39,10 +39,10 @@ class RoleDefinitionsService {
   }
 
   static List<RoleDefinition> _defaults() => [
-    RoleDefinition(name: 'ADMINISTRADOR', permissions: ['users_read','users_write','users_delete','members_read','members_write','members_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','finance_read','finance_write','finance_delete','schedules_read','schedules_write']),
-    RoleDefinition(name: 'PASTOR', permissions: ['users_read','users_write','users_delete','members_read','members_write','members_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','finance_read','finance_write','finance_delete','schedules_read','schedules_write']),
+    RoleDefinition(name: 'ADMINISTRADOR', permissions: ['users_read','users_write','users_delete','members_read','members_write','members_delete','members_export','members_import','ministries_read','ministries_write','ministries_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','finance_read','finance_write','finance_delete','schedules_read','schedules_write']),
+    RoleDefinition(name: 'PASTOR', permissions: ['users_read','users_write','users_delete','members_read','members_write','members_delete','members_export','members_import','ministries_read','ministries_write','ministries_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','finance_read','finance_write','finance_delete','schedules_read','schedules_write']),
     RoleDefinition(name: 'FINANCEIRO', permissions: ['members_read','events_read','prayers_read','schedules_read','finance_read','finance_write','finance_delete']),
-    RoleDefinition(name: 'LIDER', permissions: ['members_read','members_write','members_delete','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','schedules_read','schedules_write']),
+    RoleDefinition(name: 'LIDER', permissions: ['members_read','members_write','members_delete','members_export','ministries_read','ministries_write','events_read','events_write','events_delete','prayers_read','prayers_write','prayers_delete','schedules_read','schedules_write']),
     RoleDefinition(name: 'LIDER_LOUVOR', permissions: ['events_read','events_write','events_delete','schedules_read']),
     RoleDefinition(name: 'LOUVOR', permissions: ['events_read','schedules_read']),
     RoleDefinition(name: 'LIDER_DIACONOS', permissions: ['events_read','events_write','schedules_read','schedules_write']),

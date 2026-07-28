@@ -144,6 +144,9 @@ model Member {
   auditLogs       AuditLog[]
 
   @@index([ministryId])
+  @@index([deletedAt])
+  @@index([status])
+  @@index([email])
   @@map("members")
 }
 

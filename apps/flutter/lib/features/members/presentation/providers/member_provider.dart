@@ -75,6 +75,11 @@ class MemberListNotifier extends StateNotifier<AsyncState<List<MemberModel>>> {
     await load();
     return member;
   }
+
+  Future<void> delete(String id) async {
+    await _repository.delete(id);
+    await load();
+  }
 }
 
 class MemberDetailState {

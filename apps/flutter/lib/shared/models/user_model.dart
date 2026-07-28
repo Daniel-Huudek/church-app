@@ -29,7 +29,13 @@ class UserModel {
   bool get isLider => role == 'LIDER';
   bool get isMembro => role == 'MEMBRO';
 
-  bool hasPermission(String permission) => permissions.contains(permission);
+  /// Matches API `authorizePermissions`: admins/pastors always pass.
+  bool hasPermission(String permission) {
+    if (isAdmin || isPastor) return true;
+    return permissions.contains(permission);
+  }
+
+  bool hasAnyPermission(List<String> perms) => perms.any(hasPermission);
   bool hasAnyRole(List<String> roles) => roles.contains(role);
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
