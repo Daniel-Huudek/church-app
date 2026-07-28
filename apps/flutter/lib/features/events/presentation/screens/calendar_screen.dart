@@ -44,7 +44,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightSurface;
     final accent = AppColors.primary;
     final state = ref.watch(eventListProvider);
 
@@ -153,7 +153,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       child: Text(d, style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white30 : Colors.black26,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       )),
                     ),
                   ),
@@ -300,7 +302,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         opacity: watchIsOnline(ref) ? 1 : 0.45,
         child: FloatingActionButton(
           onPressed: guardOnlineAction(context, ref, () => context.push('/calendar/create')),
-          backgroundColor: const Color(0xFF008CFF),
+          backgroundColor: AppColors.primary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: const Icon(Icons.add, color: Colors.white),
         ),
@@ -314,14 +316,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.event_busy_rounded, size: 40,
-            color: isDark ? Colors.white24 : Colors.black12),
+            color: isDark
+                ? AppColors.darkTextTertiary
+                : AppColors.lightTextTertiary),
           const SizedBox(height: 12),
           Text(
             'Nenhum evento neste dia',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white38 : Colors.black26,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
         ],

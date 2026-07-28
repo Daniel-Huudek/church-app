@@ -48,7 +48,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightSurface;
     final state = ref.watch(bibleChapterProvider);
     final book = BibleBook.all.firstWhere((b) => b.id == _bookId);
 
@@ -62,7 +62,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
             children: [
               Flexible(
                 child: Text(
-                  '$book.name $_chapter',
+                  '${book.name} $_chapter',
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
                 ),
@@ -166,10 +166,10 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1),
+                      isDark ? AppColors.darkBg : AppColors.lightSurface,
                       Colors.transparent,
                       Colors.transparent,
-                      isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1),
+                      isDark ? AppColors.darkBg : AppColors.lightSurface,
                     ],
                     stops: const [0.0, 0.03, 0.95, 1.0],
                   ).createShader(bounds),
@@ -190,7 +190,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
                                 style: TextStyle(
                                   fontSize: _fontSize * 0.55,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFFC8A45C),
+                                  color: AppColors.primary,
                                   height: 1.8,
                                 ),
                               ),
@@ -222,7 +222,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
   }
 
   Widget _bottomBar(BibleBook book, bool isDark) {
-    final accent = const Color(0xFFC8A45C);
+    final accent = AppColors.primary;
     final progress = _chapter / book.chapters;
 
     return Container(
@@ -347,10 +347,10 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: isCurrent
-                              ? const Color(0xFFC8A45C)
+                              ? AppColors.primary
                               : (isDark
-                                  ? const Color(0xFF0D0D14)
-                                  : const Color(0xFFF8F6F1)),
+                                  ? AppColors.darkBg
+                                  : AppColors.lightSurface),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         alignment: Alignment.center,

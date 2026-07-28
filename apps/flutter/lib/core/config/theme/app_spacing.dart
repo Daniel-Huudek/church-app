@@ -30,4 +30,7 @@ class AppSpacing {
   static const double icon2xl = 40;
   static const double icon3xl = 48;
   static const double icon4xl = 64;
+
+  /// Clearance for the floating bottom navigation bar.
+  static const double bottomNavClearance = 100;
 }

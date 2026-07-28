@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/theme/app_colors.dart';
 import '../../../../shared/providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -185,7 +186,7 @@ class _DecorativeCircleState extends State<DecorativeCircle>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: const Color.fromRGBO(196, 181, 253, 0.3),
+              color: AppColors.primary.withValues(alpha: 0.28),
               width: 1,
             ),
           ),
