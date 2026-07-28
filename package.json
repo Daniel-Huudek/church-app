@@ -12,6 +12,7 @@
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
     "docker:build": "DOCKER_BUILDKIT=1 docker compose build --parallel 1",
+    "docker:build:pc": "sh scripts/docker-build-push-pc.sh",
     "docker:build:vps": "sh scripts/docker-build-vps.sh",
     "docker:bake": "DOCKER_BUILDKIT=1 docker buildx bake -f docker-bake.hcl",
     "docker:up": "docker compose up -d",
