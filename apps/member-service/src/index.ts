@@ -9,8 +9,23 @@ import { memberRoutes, ministryRoutes } from './routes/index';
 const prisma = new PrismaClient();
 const fastify = Fastify({ logger: false });
 
+async function connectWithRetry(attempts = 10, delayMs = 2000): Promise<void> {
+  let lastError: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await prisma.$connect();
+      return;
+    } catch (err) {
+      lastError = err;
+      logger.error(`Prisma connect failed (attempt ${i}/${attempts})`, err as Error);
+      if (i < attempts) await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw lastError;
+}
+
 async function bootstrap() {
-  await prisma.$connect();
+  await connectWithRetry();
   await fastify.register(helmet, { contentSecurityPolicy: false });
   await fastify.register(cors, { origin: true, credentials: true });
   await fastify.register(multipart, {
