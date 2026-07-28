@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../events/data/event_api.dart';
@@ -116,12 +117,15 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
                     ),
                   ),
                   if (canCreate)
-                    IconButton(
-                      onPressed: () async {
-                        await context.push(AppRoutes.deaconsCreate);
-                        _load();
-                      },
-                      icon: const Icon(Icons.add_circle, color: Color(0xFF008CFF)),
+                    Opacity(
+                      opacity: watchIsOnline(ref) ? 1 : 0.45,
+                      child: IconButton(
+                        onPressed: guardOnlineAction(context, ref, () async {
+                          await context.push(AppRoutes.deaconsCreate);
+                          _load();
+                        }),
+                        icon: const Icon(Icons.add_circle, color: Color(0xFF008CFF)),
+                      ),
                     ),
                 ],
               ),
@@ -208,17 +212,20 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
         ),
       ),
       floatingActionButton: canCreate
-          ? FloatingActionButton.extended(
-              onPressed: () async {
-                await context.push(
-                  AppRoutes.deaconsCreate,
-                  extra: _ministryId,
-                );
-                _load();
-              },
-              backgroundColor: const Color(0xFF008CFF),
-              icon: const Icon(Icons.add),
-              label: const Text('Nova escala'),
+          ? Opacity(
+              opacity: watchIsOnline(ref) ? 1 : 0.45,
+              child: FloatingActionButton.extended(
+                onPressed: guardOnlineAction(context, ref, () async {
+                  await context.push(
+                    AppRoutes.deaconsCreate,
+                    extra: _ministryId,
+                  );
+                  _load();
+                }),
+                backgroundColor: const Color(0xFF008CFF),
+                icon: const Icon(Icons.add),
+                label: const Text('Nova escala'),
+              ),
             )
           : null,
     );

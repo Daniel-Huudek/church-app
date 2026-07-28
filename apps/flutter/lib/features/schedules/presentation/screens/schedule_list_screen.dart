@@ -7,6 +7,7 @@ import '../../../../shared/widgets/app_tabs.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../domain/schedule_model.dart';
 import '../providers/schedule_provider.dart';
 
@@ -26,9 +27,12 @@ class _ScheduleListScreenState extends ConsumerState<ScheduleListScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Escalas')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/schedules/create'),
-        child: const Icon(Icons.add),
+      floatingActionButton: Opacity(
+        opacity: watchIsOnline(ref) ? 1 : 0.45,
+        child: FloatingActionButton(
+          onPressed: guardOnlineAction(context, ref, () => context.push('/schedules/create')),
+          child: const Icon(Icons.add),
+        ),
       ),
       body: Column(
         children: [
