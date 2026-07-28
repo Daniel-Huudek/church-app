@@ -14,20 +14,13 @@
 .site-footer__brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
   margin-bottom: 0.85rem;
 }
 
 .site-footer__brand img {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.75rem;
+  height: 2.75rem;
   object-fit: contain;
-}
-
-.site-footer__brand strong {
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .site-footer__about {
