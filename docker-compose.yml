@@ -9,8 +9,11 @@
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
 #
-# Images are built on GitHub Actions → ghcr.io/daniel-huudek/church-app/<service>
-# Local/dev build (strong machine only):
+# Images are built on your PC or GitHub Actions → ghcr.io/daniel-huudek/church-app/<service>
+# PC build+push:
+#   ./scripts/docker-build-push-pc.sh
+#   # see docs/deploy-pc-vps.md
+# Local/dev build only (no push):
 #   DOCKER_BUILDKIT=1 docker compose build --parallel 1
 
 services:
