@@ -17,6 +17,14 @@ export type MediaItem = {
   image?: string;
 };
 
+export type HomeSlide = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  caption?: string;
+  image?: string;
+};
+
 export type StreamItem = {
   id: string;
   title: string;
@@ -44,6 +52,8 @@ export type ChurchContent = {
     caption: string;
     image?: string;
   };
+  /** Optional multi-image home slider. Falls back to `series` when empty. */
+  slides?: HomeSlide[];
   events: ChurchEvent[];
   weeklyWord: {
     text: string;
@@ -116,6 +126,7 @@ export const defaultChurchContent: ChurchContent = {
     caption: 'Série de mensagens',
     image: '',
   },
+  slides: [],
   events: [
     { title: 'Projeto Ipi Avaré', date: '3 de agosto de 2025', time: '12:00', image: '' },
     { title: 'Projeto Ipi Avaré', date: '10 de agosto de 2025', time: '12:00', image: '' },

@@ -148,6 +148,48 @@ button {
   background-repeat: no-repeat;
 }
 
+.media-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(110deg, #e8edf3 20%, #f5f7fa 40%, #e8edf3 60%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.media-skeleton--hero {
+  border-radius: 0;
+}
+
+.media-skeleton--card {
+  border-color: transparent;
+}
+
+.media-skeleton--line {
+  display: block;
+  height: 0.7rem;
+  width: 88%;
+  border-radius: 999px;
+}
+
+.media-skeleton--short {
+  width: 56%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-skeleton {
+    animation: none;
+  }
+}
+
 .stream-card {
   display: grid;
   gap: 0.65rem;
