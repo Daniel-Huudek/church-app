@@ -40,9 +40,9 @@ class _ScheduleListScreenState extends ConsumerState<ScheduleListScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Expanded(
-            child: state.loading
+            child: state.loading && state.data.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : state.error != null
+                : state.error != null && state.data.isEmpty
                     ? Center(child: Text('Erro: ${state.error}'))
                     : _selectedTab == 0 ? _buildMine(state.data) : _buildAll(state.data),
           ),

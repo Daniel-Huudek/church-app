@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../offline/network_error.dart';
 import '../utils/secure_storage.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -34,8 +35,7 @@ class AuthInterceptor extends Interceptor {
     // Avoid infinite refresh loops on the refresh endpoint itself
     if (err.requestOptions.path.contains('/auth/refresh')) {
       _isRefreshing = false;
-      await SecureStorage.clearAuth();
-      onSessionExpired?.call();
+      await _expireSession();
       return handler.reject(err);
     }
 
@@ -49,8 +49,7 @@ class AuthInterceptor extends Interceptor {
       final refreshToken = await SecureStorage.getRefreshToken();
       if (refreshToken == null) {
         _isRefreshing = false;
-        await SecureStorage.clearAuth();
-        onSessionExpired?.call();
+        await _expireSession();
         return handler.reject(err);
       }
 
@@ -94,9 +93,19 @@ class AuthInterceptor extends Interceptor {
     } catch (e) {
       _isRefreshing = false;
       _pendingRequests.clear();
-      await SecureStorage.clearAuth();
-      onSessionExpired?.call();
+
+      // Keep local session when refresh fails due to network (offline / flaky).
+      if (isNetworkError(e) || (e is DioException && isNetworkError(e))) {
+        return handler.reject(err);
+      }
+
+      await _expireSession();
       handler.reject(err);
     }
+  }
+
+  Future<void> _expireSession() async {
+    await SecureStorage.clearAuth();
+    onSessionExpired?.call();
   }
 }

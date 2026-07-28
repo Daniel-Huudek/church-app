@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/offline/local_cache.dart';
 import '../../data/event_api.dart';
+import '../../data/event_repository.dart';
 import '../../domain/event_model.dart';
 import '../../../../shared/providers/async_state.dart';
 import '../../../../shared/utils/error_helper.dart';
@@ -9,51 +11,93 @@ final eventApiProvider = Provider<EventApi>((ref) {
   return EventApi(ref.read(apiClientProvider));
 });
 
+final eventRepositoryProvider = Provider<EventRepository>((ref) {
+  return EventRepository(
+    ref.read(eventApiProvider),
+    ref.read(localCacheProvider),
+  );
+});
+
 final eventListProvider = StateNotifierProvider.autoDispose<EventListNotifier, AsyncState<List<EventModel>>>((ref) {
-  return EventListNotifier(ref.read(eventApiProvider));
+  return EventListNotifier(ref.read(eventRepositoryProvider));
 });
 
 class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
-  final EventApi _api;
+  final EventRepository _repository;
 
-  EventListNotifier(this._api) : super(const AsyncState(data: [])) {
+  EventListNotifier(this._repository) : super(const AsyncState(data: [])) {
     load();
   }
 
   Future<void> load() async {
-    state = AsyncState(data: state.data, loading: true);
+    final cached = _repository.peekListCache();
+    if (cached != null) {
+      state = AsyncState(data: cached, loading: true, fromCache: true);
+    } else {
+      state = AsyncState(data: state.data, loading: true, fromCache: state.fromCache);
+    }
+
     try {
-      final events = await _api.list();
-      state = AsyncState(data: events, loading: false);
+      final result = await _repository.list();
+      state = AsyncState(
+        data: result.data,
+        loading: false,
+        fromCache: result.fromCache,
+      );
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: formatError(e));
+      final fallback = cached ?? state.data;
+      if (fallback.isNotEmpty) {
+        state = AsyncState(data: fallback, loading: false, fromCache: true);
+      } else {
+        state = AsyncState(
+          data: state.data,
+          loading: false,
+          error: formatError(e),
+          fromCache: state.fromCache,
+        );
+      }
     }
   }
 
   Future<void> create(Map<String, dynamic> data) async {
     try {
-      await _api.create(data);
+      await _repository.create(data);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: formatError(e));
+      state = AsyncState(
+        data: state.data,
+        loading: false,
+        error: formatError(e),
+        fromCache: state.fromCache,
+      );
     }
   }
 
   Future<void> update(String id, Map<String, dynamic> data) async {
     try {
-      await _api.update(id, data);
+      await _repository.update(id, data);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: formatError(e));
+      state = AsyncState(
+        data: state.data,
+        loading: false,
+        error: formatError(e),
+        fromCache: state.fromCache,
+      );
     }
   }
 
   Future<void> delete(String id) async {
     try {
-      await _api.delete(id);
+      await _repository.delete(id);
       await load();
     } catch (e) {
-      state = AsyncState(data: state.data, loading: false, error: formatError(e));
+      state = AsyncState(
+        data: state.data,
+        loading: false,
+        error: formatError(e),
+        fromCache: state.fromCache,
+      );
     }
   }
 }
@@ -62,29 +106,53 @@ class EventDetailState {
   final EventModel? event;
   final bool loading;
   final String? error;
+  final bool fromCache;
 
-  const EventDetailState({this.event, this.loading = true, this.error});
+  const EventDetailState({
+    this.event,
+    this.loading = true,
+    this.error,
+    this.fromCache = false,
+  });
 }
 
 final eventDetailProvider = StateNotifierProvider.autoDispose.family<EventDetailNotifier, EventDetailState, String>((ref, id) {
-  return EventDetailNotifier(ref.read(eventApiProvider), id);
+  return EventDetailNotifier(ref.read(eventRepositoryProvider), id);
 });
 
 class EventDetailNotifier extends StateNotifier<EventDetailState> {
-  final EventApi _api;
+  final EventRepository _repository;
   final String _id;
 
-  EventDetailNotifier(this._api, this._id) : super(const EventDetailState()) {
+  EventDetailNotifier(this._repository, this._id) : super(const EventDetailState()) {
     load();
   }
 
   Future<void> load() async {
-    state = EventDetailState(event: state.event, loading: true);
+    final cached = _repository.peekDetailCache(_id);
+    if (cached != null) {
+      state = EventDetailState(event: cached, loading: true, fromCache: true);
+    } else {
+      state = EventDetailState(event: state.event, loading: true, fromCache: state.fromCache);
+    }
+
     try {
-      final event = await _api.getById(_id);
-      state = EventDetailState(event: event, loading: false);
+      final result = await _repository.getById(_id);
+      state = EventDetailState(
+        event: result.data,
+        loading: false,
+        fromCache: result.fromCache,
+      );
     } catch (e) {
-      state = EventDetailState(loading: false, error: formatError(e));
+      if (cached != null || state.event != null) {
+        state = EventDetailState(
+          event: cached ?? state.event,
+          loading: false,
+          fromCache: true,
+        );
+      } else {
+        state = EventDetailState(loading: false, error: formatError(e));
+      }
     }
   }
 }
