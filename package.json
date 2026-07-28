@@ -11,16 +11,14 @@
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
-    "docker:build": "DOCKER_BUILDKIT=1 docker compose build --parallel 1",
+    "docker:build": "DOCKER_BUILDKIT=1 docker compose -f docker-compose.yml -f docker-compose.build.yml build --parallel 1",
     "docker:build:pc": "sh scripts/docker-build-push-pc.sh",
     "docker:build:vps": "sh scripts/docker-build-vps.sh",
-    "docker:bake": "DOCKER_BUILDKIT=1 docker buildx bake -f docker-bake.hcl",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
+    "docker:up": "docker compose -f docker-compose.yml up -d --no-build",
+    "docker:down": "docker compose -f docker-compose.yml down",
     "prepare": "husky install",
     "docker:deploy:vps": "sh scripts/docker-deploy-vps.sh",
-    "docker:up:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build",
-    "docker:pull:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml pull"
+    "docker:pull": "docker compose -f docker-compose.yml pull"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",

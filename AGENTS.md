@@ -63,14 +63,13 @@ Imagem Docker compartilhada: `docker/Dockerfile.service` (multi-stage, args `SER
 - `import { User, Member, Event } from '@church-app/types';`
 
 ### Container
-- Imagem única multi-stage: `docker/Dockerfile.service` (args `SERVICE`, `PORT`, `PACKAGE_NAME`, `HAS_PRISMA`)
-- **VPS ~4GB / Dokploy: NÃO buildar na VPS** — usar `./scripts/docker-deploy-vps.sh` (pull GHCR)
-- Imagens publicadas por `.github/workflows/docker-publish.yml` → `ghcr.io/daniel-huudek/church-app/<service>`
-- Prod: `docker-compose.yml` + `docker-compose.prod.yml` (`build: !reset`, `pull_policy: always`)
-- Build local (máquina forte): `pnpm docker:build` (`--parallel 1`) / `pnpm docker:bake` (CI)
+- **Dokploy / VPS 4GB:** nunca buildar na VPS — ver `docs/deploy-dokploy.md`
+- Imagens: `ghcr.io/daniel-huudek/church-app/<service>` via `.github/workflows/docker-publish.yml`
+- `docker-compose.yml` **sem** `build:` (só `image:` + `pull_policy: always`)
+- Build opcional no PC: `docker-compose.build.yml` + `./scripts/docker-build-push-pc.sh`
+- Dockerfile multi-stage: `docker/Dockerfile.service`
 - Runtime: bundle esbuild + `node dist/index.js`; migrations via `prisma migrate deploy`
-- Heap runtime ~96–112MB; auth `mem_limit: 160m`; demais `128m`
-- `RUN chown -R node:node /app` antes de `USER node`
+- Heap ~96–112MB; auth `mem_limit: 160m`; demais `128m`
 
 ### Banco de Dados
 - Cada serviço tem seu próprio banco PostgreSQL (ex: `auth_db`, `member_db`, etc.)

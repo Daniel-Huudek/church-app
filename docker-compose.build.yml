@@ -1,0 +1,105 @@
+# Optional override — BUILD ONLY on PC or CI (never on the 4GB VPS).
+#   DOCKER_BUILDKIT=1 docker compose -f docker-compose.yml -f docker-compose.build.yml build --parallel 1
+#   ./scripts/docker-build-push-pc.sh
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: api-gateway
+        PORT: "3030"
+        PACKAGE_NAME: "@church-app/api-gateway"
+        HAS_PRISMA: "false"
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: auth-service
+        PORT: "3001"
+        PACKAGE_NAME: "@church-app/auth-service"
+        HAS_PRISMA: "true"
+
+  member-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: member-service
+        PORT: "3006"
+        PACKAGE_NAME: "@church-app/member-service"
+        HAS_PRISMA: "true"
+
+  schedule-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: schedule-service
+        PORT: "3003"
+        PACKAGE_NAME: "@church-app/schedule-service"
+        HAS_PRISMA: "true"
+
+  event-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: event-service
+        PORT: "3004"
+        PACKAGE_NAME: "@church-app/event-service"
+        HAS_PRISMA: "true"
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: notification-service
+        PORT: "3005"
+        PACKAGE_NAME: "@church-app/notification-service"
+        HAS_PRISMA: "true"
+
+  prayer-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: prayer-service
+        PORT: "3007"
+        PACKAGE_NAME: "@church-app/prayer-service"
+        HAS_PRISMA: "true"
+
+  financial-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: financial-service
+        PORT: "3008"
+        PACKAGE_NAME: "@church-app/financial-service"
+        HAS_PRISMA: "true"
+
+  worship-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: worship-service
+        PORT: "3010"
+        PACKAGE_NAME: "@church-app/worship-service"
+        HAS_PRISMA: "true"
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: chat-service
+        PORT: "3002"
+        PACKAGE_NAME: "@church-app/chat-service"
+        HAS_PRISMA: "true"
+

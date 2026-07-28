@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# Production boot for small VPS containers.
+# Production boot — image already contains bundled dist/index.js
 
 run_prisma() {
   if [ -x ./node_modules/.bin/prisma ]; then

@@ -86,5 +86,9 @@ docker-compose up -d
 
 ## Deploy
 
-O projeto é compatível com Dokploy e VPS Linux via Docker Compose.
-Cada serviço aplica migrations com `prisma migrate deploy` no startup.
+**Dokploy (VPS 4GB):** não buildar no servidor. Ver `docs/deploy-dokploy.md`.
+
+1. GitHub Actions publica imagens no GHCR  
+2. Dokploy só faz pull + up (`docker-compose.yml`)
+
+Build opcional no PC: `./scripts/docker-build-push-pc.sh`
