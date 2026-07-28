@@ -50,7 +50,7 @@ services:
       auth-service:
         condition: service_healthy
       member-service:
-        condition: service_healthy
+        condition: service_started
       schedule-service:
         condition: service_started
       event-service:
