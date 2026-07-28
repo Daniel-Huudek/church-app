@@ -4,15 +4,13 @@
 #   1) Build images on GitHub Actions or your PC → push to GHCR
 #   2) Dokploy only PULLS and runs (this file has NO build: section)
 #
-# Dokploy settings:
-#   - Compose file: docker-compose.yml  (only this file)
-#   - Disable "build on deploy" / use auto-deploy from git after images are published
-#   - Env vars: copy from .env.example (JWT_SECRET, POSTGRES_*, WEB_API_URL, etc.)
-#   - Domains tab: add domain for service `api` (port 3030) and `web` (port 80)
-#
-# Publish images (pick one):
-#   A) GitHub → Actions → "Docker Publish" → Run workflow
-#   B) PC: ./scripts/docker-build-push-pc.sh
+# Dokploy:
+#   - Compose file: docker-compose.yml
+#   - Domains tab (NOT Traefik labels here):
+#       api  → service `api`  → port 3030
+#       site → service `web`  → port 80
+#   - Environment: set WEB_API_URL (public API URL for the browser)
+#   - Disable "build on deploy"
 #
 # Guide: docs/deploy-dokploy.md
 
@@ -22,15 +20,8 @@ services:
     pull_policy: always
     container_name: church-app-api
     restart: unless-stopped
-    ports:
-      - "3030:3030"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=dokploy-network"
-      - "traefik.http.routers.api.rule=Host(`api.ipiavare.com.br`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.api.loadbalancer.server.port=3030"
+    expose:
+      - "3030"
     environment:
       - NODE_ENV=production
       - NODE_OPTIONS=--max-old-space-size=192
@@ -69,23 +60,17 @@ services:
     mem_reservation: 128m
     cpus: 0.50
 
+  # Public site (nginx). Domain is set in Dokploy → Domains → service `web` → port 80.
+  # WEB_API_URL is injected at container start into /config.js for the browser.
   web:
     image: ghcr.io/daniel-huudek/church-app/web:${IMAGE_TAG:-latest}
     pull_policy: always
     container_name: church-app-web
     restart: unless-stopped
-    # Host port for quick checks (http://IP:8088). Prefer Domains tab in Dokploy.
-    ports:
-      - "8088:80"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=dokploy-network"
-      - "traefik.http.routers.web.rule=Host(`ipiavare.com.br`) || Host(`www.ipiavare.com.br`)"
-      - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.web.loadbalancer.server.port=80"
+    expose:
+      - "80"
     environment:
-      - WEB_API_URL=${WEB_API_URL:-https://api.ipiavare.com.br}
+      - WEB_API_URL=${WEB_API_URL}
     networks:
       - church-app-network
       - dokploy-network
@@ -136,7 +121,7 @@ services:
 networks:
   church-app-network:
     driver: bridge
-  # Required so Traefik (Dokploy) can reach api/web. Exists on the Dokploy host.
+  # So Dokploy Traefik can reach containers when you attach Domains in the UI.
   dokploy-network:
     external: true
 
