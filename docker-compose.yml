@@ -7,7 +7,8 @@
 # Dokploy settings:
 #   - Compose file: docker-compose.yml  (only this file)
 #   - Disable "build on deploy" / use auto-deploy from git after images are published
-#   - Env vars: copy from .env.example (JWT_SECRET, POSTGRES_*, etc.)
+#   - Env vars: copy from .env.example (JWT_SECRET, POSTGRES_*, WEB_API_URL, etc.)
+#   - Domains tab: add domain for service `api` (port 3030) and `web` (port 80)
 #
 # Publish images (pick one):
 #   A) GitHub → Actions → "Docker Publish" → Run workflow
@@ -25,6 +26,7 @@ services:
       - "3030:3030"
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
       - "traefik.http.routers.api.rule=Host(`api.ipiavare.com.br`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
@@ -56,6 +58,7 @@ services:
         condition: service_healthy
     networks:
       - church-app-network
+      - dokploy-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/health"]
       interval: 30s
@@ -71,19 +74,21 @@ services:
     pull_policy: always
     container_name: church-app-web
     restart: unless-stopped
+    # Host port for quick checks (http://IP:8088). Prefer Domains tab in Dokploy.
     ports:
       - "8088:80"
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
       - "traefik.http.routers.web.rule=Host(`ipiavare.com.br`) || Host(`www.ipiavare.com.br`)"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
       - "traefik.http.services.web.loadbalancer.server.port=80"
     environment:
-      # Public API URL used by the browser (written into /config.js at start)
       - WEB_API_URL=${WEB_API_URL:-https://api.ipiavare.com.br}
     networks:
       - church-app-network
+      - dokploy-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/healthz"]
       interval: 30s
@@ -117,6 +122,7 @@ services:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - church-app-network
+      - dokploy-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
       interval: 10s
@@ -130,6 +136,9 @@ services:
 networks:
   church-app-network:
     driver: bridge
+  # Required so Traefik (Dokploy) can reach api/web. Exists on the Dokploy host.
+  dokploy-network:
+    external: true
 
 volumes:
   postgres-data:

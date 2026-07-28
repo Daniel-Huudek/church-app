@@ -76,6 +76,7 @@ Imagem Docker: `docker/Dockerfile.service` (args `SERVICE=api` / `PORT=3030` / `
 - API: `docker/Dockerfile.service` — bundle esbuild + `node dist/index.js`; migrations via `prisma migrate deploy`
 - Web: `docker/Dockerfile.web` — Vite build + nginx; runtime `WEB_API_URL` → `/config.js`
 - Heap ~192MB; `mem_limit: 320m` (API), `64m` (web)
+- Compose anexa `dokploy-network` (external) em `api`/`web`/`postgres-db` para o Traefik do Dokploy
 
 ### Banco de Dados
 - Um PostgreSQL (`church_db`) com schema Prisma unificado

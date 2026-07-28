@@ -19,7 +19,7 @@ ghcr.io/daniel-huudek/church-app/web:latest
 Dokploy na VPS  →  pull  →  docker compose up
 ```
 
-A VPS de 4GB fica leve com **API + site estático (nginx) + Postgres**.
+Serviços no `docker-compose.yml`: **`api` + `web` + `postgres-db`**.
 
 ---
 
@@ -28,6 +28,9 @@ A VPS de 4GB fica leve com **API + site estático (nginx) + Postgres**.
 1. Mergeie o PR deste fluxo na `main`
 2. GitHub → **Actions** → **Docker Publish** → **Run workflow**
 3. Espere ficar verde (publica `api` e `web`)
+
+Confirme o package do site:  
+https://github.com/users/Daniel-Huudek/packages/container/package/church-app%2Fweb
 
 (Alternativa no PC: `./scripts/docker-build-push-pc.sh` — ver `docs/deploy-pc-vps.md`)
 
@@ -41,58 +44,66 @@ Se ficar privado, o Dokploy precisa de login GHCR (`read:packages`).
 
 ## Passo 3 — Configurar o Dokploy
 
-1. Crie/edite a aplicação **Docker Compose**
-2. **Compose file:** só `docker-compose.yml`  
-   (este arquivo **não tem** seção `build:` — não tem como buildar por engano)
-3. **Desative** qualquer opção de “Build on deploy” / “Build image”
-4. Variáveis de ambiente (iguais ao `.env.example`):
+1. Aplicação tipo **Docker Compose** (não Stack)
+2. **Compose file:** `docker-compose.yml` (sem `build:`)
+3. Branch: `main` — faça **pull/reload** do repositório após mudanças no compose
+4. **Desative** “Build on deploy”
+5. Variáveis (`.env.example`):
    - `POSTGRES_USER`, `POSTGRES_PASSWORD`
    - `JWT_SECRET` (**obrigatório**)
-   - `CORS_ORIGIN` — inclua a origem do site, ex.:  
-     `https://ipiavare.com.br,https://www.ipiavare.com.br`
-   - `WEB_API_URL=https://api.ipiavare.com.br` (URL pública da API no browser)
-   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (se usar Google)
-   - opcional: `EVOLUTION_API_*`, `YOUTUBE_API_KEY`, `AWS_*`, `IMAGE_TAG=latest`
-5. Deploy / Redeploy
+   - `CORS_ORIGIN=https://ipiavare.com.br,https://www.ipiavare.com.br`
+   - `WEB_API_URL=https://api.ipiavare.com.br`
+   - opcional: Google, Evolution, YouTube, AWS, `IMAGE_TAG=latest`
+6. Aba **Domains** (recomendado pelo Dokploy):
+   - Domínio da API → serviço **`api`** → porta **`3030`**
+   - Domínio do site → serviço **`web`** → porta **`80`**
+7. **Deploy / Redeploy**
 
-O Dokploy deve fazer basicamente:
-```bash
-docker compose pull
-docker compose up -d
-```
+O compose já inclui a rede externa `dokploy-network` (Traefik) em `api`, `web` e `postgres-db`.
 
-### Domínios (Traefik)
+### Conferência rápida
 
-| Serviço | Host (labels no compose) | Porta container |
-|---------|--------------------------|-----------------|
-| `api`   | `api.ipiavare.com.br`    | 3030            |
-| `web`   | `ipiavare.com.br` + `www` | 80             |
+| Serviço        | Imagem GHCR                         | Porta interna | Host publish |
+|----------------|-------------------------------------|---------------|--------------|
+| `api`          | `.../church-app/api`                | 3030          | 3030         |
+| `web`          | `.../church-app/web`                | 80            | 8088         |
+| `postgres-db`  | `postgres:16-alpine`                | 5432          | —            |
 
-Ajuste os labels Traefik no `docker-compose.yml` se o domínio for outro.
-
-O container `web` gera `/config.js` no start com `WEB_API_URL`, para o site chamar a API correta sem rebuild.
+Teste sem domínio: `http://IP-DA-VPS:8088` (site) e `:3030/health` (API).
 
 ## Passo 4 — Dia a dia
 
-1. Você faz commit + push na `main`
-2. Actions publica as imagens `api` e `web`
-3. No Dokploy: **Redeploy** (pull das imagens novas)
+1. Push na `main` → Actions publica `api` e `web`
+2. Dokploy → **Redeploy** (só pull)
 
-Não precisa buildar na VPS.
+---
+
+## Site / container `web` não aparece
+
+1. **Imagem publicada?** Package `church-app/web` com tag `latest` (após o fix do Docker Publish).
+2. **Compose atualizado?** No Dokploy, o YAML precisa ter o serviço `web:`. Use **Preview Compose** / reload do git na `main`.
+3. **Redeploy** depois que a imagem `web` existir (se o deploy foi feito quando o publish do web ainda falhava, o pull pode ter falhado).
+4. **Logs do deploy** no Dokploy — procure `church-app/web` / `pull` / `denied` / `not found`.
+5. No servidor:
+   ```bash
+   docker ps -a | grep -E 'web|church-app'
+   docker compose -f docker-compose.yml ps
+   docker compose -f docker-compose.yml logs web --tail=100
+   ```
+6. **Domínio:** aba Domains → serviço **`web`**, porta **`80`** (não a porta 8088).
+7. Se o package estiver privado: registry `ghcr.io` + token `read:packages`.
 
 ---
 
 ## Migração a partir dos microserviços
 
 Esta versão usa **um** banco `church_db` e as imagens `church-app/api` + `church-app/web`.  
-Em ambientes novos (volume Postgres limpo), o `prisma migrate deploy` cria o schema.  
-Se ainda tiver os DBs antigos (`auth_db`, `member_db`, …), faça backup e reimporte para `church_db` (ou suba com volume novo em staging primeiro).
+Em ambientes novos (volume Postgres limpo), o `prisma migrate deploy` cria o schema.
 
 ---
 
 ## Se der erro de pull (GHCR privado)
 
-No servidor / Dokploy, configure registry login:
 - Registry: `ghcr.io`
 - User: seu usuário GitHub
 - Password: token com `read:packages`
@@ -103,4 +114,5 @@ No servidor / Dokploy, configure registry login:
 
 - Não ative build no Dokploy
 - Não rode `docker compose build` na VPS
-- Não use `docker-compose.build.yml` na VPS (esse arquivo é só PC/CI)
+- Não use `docker-compose.build.yml` na VPS (só PC/CI)
+- Não aponte o domínio do site para o serviço `api`
