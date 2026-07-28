@@ -126,6 +126,7 @@ export const defaultChurchContent: ChurchContent = {
     caption: 'Série de mensagens',
     image: '',
   },
+  slides: [],
   events: [
     { title: 'Projeto Ipi Avaré', date: '3 de agosto de 2025', time: '12:00', image: '' },
     { title: 'Projeto Ipi Avaré', date: '10 de agosto de 2025', time: '12:00', image: '' },
