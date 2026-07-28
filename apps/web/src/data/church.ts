@@ -17,6 +17,14 @@ export type MediaItem = {
   image?: string;
 };
 
+export type HomeSlide = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  caption?: string;
+  image?: string;
+};
+
 export type StreamItem = {
   id: string;
   title: string;
@@ -44,6 +52,8 @@ export type ChurchContent = {
     caption: string;
     image?: string;
   };
+  /** Optional multi-image home slider. Falls back to `series` when empty. */
+  slides?: HomeSlide[];
   events: ChurchEvent[];
   weeklyWord: {
     text: string;

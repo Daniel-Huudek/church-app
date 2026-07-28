@@ -1,52 +1,47 @@
 import { useChurch } from '../church-context';
+import { HeroSlider } from './HeroSlider';
+import { latestNews } from '../data/news';
 import '../styles/home.css';
 
 export function HomeTop() {
   const church = useChurch();
-  const seriesImage = church.series.image?.trim();
+  const news = latestNews(church.news, 4);
 
   return (
     <section className="home-top" id="topo" aria-label="Destaques">
       <div className="container home-top__grid">
-        <article
-          className={`series-banner${seriesImage ? ' series-banner--photo' : ''}`}
-          aria-labelledby="series-title"
-          style={seriesImage ? { ['--series-photo' as string]: `url(${seriesImage})` } : undefined}
-        >
-          <div className="series-banner__figure" aria-hidden="true" />
-          <div className="series-banner__content">
-            <p className="series-banner__subtitle">{church.series.subtitle}</p>
-            <h1 className="series-banner__title" id="series-title">
-              {church.series.title}
-            </h1>
-            <p className="series-banner__caption">{church.series.caption}</p>
-          </div>
-        </article>
+        <HeroSlider />
 
-        <aside className="events-panel" id="eventos" aria-labelledby="eventos-title">
-          <div className="events-panel__head">
-            <h2 id="eventos-title">Eventos e Programações</h2>
-            <a className="btn-ghost-link" href="#eventos">
+        <aside className="news-panel" id="noticias-destaque" aria-labelledby="noticias-side-title">
+          <div className="news-panel__head">
+            <h2 id="noticias-side-title">Notícias</h2>
+            <a className="btn-ghost-link" href="#noticias">
               ver mais
             </a>
           </div>
-          <ul className="events-panel__list">
-            {church.events.map((event) => {
-              const thumb = event.image?.trim();
+          <ul className="news-panel__list">
+            {news.map((item, index) => {
+              const image = item.image?.trim();
+              const hasTitle = Boolean(item.title?.trim());
               return (
-                <li className="events-panel__item" key={`${event.title}-${event.date}-${event.time}`}>
+                <li className="news-panel__item" key={item.id || `news-${index}`}>
                   <div
-                    className={`events-panel__thumb${thumb ? ' events-panel__thumb--photo' : ''}`}
-                    style={thumb ? { backgroundImage: `url(${thumb})` } : undefined}
+                    className={`news-panel__thumb${image ? ' news-panel__thumb--photo' : ' media-skeleton'}`}
+                    style={image ? { backgroundImage: `url(${image})` } : undefined}
                     aria-hidden="true"
                   />
-                  <div>
-                    <h3>{event.title}</h3>
-                    <p className="events-panel__meta">
-                      {event.date}
-                      <br />
-                      {event.time}
-                    </p>
+                  <div className="news-panel__body">
+                    {hasTitle ? (
+                      <h3>{item.title}</h3>
+                    ) : (
+                      <div className="media-skeleton media-skeleton--line" aria-hidden="true" />
+                    )}
+                    {!hasTitle && (
+                      <div
+                        className="media-skeleton media-skeleton--line media-skeleton--short"
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
                 </li>
               );

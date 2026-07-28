@@ -1,28 +1,132 @@
 .weekly-word {
-  background: var(--brand);
-  color: #fff;
+  position: relative;
+  overflow: hidden;
+  color: #f4f8ff;
   text-align: center;
-  padding: 2.25rem 1rem;
+  padding: 3.5rem 1rem 3.75rem;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% -10%, rgba(0, 140, 255, 0.45), transparent 60%),
+    linear-gradient(165deg, #0b1526 0%, #123055 48%, #0d213d 100%);
 }
 
-.weekly-word__label {
-  margin: 0 0 1rem;
-  font-size: 0.95rem;
+.weekly-word__glow {
+  position: absolute;
+  inset: auto -20% -45% -20%;
+  height: 70%;
+  background: radial-gradient(circle at 50% 0%, rgba(0, 140, 255, 0.22), transparent 55%);
+  pointer-events: none;
+  animation: weekly-glow 8s ease-in-out infinite alternate;
+}
+
+.weekly-word__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 42rem;
+}
+
+.weekly-word__eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.weekly-word__mark {
+  margin: 0.85rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 5rem);
+  line-height: 0.7;
+  color: rgba(0, 140, 255, 0.55);
+  animation: weekly-mark 1s ease both;
 }
 
 .weekly-word__text {
-  margin: 0 auto;
-  max-width: 46rem;
-  font-size: clamp(1rem, 2vw, 1.15rem);
-  line-height: 1.65;
+  margin: 0.35rem auto 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.4vw, 1.55rem);
   font-weight: 500;
+  font-style: italic;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  animation: weekly-rise 0.9s ease 0.12s both;
+}
+
+.weekly-word__rule {
+  width: 3rem;
+  height: 2px;
+  margin: 1.35rem auto 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: weekly-rise 0.9s ease 0.22s both;
 }
 
 .weekly-word__ref {
+  display: block;
   margin: 1rem 0 0;
-  font-size: 0.92rem;
-  opacity: 0.92;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.82);
+  animation: weekly-rise 0.9s ease 0.3s both;
+}
+
+@keyframes weekly-glow {
+  from {
+    opacity: 0.55;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes weekly-mark {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes weekly-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weekly-word__glow,
+  .weekly-word__mark,
+  .weekly-word__text,
+  .weekly-word__rule,
+  .weekly-word__ref {
+    animation: none;
+  }
+}
+
+.media-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.media-card__label {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 0.65rem 0.75rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
