@@ -15,10 +15,10 @@ RUN apk add --no-cache openssl wget \
   && corepack enable \
   && corepack prepare pnpm@10.12.1 --activate
 WORKDIR /app
-# Cap Node heap so one build cannot eat the whole VPS
+# Cap Node heap during image build (CI / strong machines). Do not build on 4GB VPS.
 ENV HUSKY=0 \
     CI=1 \
-    NODE_OPTIONS=--max-old-space-size=384
+    NODE_OPTIONS=--max-old-space-size=256
 
 # ── deps (cached unless lockfile / package.json change) ───────────────────────
 FROM base AS deps

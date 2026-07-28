@@ -16,7 +16,10 @@
     "docker:bake": "DOCKER_BUILDKIT=1 docker buildx bake -f docker-bake.hcl",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "docker:deploy:vps": "sh scripts/docker-deploy-vps.sh",
+    "docker:up:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build",
+    "docker:pull:prod": "docker compose -f docker-compose.yml -f docker-compose.prod.yml pull"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",

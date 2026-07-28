@@ -1,14 +1,21 @@
 # Church App — Docker Compose
 #
-# VPS / Dokploy (~4GB RAM): NEVER build all services in parallel.
-#   ./scripts/docker-build-vps.sh
-#   # or:
-#   DOCKER_BUILDKIT=1 docker compose build --parallel 1 && docker compose up -d
+# *** VPS 4GB / Dokploy: DO NOT BUILD HERE ***
+# Runtime already uses ~1.2GB. A local `docker compose build` will freeze the VPS.
 #
-# Parallel bake (COMPOSE_BAKE / buildx bake) can freeze a 4GB VPS.
+# Deploy (pull only):
+#   ./scripts/docker-deploy-vps.sh
+#   # or:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+#
+# Images are built on GitHub Actions → ghcr.io/daniel-huudek/church-app/<service>
+# Local/dev build (strong machine only):
+#   DOCKER_BUILDKIT=1 docker compose build --parallel 1
 
 services:
   api-gateway:
+    image: ghcr.io/daniel-huudek/church-app/api-gateway:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -74,6 +81,7 @@ services:
     cpus: 0.20
 
   auth-service:
+    image: ghcr.io/daniel-huudek/church-app/auth-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -111,6 +119,7 @@ services:
     cpus: 0.20
 
   member-service:
+    image: ghcr.io/daniel-huudek/church-app/member-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -143,6 +152,7 @@ services:
     cpus: 0.20
 
   schedule-service:
+    image: ghcr.io/daniel-huudek/church-app/schedule-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -175,6 +185,7 @@ services:
     cpus: 0.20
 
   event-service:
+    image: ghcr.io/daniel-huudek/church-app/event-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -207,6 +218,7 @@ services:
     cpus: 0.20
 
   notification-service:
+    image: ghcr.io/daniel-huudek/church-app/notification-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -241,6 +253,7 @@ services:
     cpus: 0.20
 
   prayer-service:
+    image: ghcr.io/daniel-huudek/church-app/prayer-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -273,6 +286,7 @@ services:
     cpus: 0.20
 
   financial-service:
+    image: ghcr.io/daniel-huudek/church-app/financial-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -305,6 +319,7 @@ services:
     cpus: 0.20
 
   worship-service:
+    image: ghcr.io/daniel-huudek/church-app/worship-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -338,6 +353,7 @@ services:
     cpus: 0.20
 
   chat-service:
+    image: ghcr.io/daniel-huudek/church-app/chat-service:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/Dockerfile.service

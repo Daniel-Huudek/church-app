@@ -64,10 +64,12 @@ Imagem Docker compartilhada: `docker/Dockerfile.service` (multi-stage, args `SER
 
 ### Container
 - Imagem única multi-stage: `docker/Dockerfile.service` (args `SERVICE`, `PORT`, `PACKAGE_NAME`, `HAS_PRISMA`)
-- **VPS ~4GB / Dokploy:** build **serial** — `pnpm docker:build:vps` ou `docker compose build --parallel 1` (nunca bake paralelo)
-- Build: `pnpm docker:build` (serial) / `pnpm docker:bake` (só em máquina forte / CI)
+- **VPS ~4GB / Dokploy: NÃO buildar na VPS** — usar `./scripts/docker-deploy-vps.sh` (pull GHCR)
+- Imagens publicadas por `.github/workflows/docker-publish.yml` → `ghcr.io/daniel-huudek/church-app/<service>`
+- Prod: `docker-compose.yml` + `docker-compose.prod.yml` (`build: !reset`, `pull_policy: always`)
+- Build local (máquina forte): `pnpm docker:build` (`--parallel 1`) / `pnpm docker:bake` (CI)
 - Runtime: bundle esbuild + `node dist/index.js`; migrations via `prisma migrate deploy`
-- Heap: build `NODE_OPTIONS=--max-old-space-size=384`, runtime `64`; serviços `mem_limit: 96m`
+- Heap runtime ~96–112MB; auth `mem_limit: 160m`; demais `128m`
 - `RUN chown -R node:node /app` antes de `USER node`
 
 ### Banco de Dados
