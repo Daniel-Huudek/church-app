@@ -16,6 +16,9 @@ O site lê `GET /website` da API. Administradores/pastores editam no app Flutter
 
 **Painel administrativo → Site**
 
+Imagens (banner / liderança) sobem para **AWS S3** via `POST /website/uploads`.
+Ver `docs/aws-s3-website-uploads.md`.
+
 Fallback local em `src/data/church.ts` se a API estiver offline.
 
 Variável opcional: `VITE_API_URL` (default `http://localhost:3030`).

@@ -26,6 +26,18 @@
     radial-gradient(circle at 35% 30%, #f4e8da, #c9a888);
 }
 
+.series-banner--photo .series-banner__figure {
+  width: 100%;
+  background:
+    linear-gradient(90deg, rgba(243, 230, 216, 0.15) 0%, rgba(243, 230, 216, 0.92) 58%, rgba(243, 230, 216, 0.98) 100%),
+    var(--series-photo) center / cover no-repeat;
+}
+
+.series-banner--photo .series-banner__figure::before,
+.series-banner--photo .series-banner__figure::after {
+  display: none;
+}
+
 .series-banner__figure::before {
   content: '';
   position: absolute;

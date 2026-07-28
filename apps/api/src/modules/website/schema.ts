@@ -44,6 +44,7 @@ export const websiteContentSchema = z.object({
     title: z.string().min(1),
     subtitle: z.string().min(1),
     caption: z.string().min(1),
+    image: z.string().optional().default(''),
   }),
   events: z.array(eventSchema),
   weeklyWord: z.object({

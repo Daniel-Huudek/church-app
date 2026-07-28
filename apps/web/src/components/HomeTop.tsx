@@ -3,11 +3,16 @@ import '../styles/home.css';
 
 export function HomeTop() {
   const church = useChurch();
+  const seriesImage = church.series.image?.trim();
 
   return (
     <section className="home-top" id="topo" aria-label="Destaques">
       <div className="container home-top__grid">
-        <article className="series-banner" aria-labelledby="series-title">
+        <article
+          className={`series-banner${seriesImage ? ' series-banner--photo' : ''}`}
+          aria-labelledby="series-title"
+          style={seriesImage ? { ['--series-photo' as string]: `url(${seriesImage})` } : undefined}
+        >
           <div className="series-banner__figure" aria-hidden="true" />
           <div className="series-banner__content">
             <p className="series-banner__subtitle">{church.series.subtitle}</p>

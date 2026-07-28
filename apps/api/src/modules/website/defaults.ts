@@ -39,6 +39,7 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
     title: 'Adoração e soberania de Deus',
     subtitle: 'Igreja adoradora',
     caption: 'Série de mensagens',
+    image: '',
   },
   events: [
     { title: 'Projeto Ipi Avaré', date: '3 de agosto de 2025', time: '12:00' },

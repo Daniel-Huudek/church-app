@@ -22,6 +22,7 @@ export type ChurchContent = {
     title: string;
     subtitle: string;
     caption: string;
+    image?: string;
   };
   events: Array<{ title: string; date: string; time: string }>;
   weeklyWord: {
@@ -92,6 +93,7 @@ export const defaultChurchContent: ChurchContent = {
     title: 'Adoração e soberania de Deus',
     subtitle: 'Igreja adoradora',
     caption: 'Série de mensagens',
+    image: '',
   },
   events: [
     { title: 'Projeto Ipi Avaré', date: '3 de agosto de 2025', time: '12:00' },

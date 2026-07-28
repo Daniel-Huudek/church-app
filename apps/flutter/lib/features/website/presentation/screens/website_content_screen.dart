@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../providers/website_provider.dart';
 
@@ -15,6 +16,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _initialized = false;
   bool _saving = false;
+  String? _uploadingKind;
 
   late final TextEditingController _brand;
   late final TextEditingController _fullName;
@@ -27,6 +29,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
   late final TextEditingController _seriesTitle;
   late final TextEditingController _seriesSubtitle;
   late final TextEditingController _seriesCaption;
+  late final TextEditingController _seriesImage;
   late final TextEditingController _weeklyText;
   late final TextEditingController _weeklyRef;
   late final TextEditingController _leaderName;
@@ -51,6 +54,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     _seriesTitle = TextEditingController();
     _seriesSubtitle = TextEditingController();
     _seriesCaption = TextEditingController();
+    _seriesImage = TextEditingController();
     _weeklyText = TextEditingController();
     _weeklyRef = TextEditingController();
     _leaderName = TextEditingController();
@@ -64,7 +68,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
   void dispose() {
     for (final c in [
       _brand, _fullName, _about, _addressLine, _email, _facebook, _instagram, _youtube,
-      _seriesTitle, _seriesSubtitle, _seriesCaption, _weeklyText, _weeklyRef,
+      _seriesTitle, _seriesSubtitle, _seriesCaption, _seriesImage, _weeklyText, _weeklyRef,
       _leaderName, _leaderRole, _leaderImage, _leaderBio, _faithParagraphs,
     ]) {
       c.dispose();
@@ -100,6 +104,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     _seriesTitle.text = '${series['title'] ?? ''}';
     _seriesSubtitle.text = '${series['subtitle'] ?? ''}';
     _seriesCaption.text = '${series['caption'] ?? ''}';
+    _seriesImage.text = '${series['image'] ?? ''}';
 
     final weekly = Map<String, dynamic>.from((content['weeklyWord'] as Map?) ?? {});
     _weeklyText.text = '${weekly['text'] ?? ''}';
@@ -183,6 +188,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
         'title': _seriesTitle.text.trim(),
         'subtitle': _seriesSubtitle.text.trim(),
         'caption': _seriesCaption.text.trim(),
+        'image': _seriesImage.text.trim(),
       },
       'weeklyWord': {
         'text': _weeklyText.text.trim(),
@@ -215,6 +221,105 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
       SnackBar(
         content: Text(ok ? 'Site atualizado com sucesso' : 'Falha ao salvar conteúdo do site'),
         backgroundColor: ok ? AppColors.success : AppColors.error,
+      ),
+    );
+  }
+
+  Future<void> _uploadImage({
+    required String kind,
+    required TextEditingController target,
+  }) async {
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2400,
+        imageQuality: 88,
+      );
+      if (file == null) return;
+
+      setState(() => _uploadingKind = kind);
+      final api = ref.read(websiteApiProvider);
+      final result = await api.uploadImage(
+        filePath: file.path,
+        filename: file.name,
+        kind: kind,
+      );
+      final url = '${result['url'] ?? ''}';
+      if (url.isEmpty) {
+        throw Exception('Upload sem URL pública');
+      }
+      setState(() => target.text = url);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Imagem enviada para o AWS S3'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Falha no upload: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingKind = null);
+    }
+  }
+
+  Widget _imageField({
+    required TextEditingController controller,
+    required String kind,
+    required String label,
+    required Color t1,
+    required Color t2,
+  }) {
+    final url = controller.text.trim();
+    final uploading = _uploadingKind == kind;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (url.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: AppColors.neutral200,
+                    alignment: Alignment.center,
+                    child: Text('Prévia indisponível', style: TextStyle(color: t2)),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          _field(controller, label, t1),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.tonalIcon(
+              onPressed: uploading || _saving
+                  ? null
+                  : () => _uploadImage(kind: kind, target: controller),
+              icon: uploading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.cloud_upload_rounded),
+              label: Text(uploading ? 'Enviando para S3...' : 'Enviar imagem (S3)'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -313,6 +418,13 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
                           _field(_seriesSubtitle, 'Subtítulo', t1, requiredField: true),
                           _field(_seriesTitle, 'Título', t1, requiredField: true),
                           _field(_seriesCaption, 'Legenda', t1, requiredField: true),
+                          _imageField(
+                            controller: _seriesImage,
+                            kind: 'series',
+                            label: 'URL da imagem do banner',
+                            t1: t1,
+                            t2: t2,
+                          ),
                         ],
                       ),
                       _section(
@@ -375,7 +487,13 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
                         children: [
                           _field(_leaderName, 'Nome', t1, requiredField: true),
                           _field(_leaderRole, 'Cargo / função', t1, requiredField: true),
-                          _field(_leaderImage, 'URL da foto', t1),
+                          _imageField(
+                            controller: _leaderImage,
+                            kind: 'leadership',
+                            label: 'URL da foto',
+                            t1: t1,
+                            t2: t2,
+                          ),
                           _field(_leaderBio, 'Biografia', t1, maxLines: 8, requiredField: true),
                         ],
                       ),
