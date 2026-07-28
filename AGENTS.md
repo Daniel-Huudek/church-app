@@ -85,7 +85,7 @@ Imagem Docker: `docker/Dockerfile.service` (args `SERVICE=api` / `PORT=3030` / `
 - RBAC no módulo finance usa `authorize()` / `assertFinanceWriteRole`
 
 ### Rotas
-- API expõe: `/auth/*`, `/members/*`, `/events/*`, `/schedules/*`, `/notifications/*`, `/prayers/*`, `/finance/*`, `/users/*`, `/worship/*`, `/chats/*`
+- API expõe: `/auth/*`, `/members/*`, `/events/*`, `/schedules/*`, `/notifications/*`, `/prayers/*`, `/finance/*`, `/users/*`, `/worship/*`, `/chats/*`, `/website`
 - Health: `GET /health`
 - Website CMS: `GET /website` (público), `PUT /website` (ADMINISTRADOR/PASTOR)
 

@@ -77,7 +77,7 @@ docker compose up -d
 | Serviço | Porta | Descrição |
 |---------|-------|-----------|
 | API | 3030 | Auth JWT, membros, eventos, escalas, oração, finanças, louvor, chat, notificações |
-| Web | 5173 | Site público (cultos, sobre, ministérios, visita) |
+| Web | 5173 | Site público (conteúdo via `GET /website`) |
 
 Rotas públicas (compatíveis com o app Flutter): `/auth`, `/users`, `/members`, `/events`, `/schedules`, `/prayers`, `/finance`, `/worship`, `/chats`, `/notifications`.
 
