@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class StatCard extends StatelessWidget {
-  final String icon;
+  final IconData icon;
   final String value;
   final String label;
   final Color color;
@@ -28,8 +28,8 @@ class StatCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
-            const SizedBox(height: 4),
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 6),
             Text(
               value,
               style: TextStyle(

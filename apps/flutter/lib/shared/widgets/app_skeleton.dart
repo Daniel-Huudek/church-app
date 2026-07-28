@@ -16,11 +16,14 @@ class AppSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.lightBorder.withValues(alpha: 0.5),
+        color: isDark
+            ? AppColors.darkBorderLight.withValues(alpha: 0.45)
+            : AppColors.lightBorder.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
@@ -34,23 +37,29 @@ class AppSkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const AppSkeleton(height: 20, width: 200),
-            const SizedBox(height: AppSpacing.md),
-            for (var i = 0; i < lines; i++) ...[
-              AppSkeleton(
-                height: 14,
-                width: i == lines - 1 ? 150 : double.infinity,
-              ),
-              if (i < lines - 1) const SizedBox(height: AppSpacing.sm),
-            ],
-          ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppSkeleton(height: 20, width: 200),
+          const SizedBox(height: AppSpacing.md),
+          for (var i = 0; i < lines; i++) ...[
+            AppSkeleton(
+              height: 14,
+              width: i == lines - 1 ? 150 : double.infinity,
+            ),
+            if (i < lines - 1) const SizedBox(height: AppSpacing.sm),
+          ],
+        ],
       ),
     );
   }

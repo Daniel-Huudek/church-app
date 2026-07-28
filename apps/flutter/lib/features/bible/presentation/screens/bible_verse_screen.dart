@@ -32,8 +32,8 @@ class _BibleVerseScreenState extends ConsumerState<BibleVerseScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D0D14) : const Color(0xFFF8F6F1);
-    final accent = const Color(0xFFC8A45C);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightSurface;
+    final accent = AppColors.primary;
     final accentLight = accent.withValues(alpha: 0.12);
 
     final state = ref.watch(bibleChapterProvider);
