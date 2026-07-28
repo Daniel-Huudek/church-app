@@ -1,5 +1,16 @@
+import { Link } from 'react-router-dom';
 import { church } from '../data/church';
 import '../styles/footer.css';
+
+function FooterLink({ href, children }: { href: string; children: string }) {
+  if (href.startsWith('/#' ) || href.startsWith('#')) {
+    return <a href={href}>{children}</a>;
+  }
+  if (href.startsWith('/')) {
+    return <Link to={href}>{children}</Link>;
+  }
+  return <a href={href}>{children}</a>;
+}
 
 export function Footer() {
   return (
@@ -7,13 +18,11 @@ export function Footer() {
       <div className="container">
         <div className="site-footer__grid">
           <div>
-            <a className="site-footer__brand" href="#topo" id="nossa-igreja">
+            <Link className="site-footer__brand" to="/">
               <img src="/logo.png" alt="" width={36} height={36} />
               <strong>IPI Avaré</strong>
-            </a>
-            <p className="site-footer__about" id="o-que-somos">
-              {church.about}
-            </p>
+            </Link>
+            <p className="site-footer__about">{church.about}</p>
           </div>
 
           <div>
@@ -21,7 +30,7 @@ export function Footer() {
             <ul className="site-footer__links">
               {church.usefulLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href}>{link.label}</a>
+                  <FooterLink href={link.href}>{link.label}</FooterLink>
                 </li>
               ))}
             </ul>
@@ -41,7 +50,8 @@ export function Footer() {
             src={church.address.mapEmbed}
           />
         </div>
-
+      </div>
+      <div className="site-footer__bar">
         <p className="site-footer__copy">
           Todos os direitos reservados. {church.fullName}.
         </p>

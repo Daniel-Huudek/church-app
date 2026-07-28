@@ -2,16 +2,15 @@
 
 Site institucional público baseado no layout Figma da **IPI Avaré**.
 
-## Seções
+## Seções / páginas
 
-- Header (Nossa Igreja, O que somos, IPI Comunica, redes, Conectar)
-- Banner da série + Eventos e Programações
-- Palavra da semana
-- Notícias IPI Avaré
-- Nossas Transmissões
-- Footer (links, contato, mapa)
+- `/` — Home (banner, eventos, palavra, notícias, transmissões)
+- `/afirmacao-de-fe` — Afirmação de Fé da IPI do Brasil
+- `/lideranca` — Nossa Liderança
 
-Dados editáveis em `src/data/church.ts`.
+Header com dropdowns (Nossa Igreja, O que cremos, IPI Comunica) e footer com barra azul.
+
+Dados editáveis em `src/data/church.ts`. Foto do pastor em `public/pastor.jpg`.
 
 ## Desenvolvimento
 

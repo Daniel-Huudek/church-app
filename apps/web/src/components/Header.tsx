@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
 import { church } from '../data/church';
 import '../styles/header.css';
 
@@ -33,38 +34,63 @@ function SocialIcon({ icon }: { icon: 'facebook' | 'instagram' | 'youtube' }) {
   );
 }
 
+function isHashLink(href: string) {
+  return href.includes('#');
+}
+
 export function Header() {
   const [open, setOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const onPointerDown = (event: MouseEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) {
+        navRef.current?.querySelectorAll('details[open]').forEach((el) => {
+          el.removeAttribute('open');
+        });
+      }
+    };
+    document.addEventListener('click', onPointerDown);
+    return () => document.removeEventListener('click', onPointerDown);
+  }, []);
 
   return (
     <header className="site-header">
       <div className="container site-header__inner">
-        <a className="site-header__brand" href="#topo" aria-label={church.brand}>
+        <Link className="site-header__brand" to="/" aria-label={church.brand}>
           <img src="/logo.png" alt="" width={38} height={38} />
           <strong>
             Primeira
             <br />
             IPI Avaré
           </strong>
-        </a>
+        </Link>
 
-        <nav className="site-header__nav" aria-label="Principal">
+        <nav className="site-header__nav" aria-label="Principal" ref={navRef}>
           {church.nav.map((item) =>
-            'children' in item && item.children ? (
+            item.children ? (
               <details className="site-header__dropdown" key={item.label}>
                 <summary>{item.label}</summary>
                 <ul className="site-header__menu">
                   {item.children.map((child) => (
                     <li key={child.label}>
-                      <a href={child.href}>{child.label}</a>
+                      {isHashLink(child.href) ? (
+                        <a href={child.href}>{child.label}</a>
+                      ) : (
+                        <Link to={child.href}>{child.label}</Link>
+                      )}
                     </li>
                   ))}
                 </ul>
               </details>
-            ) : (
+            ) : isHashLink(item.href) ? (
               <a key={item.label} href={item.href}>
                 {item.label}
               </a>
+            ) : (
+              <NavLink key={item.label} to={item.href}>
+                {item.label}
+              </NavLink>
             ),
           )}
         </nav>
@@ -98,16 +124,31 @@ export function Header() {
         className={`site-header__mobile container${open ? ' is-open' : ''}`}
       >
         <nav aria-label="Mobile">
-          {church.nav.map((item) => (
-            <a key={item.label} href={item.href} onClick={() => setOpen(false)}>
-              {item.label}
-            </a>
-          ))}
-          {church.social.map((item) => (
-            <a key={item.label} href={item.href}>
-              {item.label}
-            </a>
-          ))}
+          {church.nav.flatMap((item) =>
+            item.children
+              ? item.children.map((child) =>
+                  isHashLink(child.href) ? (
+                    <a key={child.label} href={child.href} onClick={() => setOpen(false)}>
+                      {child.label}
+                    </a>
+                  ) : (
+                    <Link key={child.label} to={child.href} onClick={() => setOpen(false)}>
+                      {child.label}
+                    </Link>
+                  ),
+                )
+              : [
+                  isHashLink(item.href) ? (
+                    <a key={item.label} href={item.href} onClick={() => setOpen(false)}>
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link key={item.label} to={item.href} onClick={() => setOpen(false)}>
+                      {item.label}
+                    </Link>
+                  ),
+                ],
+          )}
         </nav>
       </div>
     </header>
