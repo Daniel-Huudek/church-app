@@ -147,9 +147,7 @@ class WorshipRepository {
   Future<CachedResult<WorshipEvent>> getWorshipEvent(String id) async {
     try {
       final response = await _api.getWorshipEvent(id);
-      final map = response is Map<String, dynamic>
-          ? response
-          : Map<String, dynamic>.from(response as Map);
+      final map = Map<String, dynamic>.from(response);
       final data = map.containsKey('data') && map['data'] is Map
           ? Map<String, dynamic>.from(map['data'] as Map)
           : map;
