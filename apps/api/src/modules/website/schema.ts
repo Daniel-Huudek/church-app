@@ -30,6 +30,12 @@ const mediaItemSchema = z.object({
   image: z.string().optional().default(''),
 });
 
+const streamItemSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  youtubeUrl: z.string().optional().default(''),
+});
+
 const linkSchema = z.object({
   label: z.string().min(1),
   href: z.string().min(1),
@@ -55,7 +61,7 @@ export const websiteContentSchema = z.object({
     reference: z.string().min(1),
   }),
   news: z.array(mediaItemSchema),
-  streams: z.array(mediaItemSchema),
+  streams: z.array(streamItemSchema),
   faith: z.object({
     titlePrefix: z.string().min(1),
     titleAccent: z.string().min(1),

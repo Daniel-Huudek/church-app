@@ -41,7 +41,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
 
   final List<_EventDraft> _events = [];
   final List<_MediaDraft> _news = [];
-  final List<_MediaDraft> _streams = [];
+  final List<_StreamDraft> _streams = [];
 
   @override
   void initState() {
@@ -133,7 +133,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
 
     _replaceEvents(content['events'] as List?);
     _replaceMedia(_news, content['news'] as List?, prefix: 'n');
-    _replaceMedia(_streams, content['streams'] as List?, prefix: 's');
+    _replaceStreams(content['streams'] as List?);
 
     _initialized = true;
   }
@@ -172,6 +172,26 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     }
     if (target.isEmpty) {
       target.add(_MediaDraft(id: '${prefix}1'));
+    }
+  }
+
+  void _replaceStreams(List? raw) {
+    for (final item in _streams) {
+      item.dispose();
+    }
+    _streams.clear();
+    var index = 1;
+    for (final item in raw ?? const []) {
+      final map = Map<String, dynamic>.from(item as Map);
+      _streams.add(_StreamDraft(
+        id: '${map['id'] ?? 's$index'}',
+        title: '${map['title'] ?? ''}',
+        youtubeUrl: '${map['youtubeUrl'] ?? map['image'] ?? ''}',
+      ));
+      index += 1;
+    }
+    if (_streams.isEmpty) {
+      _streams.add(_StreamDraft(id: 's1'));
     }
   }
 
@@ -250,7 +270,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
           .map((e) => {
                 'id': e.id,
                 'title': e.title.text.trim().isEmpty ? 'Transmissão' : e.title.text.trim(),
-                'image': e.image.text.trim(),
+                'youtubeUrl': e.youtubeUrl.text.trim(),
               })
           .toList(),
       'leadership': leadership,
@@ -502,6 +522,11 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
                         card: card,
                         title: 'Transmissões',
                         children: [
+                          Text(
+                            'Cole o link do YouTube (watch, youtu.be ou embed). O site mostra o player.',
+                            style: TextStyle(color: t2, fontSize: 13),
+                          ),
+                          const SizedBox(height: 8),
                           ..._streams.asMap().entries.map((entry) {
                             final index = entry.key;
                             final item = entry.value;
@@ -513,19 +538,18 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
                                   : null,
                               children: [
                                 _field(item.title, 'Título', t1),
-                                _imageField(
-                                  controller: item.image,
-                                  kind: 'streams:$index',
-                                  label: 'Capa / thumbnail',
-                                  t1: t1,
-                                  t2: t2,
+                                _field(
+                                  item.youtubeUrl,
+                                  'Link do YouTube',
+                                  t1,
+                                  keyboard: TextInputType.url,
                                 ),
                               ],
                             );
                           }),
                           TextButton.icon(
                             onPressed: () => setState(
-                              () => _streams.add(_MediaDraft(id: 's${DateTime.now().millisecondsSinceEpoch}')),
+                              () => _streams.add(_StreamDraft(id: 's${DateTime.now().millisecondsSinceEpoch}')),
                             ),
                             icon: const Icon(Icons.add_rounded),
                             label: const Text('Adicionar transmissão'),
@@ -739,5 +763,20 @@ class _MediaDraft {
   void dispose() {
     title.dispose();
     image.dispose();
+  }
+}
+
+class _StreamDraft {
+  _StreamDraft({required this.id, String title = '', String youtubeUrl = ''})
+      : title = TextEditingController(text: title),
+        youtubeUrl = TextEditingController(text: youtubeUrl);
+
+  final String id;
+  final TextEditingController title;
+  final TextEditingController youtubeUrl;
+
+  void dispose() {
+    title.dispose();
+    youtubeUrl.dispose();
   }
 }

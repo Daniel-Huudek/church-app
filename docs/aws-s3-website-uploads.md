@@ -10,7 +10,8 @@ Imagens do site (banner da série, foto da liderança, etc.) sobem para um bucke
 4. URL pública gravada no CMS (`PUT /website`)
 5. Site consome a URL no `GET /website`
 
-Slots cobertos: logo, banner da série, eventos, notícias, transmissões e liderança.
+Slots cobertos: logo, banner da série, eventos, notícias, liderança.
+Transmissões usam **link do YouTube** (`youtubeUrl`) e o site renderiza o embed.
 
 ## Variáveis
 

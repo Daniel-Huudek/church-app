@@ -17,6 +17,12 @@ export type MediaItem = {
   image?: string;
 };
 
+export type StreamItem = {
+  id: string;
+  title: string;
+  youtubeUrl?: string;
+};
+
 export type ChurchEvent = {
   title: string;
   date: string;
@@ -44,7 +50,7 @@ export type ChurchContent = {
     reference: string;
   };
   news: MediaItem[];
-  streams: MediaItem[];
+  streams: StreamItem[];
   faith: {
     titlePrefix: string;
     titleAccent: string;
@@ -127,10 +133,10 @@ export const defaultChurchContent: ChurchContent = {
     { id: 'n4', title: 'Notícia 4', image: '' },
   ],
   streams: [
-    { id: 's1', title: 'Transmissão 1', image: '' },
-    { id: 's2', title: 'Transmissão 2', image: '' },
-    { id: 's3', title: 'Transmissão 3', image: '' },
-    { id: 's4', title: 'Transmissão 4', image: '' },
+    { id: 's1', title: 'Transmissão 1', youtubeUrl: '' },
+    { id: 's2', title: 'Transmissão 2', youtubeUrl: '' },
+    { id: 's3', title: 'Transmissão 3', youtubeUrl: '' },
+    { id: 's4', title: 'Transmissão 4', youtubeUrl: '' },
   ],
   faith: {
     titlePrefix: 'Afirmação de Fé da',

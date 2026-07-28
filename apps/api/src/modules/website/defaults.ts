@@ -59,10 +59,10 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
     { id: 'n4', title: 'Notícia 4', image: '' },
   ],
   streams: [
-    { id: 's1', title: 'Transmissão 1', image: '' },
-    { id: 's2', title: 'Transmissão 2', image: '' },
-    { id: 's3', title: 'Transmissão 3', image: '' },
-    { id: 's4', title: 'Transmissão 4', image: '' },
+    { id: 's1', title: 'Transmissão 1', youtubeUrl: '' },
+    { id: 's2', title: 'Transmissão 2', youtubeUrl: '' },
+    { id: 's3', title: 'Transmissão 3', youtubeUrl: '' },
+    { id: 's4', title: 'Transmissão 4', youtubeUrl: '' },
   ],
   faith: {
     titlePrefix: 'Afirmação de Fé da',
