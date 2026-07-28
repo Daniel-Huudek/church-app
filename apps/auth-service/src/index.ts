@@ -9,12 +9,29 @@ import { authRoutes } from './routes/auth';
 const prisma = new PrismaClient();
 const fastify = Fastify({ logger: false });
 
+async function connectWithRetry(attempts = 10, delayMs = 2000): Promise<void> {
+  let lastError: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await prisma.$connect();
+      return;
+    } catch (err) {
+      lastError = err;
+      logger.error(`Prisma connect failed (attempt ${i}/${attempts})`, err as Error);
+      if (i < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw lastError;
+}
+
 async function bootstrap() {
   if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is required');
   }
 
-  await prisma.$connect();
+  await connectWithRetry();
 
   await fastify.register(helmet, { contentSecurityPolicy: false });
   await fastify.register(cors, { origin: true, credentials: true });
@@ -48,9 +65,24 @@ async function bootstrap() {
   logger.info(`Auth service running on port ${port}`);
 }
 
-bootstrap()
-  .catch((err) => {
-    logger.error('Failed to start server', err);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+async function shutdown() {
+  try {
+    await fastify.close();
+  } catch {
+    /* ignore */
+  }
+  try {
+    await prisma.$disconnect();
+  } catch {
+    /* ignore */
+  }
+  process.exit(0);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+bootstrap().catch((err) => {
+  logger.error('Failed to start server', err);
+  process.exit(1);
+});

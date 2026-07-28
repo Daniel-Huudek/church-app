@@ -36,9 +36,18 @@ async function bootstrap() {
   logger.info(`Chat service running on port ${port}`);
 }
 
+
+process.on('SIGTERM', async () => {
+  try { await prisma.$disconnect(); } catch { /* ignore */ }
+  process.exit(0);
+});
+process.on('SIGINT', async () => {
+  try { await prisma.$disconnect(); } catch { /* ignore */ }
+  process.exit(0);
+});
+
 bootstrap()
   .catch((err) => {
     logger.error('Failed to start server', err);
     process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+  });
