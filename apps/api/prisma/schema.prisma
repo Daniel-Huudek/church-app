@@ -1,0 +1,828 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// --- from apps/auth-service/prisma/schema.prisma ---
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String
+  password      String?
+  avatar        String?
+  role          Role      @default(MEMBRO)
+  permissions   Permission[]
+  googleId      String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+enum Role {
+  ADMINISTRADOR
+  PASTOR
+  FINANCEIRO
+  LIDER
+  MEMBRO
+  LOUVOR
+  LIDER_LOUVOR
+  DIACONO
+  LIDER_DIACONOS
+  VISITANTE
+}
+
+enum Permission {
+  users_read
+  users_write
+  users_delete
+  members_read
+  members_write
+  members_delete
+  members_export
+  members_import
+  ministries_read
+  ministries_write
+  ministries_delete
+  schedules_read
+  schedules_write
+  schedules_delete
+  events_read
+  events_write
+  events_delete
+  prayers_read
+  prayers_write
+  prayers_delete
+  prayers_comment
+  prayers_react
+  finance_read
+  finance_write
+  finance_delete
+  finance_export
+  finance_audit
+  finance_close
+  finance_reports
+  notifications_send
+}
+
+model RoleConfig {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  permissions String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// --- from apps/member-service/prisma/schema.prisma ---
+model Member {
+  id              String    @id @default(uuid())
+  userId          String?   @unique
+  name            String
+  email           String?
+  phone           String?
+  avatar          String?
+  dateOfBirth     DateTime?
+  gender          String?
+  maritalStatus   String?
+  baptismDate     DateTime?
+  baptismChurch   String?
+  conversionDate  DateTime?
+  admissionDate   DateTime?
+  admissionType   String?
+  isBaptized      Boolean   @default(false)
+  status          MemberStatus @default(ATIVO)
+  role            MemberRole @default(MEMBRO)
+  ministryId      String?
+  occupation      String?
+  notes           String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  ministry        Ministry? @relation("MinistryMembers", fields: [ministryId], references: [id])
+  ledMinistry     Ministry? @relation("MinistryLeader")
+  address         Address?
+  documents       Document[]
+  familyMembers   FamilyMember[]
+  ministerialHistory MinisterialHistory[]
+  auditLogs       AuditLog[]
+
+  @@index([ministryId])
+  @@map("members")
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  memberId     String   @unique
+  street       String
+  number       String?
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  member       Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  memberId  String
+  type      String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("documents")
+}
+
+model FamilyMember {
+  id        String   @id @default(uuid())
+  memberId  String
+  name      String
+  kinship   String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("family_members")
+}
+
+model MinisterialHistory {
+  id          String   @id @default(uuid())
+  memberId    String
+  ministry    String
+  role        String
+  startDate   DateTime
+  endDate     DateTime?
+  description String?
+  createdAt   DateTime @default(now())
+
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("ministerial_histories")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  memberId  String
+  action    String
+  changedBy String?
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime @default(now())
+
+  member    Member   @relation(fields: [memberId], references: [id])
+
+  @@index([memberId])
+  @@map("audit_logs")
+}
+
+model Ministry {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  leaderId    String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  leader      Member?  @relation("MinistryLeader", fields: [leaderId], references: [id])
+  members     Member[] @relation("MinistryMembers")
+
+  @@map("ministries")
+}
+
+enum MemberStatus {
+  ATIVO
+  INATIVO
+  AFASTADO
+  TRANSFERIDO
+  EXCLUIDO
+}
+
+enum MemberRole {
+  MEMBRO
+  DIACONO
+  PRESBITERO
+  PASTOR
+}
+
+// --- from apps/schedule-service/prisma/schema.prisma ---
+model Schedule {
+  id          String   @id @default(uuid())
+  eventId     String
+  ministryId  String
+  date        DateTime
+  startTime   String
+  endTime     String
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  positions   SchedulePosition[]
+
+  @@index([eventId])
+  @@index([ministryId])
+  @@index([deletedAt])
+  @@map("schedules")
+}
+
+model SchedulePosition {
+  id              String   @id @default(uuid())
+  scheduleId      String
+  memberId        String
+  position        String
+  isConfirmed     Boolean  @default(false)
+  isSubstituted   Boolean  @default(false)
+  substitutedById String?
+  createdAt       DateTime @default(now())
+  schedule        Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([scheduleId])
+  @@map("schedule_positions")
+}
+
+// --- from apps/event-service/prisma/schema.prisma ---
+model Event {
+  id            String    @id @default(uuid())
+  title         String
+  description   String?
+  type          EventType
+  date          DateTime
+  startTime     String
+  endTime       String
+  location      String?
+  isRecurring   Boolean   @default(false)
+  recurrenceRule String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([date])
+  @@index([type])
+  @@index([deletedAt])
+  @@map("events")
+}
+
+enum EventType {
+  WORSHIP
+  EVENT
+  REHEARSAL
+}
+
+// --- from apps/notification-service/prisma/schema.prisma ---
+model Notification {
+  id         String            @id @default(uuid())
+  type       NotificationType
+  recipientId String
+  phone      String
+  message    String
+  status     NotificationStatus @default(PENDING)
+  isRead     Boolean           @default(false)
+  sentAt     DateTime?
+  createdAt  DateTime          @default(now())
+
+  @@index([recipientId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  SCHEDULE_REMINDER
+  ATTENDANCE_CONFIRMATION
+  GENERAL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// --- from apps/prayer-service/prisma/schema.prisma ---
+model PrayerRequest {
+  id          String   @id @default(uuid())
+  authorId    String
+  title       String
+  content     String
+  categoryId  String?
+  isPublic    Boolean  @default(true)
+  isAnonymous Boolean  @default(false)
+  isUrgent    Boolean  @default(false)
+  isAnswered  Boolean  @default(false)
+  answeredAt  DateTime?
+  answeredBy  String?
+  viewsCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  category    PrayerCategory? @relation(fields: [categoryId], references: [id])
+  comments    PrayerComment[]
+  reactions   PrayerReaction[]
+  intercessors Intercessor[]
+  favoritedBy UserFavorite[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([answeredBy])
+  @@index([deletedAt])
+  @@map("prayer_requests")
+}
+
+model PrayerCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String?
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prayers   PrayerRequest[]
+
+  @@map("prayer_categories")
+}
+
+model PrayerComment {
+  id        String   @id @default(uuid())
+  prayerId  String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@index([prayerId])
+  @@index([authorId])
+  @@map("prayer_comments")
+}
+
+model PrayerReaction {
+  id        String   @id @default(uuid())
+  prayerId  String
+  userId    String
+  type      String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@index([prayerId])
+  @@index([userId])
+  @@unique([prayerId, userId, type])
+  @@map("prayer_reactions")
+}
+
+model Intercessor {
+  id        String   @id @default(uuid())
+  prayerId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@index([prayerId])
+  @@index([userId])
+  @@unique([prayerId, userId])
+  @@map("intercessors")
+}
+
+model UserFavorite {
+  id        String   @id @default(uuid())
+  prayerId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  prayer    PrayerRequest @relation(fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@index([prayerId])
+  @@index([userId])
+  @@unique([prayerId, userId])
+  @@map("user_favorites")
+}
+
+// --- from apps/financial-service/prisma/schema.prisma ---
+model Transaction {
+  id              String            @id @default(uuid())
+  type            TransactionType
+  value           Decimal           @db.Decimal(15,2)
+  description     String?
+  date            DateTime
+  dueDate         DateTime?
+  paymentDate     DateTime?
+  categoryId      String?
+  costCenterId    String?
+  createdById     String
+  createdByRole   String?
+  status          TransactionStatus @default(PENDING)
+  paymentMethod   String?
+  isRecurring     Boolean           @default(false)
+  recurrenceRule  String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  category        TransactionCategory? @relation(fields: [categoryId], references: [id])
+  costCenter      CostCenter?          @relation(fields: [costCenterId], references: [id])
+  attachments     Attachment[]
+  auditLogs       FinancialAuditLog[]
+
+  @@index([categoryId])
+  @@index([costCenterId])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("transactions")
+}
+
+model TransactionCategory {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  type        TransactionType
+  description String?
+  color       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  transactions Transaction[]
+
+  @@map("transaction_categories")
+}
+
+model CostCenter {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  description String?
+  budget      Decimal?      @db.Decimal(15,2)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  transactions Transaction[]
+
+  @@map("cost_centers")
+}
+
+model Attachment {
+  id            String         @id @default(uuid())
+  transactionId String
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  url           String
+  type          AttachmentType @default(OTHER)
+  createdAt     DateTime       @default(now())
+
+  transaction   Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@map("attachments")
+}
+
+model FinancialAuditLog {
+  id            String      @id @default(uuid())
+  transactionId String
+  action        String
+  changedById   String
+  changedByRole String?
+  oldValue      Json?
+  newValue      Json?
+  createdAt     DateTime    @default(now())
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([transactionId])
+  @@index([changedById])
+  @@map("financial_audit_logs")
+}
+
+model MonthlyClose {
+  id            String      @id @default(uuid())
+  referenceDate DateTime    @unique
+  totalIncome   Decimal     @db.Decimal(15,2)
+  totalExpense  Decimal     @db.Decimal(15,2)
+  balance       Decimal     @db.Decimal(15,2)
+  closedById    String
+  closedByRole  String?
+  closedAt      DateTime    @default(now())
+  status        CloseStatus @default(OPEN)
+  notes         String?
+  createdAt     DateTime    @default(now())
+
+  @@index([closedById])
+  @@map("monthly_closes")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TITHE
+  OFFERING
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum AttachmentType {
+  RECEIPT
+  PROOF
+  DOCUMENT
+  OTHER
+}
+
+enum CloseStatus {
+  OPEN
+  CLOSED
+  REOPENED
+}
+
+// --- from apps/chat-service/prisma/schema.prisma ---
+model ChatRoom {
+  id        String        @id @default(uuid())
+  name      String?
+  type      ChatRoomType  @default(DIRECT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+
+  members   ChatRoomMember[]
+  messages  ChatMessage[]
+
+  @@index([type])
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id         String   @id @default(uuid())
+  roomId     String
+  userId     String
+  unreadCount Int     @default(0)
+  joinedAt   DateTime @default(now())
+
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@index([roomId])
+  @@map("chat_room_members")
+}
+
+model ChatMessage {
+  id        String        @id @default(uuid())
+  roomId    String
+  senderId  String
+  content   String
+  type      ChatMessageType @default(TEXT)
+  createdAt DateTime      @default(now())
+  deletedAt DateTime?
+
+  room      ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@index([senderId])
+  @@map("chat_messages")
+}
+
+enum ChatRoomType {
+  DIRECT
+  GROUP
+  MINISTRY
+}
+
+enum ChatMessageType {
+  TEXT
+  IMAGE
+  SYSTEM
+}
+
+// --- from apps/worship-service/prisma/schema.prisma ---
+enum SongKey {
+  C
+  Cm
+  C7
+  Cm7
+  Cs
+  Csm
+  D
+  Dm
+  D7
+  Dm7
+  Eb
+  Ebm
+  E
+  Em
+  E7
+  Em7
+  F
+  Fm
+  F7
+  Fm7
+  Fs
+  Fsm
+  G
+  Gm
+  G7
+  Gm7
+  Ab
+  Abm
+  A
+  Am
+  A7
+  Am7
+  Bb
+  Bbm
+  B
+  Bm
+  B7
+  Bm7
+}
+
+model Song {
+  id         String   @id @default(uuid())
+  title      String
+  artist     String?
+  key        String?
+  bpm        Int?
+  duration   Int?
+  lyrics     String?
+  chords     String?
+  capo       Int?
+  youtubeUrl String?
+  thumbnail  String?
+  notes      String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tags              SongTag[]
+  favorites         Favorite[]
+  playlistSongs     PlaylistSong[]
+  worshipEventSongs WorshipEventSong[]
+  histories         SongHistory[]
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String
+  color String @default("#008CFF")
+
+  songs SongTag[]
+}
+
+model SongTag {
+  songId String
+  tagId  String
+  song   Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([songId, tagId])
+  @@index([tagId])
+}
+
+model Playlist {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdBy   String
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  songs        PlaylistSong[]
+  worshipEvent WorshipEvent?
+}
+
+model PlaylistSong {
+  id         String @id @default(uuid())
+  playlistId String
+  songId     String
+  order      Int
+  notes      String?
+  transpose  Int    @default(0)
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  song     Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId])
+  @@index([songId])
+}
+
+model WorshipEvent {
+  id            String   @id @default(uuid())
+  eventId       String   @unique
+  playlistId    String? @unique
+  notes         String?
+  estimatedTime Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  playlist  Playlist?              @relation(fields: [playlistId], references: [id])
+  songs     WorshipEventSong[]
+  musicians WorshipEventMusician[]
+}
+
+model WorshipEventSong {
+  id             String @id @default(uuid())
+  worshipEventId String
+  songId         String
+  order          Int
+  transpose      Int    @default(0)
+  notes          String?
+
+  worshipEvent WorshipEvent @relation(fields: [worshipEventId], references: [id], onDelete: Cascade)
+  song         Song         @relation(fields: [songId], references: [id])
+
+  @@index([worshipEventId])
+  @@index([songId])
+}
+
+model WorshipEventMusician {
+  id             String  @id @default(uuid())
+  worshipEventId String
+  memberId       String
+  instrument     String?
+  role           String?
+  isConfirmed    Boolean @default(false)
+  isSubstituted  Boolean @default(false)
+
+  worshipEvent WorshipEvent @relation(fields: [worshipEventId], references: [id], onDelete: Cascade)
+
+  @@index([worshipEventId])
+  @@index([memberId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  songId    String
+  createdAt DateTime @default(now())
+
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, songId])
+  @@index([userId])
+  @@index([songId])
+}
+
+model SongHistory {
+  id      String   @id @default(uuid())
+  songId  String
+  eventId String?
+  date    DateTime @default(now())
+
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([songId])
+  @@index([date])
+}
+

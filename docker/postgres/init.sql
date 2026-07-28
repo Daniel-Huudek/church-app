@@ -1,9 +1,3 @@
-CREATE DATABASE auth_db;
-CREATE DATABASE member_db;
-CREATE DATABASE schedule_db;
-CREATE DATABASE event_db;
-CREATE DATABASE notification_db;
-CREATE DATABASE prayer_db;
-CREATE DATABASE financial_db;
-CREATE DATABASE worship_db;
-CREATE DATABASE chat_db;
+-- Single database for the modular monolith API.
+-- Kept for volume init compatibility; POSTGRES_DB already creates church_db.
+SELECT 'church_db ready' AS status;

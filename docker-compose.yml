@@ -16,53 +16,37 @@
 # Guide: docs/deploy-dokploy.md
 
 services:
-  api-gateway:
-    image: ghcr.io/daniel-huudek/church-app/api-gateway:${IMAGE_TAG:-latest}
+  api:
+    image: ghcr.io/daniel-huudek/church-app/api:${IMAGE_TAG:-latest}
     pull_policy: always
-    container_name: church-app-api-gateway
+    container_name: church-app-api
     restart: unless-stopped
     ports:
       - "3030:3030"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api-gateway.rule=Host(`api.ipiavare.com.br`)"
-      - "traefik.http.routers.api-gateway.entrypoints=websecure"
-      - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
-      - "traefik.http.services.api-gateway.loadbalancer.server.port=3030"
+      - "traefik.http.routers.api.rule=Host(`api.ipiavare.com.br`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api.loadbalancer.server.port=3030"
     environment:
       - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
+      - NODE_OPTIONS=--max-old-space-size=192
       - PORT=3030
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - MEMBER_SERVICE_URL=http://member-service:3006
-      - SCHEDULE_SERVICE_URL=http://schedule-service:3003
-      - EVENT_SERVICE_URL=http://event-service:3004
-      - NOTIFICATION_SERVICE_URL=http://notification-service:3005
-      - PRAYER_SERVICE_URL=http://prayer-service:3007
-      - FINANCIAL_SERVICE_URL=http://financial-service:3008
-      - CHAT_SERVICE_URL=http://chat-service:3002
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/church_db
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+      - CORS_ORIGIN=${CORS_ORIGIN:-}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3030/auth/google/callback}
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://evolution-api:8080}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
     depends_on:
-      auth-service:
+      postgres-db:
         condition: service_healthy
-      member-service:
-        condition: service_started
-      schedule-service:
-        condition: service_started
-      event-service:
-        condition: service_started
-      notification-service:
-        condition: service_started
-      prayer-service:
-        condition: service_started
-      financial-service:
-        condition: service_started
-      chat-service:
-        condition: service_started
     networks:
       - church-app-network
     healthcheck:
@@ -71,251 +55,9 @@ services:
       timeout: 10s
       retries: 5
       start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  auth-service:
-    image: ghcr.io/daniel-huudek/church-app/auth-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-auth-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=112
-      - PORT=3001
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/auth_db
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
-      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3030/auth/google/callback}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 160m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  member-service:
-    image: ghcr.io/daniel-huudek/church-app/member-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-member-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3006
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/member_db
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3006/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  schedule-service:
-    image: ghcr.io/daniel-huudek/church-app/schedule-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-schedule-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3003
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/schedule_db
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  event-service:
-    image: ghcr.io/daniel-huudek/church-app/event-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-event-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3004
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/event_db
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  notification-service:
-    image: ghcr.io/daniel-huudek/church-app/notification-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-notification-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3005
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/notification_db
-      - JWT_SECRET=${JWT_SECRET}
-      - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://evolution-api:8080}
-      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3005/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  prayer-service:
-    image: ghcr.io/daniel-huudek/church-app/prayer-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-prayer-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3007
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/prayer_db
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3007/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  financial-service:
-    image: ghcr.io/daniel-huudek/church-app/financial-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-financial-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3008
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/financial_db
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3008/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  worship-service:
-    image: ghcr.io/daniel-huudek/church-app/worship-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-worship-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3010
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/worship_db
-      - JWT_SECRET=${JWT_SECRET}
-      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3010/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
-
-  chat-service:
-    image: ghcr.io/daniel-huudek/church-app/chat-service:${IMAGE_TAG:-latest}
-    pull_policy: always
-    container_name: church-app-chat-service
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - NODE_OPTIONS=--max-old-space-size=96
-      - PORT=3002
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/chat_db
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - church-app-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    mem_limit: 128m
-    mem_reservation: 48m
-    cpus: 0.20
+    mem_limit: 320m
+    mem_reservation: 128m
+    cpus: 0.50
 
   postgres-db:
     image: postgres:16-alpine
@@ -324,7 +66,7 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=church_app
+      - POSTGRES_DB=church_db
     command:
       - postgres
       - -c
@@ -356,6 +98,3 @@ networks:
 
 volumes:
   postgres-data:
-
-
-

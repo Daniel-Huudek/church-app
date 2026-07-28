@@ -11,7 +11,7 @@ unset COMPOSE_BAKE || true
 
 PREFIX="ghcr.io/daniel-huudek/church-app"
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.build.yml"
-ALL="api-gateway auth-service member-service schedule-service event-service notification-service prayer-service financial-service worship-service chat-service"
+ALL="api"
 SERVICES="${*:-$ALL}"
 
 if [ -r /proc/meminfo ]; then
@@ -45,5 +45,5 @@ for svc in $SERVICES; do
 done
 
 echo
-echo "==> Pushed. No Dokploy: Redeploy (pull only)."
+echo "==> Pushed. On Dokploy: Redeploy (pull only)."
 echo "    Guide: docs/deploy-dokploy.md"

@@ -1,14 +1,14 @@
 # Church App - Sistema de Gerenciamento para Igrejas
 
-Plataforma completa de gerenciamento para igrejas com arquitetura de microserviços e app Flutter.
+Plataforma completa de gerenciamento para igrejas com **API monólito modular** e app Flutter.
 
 ## Stack
 
 ### Backend
 - Node.js 22 + TypeScript
-- Fastify
+- Fastify (monólito modular por domínio)
 - Prisma ORM
-- PostgreSQL 16
+- PostgreSQL 16 (`church_db`)
 - Docker + Docker Compose
 - pnpm workspaces
 
@@ -23,16 +23,8 @@ Plataforma completa de gerenciamento para igrejas com arquitetura de microservi�
 
 ```
 /apps
-  /api-gateway          - Gateway central (porta 3030)
-  /auth-service         - Autenticação (porta 3001)
-  /chat-service         - Chat (porta 3002)
-  /schedule-service     - Escalas (porta 3003)
-  /event-service        - Eventos (porta 3004)
-  /notification-service - WhatsApp/Evolution API (porta 3005)
-  /member-service       - Membros e ministérios (porta 3006)
-  /prayer-service       - Pedidos de oração (porta 3007)
-  /financial-service    - Gestão financeira (porta 3008)
-  /worship-service      - Louvor/músicas (porta 3010)
+  /api                  - API monólito modular (porta 3030)
+    /src/modules        - Domínios: auth, members, events, schedules, …
   /flutter              - App mobile Flutter
 
 /packages
@@ -59,36 +51,27 @@ pnpm install
 # Build do pacote shared
 pnpm --filter @church-app/shared build
 
-# Rodar todos os serviços em modo desenvolvimento
-pnpm dev
+# Gerar Prisma Client
+pnpm --filter @church-app/api db:generate
+
+# Rodar a API em modo desenvolvimento
+pnpm --filter @church-app/api dev
 
 # Build
 pnpm build
 
 # Docker
-docker-compose up -d
+docker compose up -d
 ```
 
-## Serviços
+## API
 
 | Serviço | Porta | Descrição |
 |---------|-------|-----------|
-| API Gateway | 3030 | Roteamento, auth JWT, RBAC |
-| Auth Service | 3001 | Login, OAuth Google |
-| Chat Service | 3002 | Salas e mensagens |
-| Schedule Service | 3003 | Escalas, confirmações |
-| Event Service | 3004 | Eventos, calendário |
-| Notification Service | 3005 | WhatsApp/Evolution API |
-| Member Service | 3006 | Membros, ministérios, perfis |
-| Prayer Service | 3007 | Pedidos de oração |
-| Financial Service | 3008 | Gestão financeira com RBAC |
-| Worship Service | 3010 | Músicas, playlists, escalas de louvor |
+| API | 3030 | Auth JWT, membros, eventos, escalas, oração, finanças, louvor, chat, notificações |
+
+Rotas públicas (compatíveis com o app Flutter): `/auth`, `/users`, `/members`, `/events`, `/schedules`, `/prayers`, `/finance`, `/worship`, `/chats`, `/notifications`.
 
 ## Deploy
 
-**Dokploy (VPS 4GB):** não buildar no servidor. Ver `docs/deploy-dokploy.md`.
-
-1. GitHub Actions publica imagens no GHCR  
-2. Dokploy só faz pull + up (`docker-compose.yml`)
-
-Build opcional no PC: `./scripts/docker-build-push-pc.sh`
+Ver `docs/deploy-dokploy.md` (VPS 4GB — só pull de imagem, sem build na VPS).

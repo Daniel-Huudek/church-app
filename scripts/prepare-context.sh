@@ -6,7 +6,7 @@ OUTDIR=${2:-/tmp/docker-context/$SERVICE}
 
 if [ -z "$SERVICE" ]; then
   echo "Usage: $0 <service-name> [output-dir]"
-  echo "Example: $0 auth-service"
+  echo "Example: $0 api"
   exit 1
 fi
 
