@@ -12,13 +12,13 @@ Seu código (git push)
 GitHub Actions "Docker Publish"
         │
         ▼
-ghcr.io/daniel-huudek/church-app/<serviço>:latest
+ghcr.io/daniel-huudek/church-app/api:latest
         │
         ▼
 Dokploy na VPS  →  pull  →  docker compose up
 ```
 
-A VPS de 4GB já usa ~1.2GB. Build local nela **trava**.
+A VPS de 4GB fica bem mais leve com **uma** API + Postgres (em vez de 10 containers Node).
 
 ---
 
@@ -30,10 +30,10 @@ A VPS de 4GB já usa ~1.2GB. Build local nela **trava**.
 
 (Alternativa no PC: `./scripts/docker-build-push-pc.sh` — ver `docs/deploy-pc-vps.md`)
 
-## Passo 2 — Packages públicos (uma vez)
+## Passo 2 — Package público (uma vez)
 
 1. GitHub → **Packages**
-2. Para cada `church-app/...` → **Package settings** → **Change visibility** → **Public**
+2. `church-app/api` → **Package settings** → **Change visibility** → **Public**
 
 Se ficar privado, o Dokploy precisa de login GHCR (`read:packages`).
 
@@ -47,7 +47,7 @@ Se ficar privado, o Dokploy precisa de login GHCR (`read:packages`).
    - `POSTGRES_USER`, `POSTGRES_PASSWORD`
    - `JWT_SECRET` (**obrigatório**)
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (se usar Google)
-   - opcional: `IMAGE_TAG=latest`
+   - opcional: `EVOLUTION_API_*`, `YOUTUBE_API_KEY`, `IMAGE_TAG=latest`
 5. Deploy / Redeploy
 
 O Dokploy deve fazer basicamente:
@@ -59,10 +59,18 @@ docker compose up -d
 ## Passo 4 — Dia a dia
 
 1. Você faz commit + push na `main`
-2. Actions publica imagens novas
-3. No Dokploy: **Redeploy** (pull das imagens novas)
+2. Actions publica a imagem `api`
+3. No Dokploy: **Redeploy** (pull da imagem nova)
 
 Não precisa buildar na VPS.
+
+---
+
+## Migração a partir dos microserviços
+
+Esta versão usa **um** banco `church_db` e a imagem `church-app/api`.  
+Em ambientes novos (volume Postgres limpo), o `prisma migrate deploy` cria o schema.  
+Se ainda tiver os DBs antigos (`auth_db`, `member_db`, …), faça backup e reimporte para `church_db` (ou suba com volume novo em staging primeiro).
 
 ---
 

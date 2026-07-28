@@ -36,11 +36,12 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @church-app/shared build
-      - name: Build shared packages and selected services
+      - name: Build shared packages and API
         run: |
           pnpm --filter @church-app/shared build
-          # Typecheck/build shared only for now; service builds need prisma generate per DB
-          echo "Shared build OK"
+          pnpm --filter @church-app/api db:generate
+          pnpm --filter @church-app/api build
+          echo "API build OK"
 
   security-audit:
     runs-on: ubuntu-latest
@@ -78,11 +79,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Smoke-build api-gateway (publish is docker-publish.yml)
+      - name: Smoke-build api (publish is docker-publish.yml)
         run: |
           docker build -f docker/Dockerfile.service \
-            --build-arg SERVICE=api-gateway \
+            --build-arg SERVICE=api \
             --build-arg PORT=3030 \
-            --build-arg PACKAGE_NAME=@church-app/api-gateway \
-            --build-arg HAS_PRISMA=false \
-            -t church-app-api-gateway:ci .
+            --build-arg PACKAGE_NAME=@church-app/api \
+            --build-arg HAS_PRISMA=true \
+            -t church-app-api:ci .

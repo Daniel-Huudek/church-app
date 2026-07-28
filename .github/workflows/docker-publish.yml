@@ -1,7 +1,7 @@
 name: Docker Publish
 
 # Build images on GitHub (not on the 4GB VPS) and push to GHCR.
-# VPS should only: docker compose -f docker-compose.yml -f docker-compose.prod.yml pull && up -d
+# VPS should only: docker compose -f docker-compose.yml pull && up -d
 
 on:
   push:
@@ -20,48 +20,11 @@ jobs:
       packages: write
     strategy:
       fail-fast: false
-      max-parallel: 3
       matrix:
         include:
-          - service: api-gateway
+          - service: api
             port: "3030"
-            package: "@church-app/api-gateway"
-            prisma: "false"
-          - service: auth-service
-            port: "3001"
-            package: "@church-app/auth-service"
-            prisma: "true"
-          - service: member-service
-            port: "3006"
-            package: "@church-app/member-service"
-            prisma: "true"
-          - service: schedule-service
-            port: "3003"
-            package: "@church-app/schedule-service"
-            prisma: "true"
-          - service: event-service
-            port: "3004"
-            package: "@church-app/event-service"
-            prisma: "true"
-          - service: notification-service
-            port: "3005"
-            package: "@church-app/notification-service"
-            prisma: "true"
-          - service: prayer-service
-            port: "3007"
-            package: "@church-app/prayer-service"
-            prisma: "true"
-          - service: financial-service
-            port: "3008"
-            package: "@church-app/financial-service"
-            prisma: "true"
-          - service: worship-service
-            port: "3010"
-            package: "@church-app/worship-service"
-            prisma: "true"
-          - service: chat-service
-            port: "3002"
-            package: "@church-app/chat-service"
+            package: "@church-app/api"
             prisma: "true"
     steps:
       - uses: actions/checkout@v4
