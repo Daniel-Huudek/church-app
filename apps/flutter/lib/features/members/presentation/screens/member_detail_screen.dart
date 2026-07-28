@@ -55,7 +55,7 @@ class MemberDetailScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(memberDetailProvider(id));
 
-    if (state.loading) {
+    if (state.loading && state.member == null) {
       return Scaffold(
         body: SafeArea(
           child: Center(
@@ -72,7 +72,7 @@ class MemberDetailScreen extends ConsumerWidget {
       );
     }
 
-    if (state.error != null) {
+    if (state.error != null && state.member == null) {
       return Scaffold(
         body: SafeArea(
           child: Center(child: Text('Erro: ${state.error}')),

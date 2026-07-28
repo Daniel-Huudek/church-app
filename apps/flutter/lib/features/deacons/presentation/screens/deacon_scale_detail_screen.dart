@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/network/api_client.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../../../shared/providers/auth_provider.dart';
-import '../../../events/data/event_api.dart';
-import '../../../members/data/member_api.dart';
-import '../../../schedules/data/schedule_api.dart';
+import '../../../events/presentation/providers/event_provider.dart';
+import '../../../members/presentation/providers/member_provider.dart';
 import '../../../schedules/domain/schedule_model.dart';
+import '../../../schedules/presentation/providers/schedule_provider.dart';
 
 class DeaconScaleDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -33,19 +33,28 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
 
   Future<void> _load() async {
     setState(() {
-      _loading = true;
+      _loading = _schedule == null;
       _error = null;
     });
     try {
-      final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
-      final eventApi = EventApi(ref.read(apiClientProvider));
-      final memberApi = MemberApi(ref.read(apiClientProvider));
+      final scheduleRepo = ref.read(scheduleRepositoryProvider);
+      final eventRepo = ref.read(eventRepositoryProvider);
+      final memberRepo = ref.read(memberRepositoryProvider);
 
-      final schedule = await scheduleApi.getById(widget.id);
+      final cached = scheduleRepo.peekDetailCache(widget.id);
+      if (cached != null && mounted) {
+        setState(() {
+          _schedule = cached;
+          _title = cached.eventName ?? _title;
+          _loading = false;
+        });
+      }
+
+      final schedule = (await scheduleRepo.getById(widget.id)).data;
       var title = schedule.eventName ?? 'Escala de Diáconos';
       if (schedule.eventId != null) {
         try {
-          final event = await eventApi.getById(schedule.eventId!);
+          final event = (await eventRepo.getById(schedule.eventId!)).data;
           title = event.title;
         } catch (_) {}
       }
@@ -56,7 +65,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
         final memberId = position.memberId;
         if (memberId == null) continue;
         try {
-          final member = await memberApi.getById(memberId);
+          final member = (await memberRepo.getById(memberId)).data;
           names[memberId] = member.name;
           userIds[memberId] = member.userId;
         } catch (_) {
@@ -76,16 +85,24 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        if (_schedule == null) _error = e.toString();
       });
     }
   }
 
   Future<void> _confirm(SchedulePosition position, bool confirmed) async {
     try {
-      final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
-      await scheduleApi.confirmPresence(_schedule!.id, position.id, confirmed: confirmed);
+      final outcome = await ref.read(scheduleRepositoryProvider).confirmPresence(
+            _schedule!.id,
+            position.id,
+            confirmed: confirmed,
+          );
       await _load();
+      if (!mounted) return;
+      if (outcome.queued) {
+        notifyMutationQueueChanged(ref);
+        showQueuedSyncSnackBar(context);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
@@ -102,7 +119,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
     final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
     final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
 
-    if (_loading) {
+    if (_loading && _schedule == null) {
       return Scaffold(backgroundColor: bg, body: const Center(child: CircularProgressIndicator()));
     }
     if (_error != null || _schedule == null) {

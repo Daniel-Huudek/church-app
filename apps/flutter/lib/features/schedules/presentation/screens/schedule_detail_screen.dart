@@ -18,14 +18,14 @@ class ScheduleDetailScreen extends ConsumerWidget {
     final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
     final state = ref.watch(scheduleDetailProvider(id));
 
-    if (state.loading) {
+    if (state.loading && state.schedule == null) {
       return Scaffold(
         backgroundColor: bg,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (state.error != null) {
+    if (state.error != null && state.schedule == null) {
       return Scaffold(
         backgroundColor: bg,
         body: Center(child: Text('Erro: ${state.error}')),

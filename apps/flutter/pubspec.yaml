@@ -28,6 +28,9 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   shared_preferences: ^2.3.4
 
+  # Offline
+  connectivity_plus: ^6.1.1
+
   # Charts
   fl_chart: ^0.69.2
 

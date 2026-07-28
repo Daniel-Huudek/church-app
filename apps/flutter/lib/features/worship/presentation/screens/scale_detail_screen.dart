@@ -4,11 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../../../shared/providers/auth_provider.dart';
-import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
-import '../../../events/data/event_api.dart';
 import '../../../events/domain/event_model.dart';
+import '../../../events/presentation/providers/event_provider.dart';
+import '../providers/worship_provider.dart';
 
 class ScaleDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -32,14 +33,26 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
 
   Future<void> _load() async {
     try {
-      final worshipApi = WorshipApi(ref.read(apiClientProvider));
-      final eventApi = EventApi(ref.read(apiClientProvider));
-      final data = await worshipApi.getWorshipEvent(widget.id);
-      final we = WorshipEvent.fromJson(data);
+      final worshipRepo = ref.read(worshipRepositoryProvider);
+      final eventRepo = ref.read(eventRepositoryProvider);
+
+      final cached = worshipRepo.peekWorshipEventCache(widget.id);
+      if (cached != null && mounted) {
+        setState(() {
+          _worshipEvent = cached;
+          _event = eventRepo.peekDetailCache(cached.eventId);
+          _loading = false;
+        });
+      }
+
+      final result = await worshipRepo.getWorshipEvent(widget.id);
+      final we = result.data;
       EventModel? ev;
       try {
-        ev = await eventApi.getById(we.eventId);
-      } catch (_) {}
+        ev = (await eventRepo.getById(we.eventId)).data;
+      } catch (_) {
+        ev = eventRepo.peekDetailCache(we.eventId);
+      }
       List<Map<String, dynamic>> users = [];
       try {
         final usersResponse = await ref.read(apiClientProvider).get('/users');
@@ -57,14 +70,17 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && _worshipEvent == null) setState(() => _loading = false);
     }
   }
 
   Future<void> _confirmPresence(WorshipEventMusician musician, String status) async {
     try {
-      final api = WorshipApi(ref.read(apiClientProvider));
-      await api.confirmMusician(widget.id, musician.memberId, status: status);
+      final outcome = await ref.read(worshipRepositoryProvider).confirmMusician(
+            widget.id,
+            musician.memberId,
+            status: status,
+          );
       if (mounted) {
         final we = _worshipEvent;
         if (we != null) {
@@ -85,6 +101,10 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
               songs: we.songs, musicians: updated, playlist: we.playlist,
             );
           });
+        }
+        if (outcome.queued) {
+          notifyMutationQueueChanged(ref);
+          showQueuedSyncSnackBar(context);
         }
       }
     } catch (_) {}
@@ -110,8 +130,11 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     if (confirm != true) return;
 
     try {
-      final api = WorshipApi(ref.read(apiClientProvider));
-      await api.confirmMusician(widget.id, musician.memberId, status: 'indisponivel');
+      final outcome = await ref.read(worshipRepositoryProvider).confirmMusician(
+            widget.id,
+            musician.memberId,
+            status: 'indisponivel',
+          );
       if (mounted) {
         final we = _worshipEvent;
         if (we != null) {
@@ -136,7 +159,9 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Ausência registrada'),
+            content: Text(outcome.queued
+                ? 'Ausência salva offline — sincroniza depois'
+                : 'Ausência registrada'),
             backgroundColor: const Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -144,6 +169,9 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
+        if (outcome.queued) {
+          notifyMutationQueueChanged(ref);
+        }
       }
     } catch (_) {}
   }

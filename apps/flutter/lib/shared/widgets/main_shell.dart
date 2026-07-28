@@ -6,6 +6,7 @@ import '../../core/config/theme/app_colors.dart';
 import '../../core/router/app_routes.dart';
 import 'drawer_overlay.dart';
 import 'custom_bottom_bar.dart';
+import 'offline_banner.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
@@ -28,53 +29,91 @@ class _MainShellState extends ConsumerState<MainShell> {
     final currentRoute = GoRouterState.of(context).matchedLocation;
 
     return Scaffold(
-      body: Stack(
+      body: Column(
         children: [
-          widget.child,
-          if (_drawerVisible)
-            DrawerOverlay(
-              isDark: isDark,
-              onClose: () => setState(() => _drawerVisible = false),
+          const OfflineBanner(),
+          Expanded(
+            child: Stack(
+              children: [
+                widget.child,
+                if (_drawerVisible)
+                  DrawerOverlay(
+                    isDark: isDark,
+                    onClose: () => setState(() => _drawerVisible = false),
+                  ),
+                if (user != null &&
+                    !currentRoute.startsWith(AppRoutes.worship) &&
+                    !currentRoute.startsWith(AppRoutes.deacons) &&
+                    !currentRoute.startsWith(AppRoutes.finance) &&
+                    !currentRoute.startsWith(AppRoutes.bible) &&
+                    !currentRoute.startsWith(AppRoutes.calendar) &&
+                    currentRoute != AppRoutes.dashboard &&
+                    user.hasAnyRole([
+                      'ADMINISTRADOR',
+                      'PASTOR',
+                      'LIDER',
+                      'LIDER_LOUVOR',
+                      'LOUVOR',
+                      'LIDER_DIACONOS',
+                      'DIACONO',
+                      'FINANCEIRO',
+                    ]))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (user.hasAnyRole([
+                            'ADMINISTRADOR',
+                            'PASTOR',
+                            'LIDER',
+                            'LIDER_LOUVOR',
+                            'LOUVOR',
+                          ]))
+                            _sideButton(
+                              icon: Icons.music_note_rounded,
+                              label: 'Louvor',
+                              grad: const [AppColors.primary, AppColors.primaryDark],
+                              onTap: () => context.go(AppRoutes.worship),
+                            ),
+                          if (user.hasAnyRole([
+                            'ADMINISTRADOR',
+                            'PASTOR',
+                            'DIACONO',
+                            'LIDER_DIACONOS',
+                          ])) ...[
+                            const SizedBox(height: 10),
+                            _sideButton(
+                              icon: Icons.volunteer_activism_rounded,
+                              label: 'Diáconos',
+                              grad: const [Color(0xFF0EA5E9), Color(0xFF0284C7)],
+                              onTap: () => context.go(AppRoutes.deacons),
+                            ),
+                          ],
+                          if (user.hasAnyRole([
+                            'ADMINISTRADOR',
+                            'PASTOR',
+                            'FINANCEIRO',
+                          ])) ...[
+                            const SizedBox(height: 10),
+                            _sideButton(
+                              icon: Icons.dashboard_rounded,
+                              label: '',
+                              grad: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                              onTap: () => context.go(AppRoutes.dashboard),
+                              height: 56,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          if (user != null && !currentRoute.startsWith(AppRoutes.worship) && !currentRoute.startsWith(AppRoutes.deacons) && !currentRoute.startsWith(AppRoutes.finance) && !currentRoute.startsWith(AppRoutes.bible) && !currentRoute.startsWith(AppRoutes.calendar) && currentRoute != AppRoutes.dashboard && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR', 'LIDER_DIACONOS', 'DIACONO', 'FINANCEIRO']))
-            Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR']))
-                      _sideButton(
-                        icon: Icons.music_note_rounded,
-                        label: 'Louvor',
-                        grad: const [AppColors.primary, AppColors.primaryDark],
-                        onTap: () => context.go(AppRoutes.worship),
-                      ),
-                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'DIACONO', 'LIDER_DIACONOS'])) ...[
-                      const SizedBox(height: 10),
-                      _sideButton(
-                        icon: Icons.volunteer_activism_rounded,
-                        label: 'Diáconos',
-                        grad: const [Color(0xFF0EA5E9), Color(0xFF0284C7)],
-                        onTap: () => context.go(AppRoutes.deacons),
-                      ),
-                    ],
-                    if (user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO'])) ...[
-                      const SizedBox(height: 10),
-                      _sideButton(
-                        icon: Icons.dashboard_rounded,
-                        label: '',
-                        grad: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-                        onTap: () => context.go(AppRoutes.dashboard),
-                        height: 56,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+          ),
         ],
       ),
       bottomNavigationBar: widget.hideNav
@@ -124,12 +163,15 @@ class _MainShellState extends ConsumerState<MainShell> {
                 children: [
                   Icon(icon, color: Colors.white, size: 26),
                   const SizedBox(height: 6),
-                  Text(label, style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  )),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ],
               ),
       ),

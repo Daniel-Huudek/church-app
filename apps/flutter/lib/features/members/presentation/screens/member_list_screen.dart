@@ -7,6 +7,7 @@ import '../../../../shared/widgets/app_chip.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
 import '../providers/member_provider.dart';
 
@@ -53,9 +54,12 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(AppRoutes.membersCreate),
-        child: const Icon(Icons.add),
+      floatingActionButton: Opacity(
+        opacity: watchIsOnline(ref) ? 1 : 0.45,
+        child: FloatingActionButton(
+          onPressed: guardOnlineAction(context, ref, () => context.push(AppRoutes.membersCreate)),
+          child: const Icon(Icons.add),
+        ),
       ),
       body: Column(
         children: [
@@ -78,9 +82,9 @@ class _MemberListScreenState extends ConsumerState<MemberListScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Expanded(
-            child: state.loading
+            child: state.loading && state.data.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : state.error != null
+                : state.error != null && state.data.isEmpty
                     ? Center(child: Text('Erro: ${state.error}'))
                     : members.isEmpty
                         ? const AppEmptyState(

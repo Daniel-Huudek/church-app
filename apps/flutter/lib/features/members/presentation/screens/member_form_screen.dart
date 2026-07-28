@@ -82,8 +82,8 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   Future<void> _loadMember() async {
     setState(() => _loading = true);
     try {
-      final member = await ref.read(memberApiProvider).getById(widget.memberId!);
-      _fill(member);
+      final result = await ref.read(memberRepositoryProvider).getById(widget.memberId!);
+      _fill(result.data);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao carregar: $e')));

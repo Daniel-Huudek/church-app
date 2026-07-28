@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../domain/event_model.dart';
 import '../providers/event_provider.dart';
 
@@ -272,9 +273,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
             // Event list
             Expanded(
-              child: state.loading
+              child: state.loading && state.data.isEmpty
                   ? const Center(child: CircularProgressIndicator())
-                  : state.error != null
+                  : state.error != null && state.data.isEmpty
                       ? Center(child: Text('Erro: ${state.error}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black45)))
                       : selectedEvents.isEmpty
                           ? _emptyDay(isDark, accent)
@@ -295,11 +296,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/calendar/create'),
-        backgroundColor: const Color(0xFF008CFF),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Opacity(
+        opacity: watchIsOnline(ref) ? 1 : 0.45,
+        child: FloatingActionButton(
+          onPressed: guardOnlineAction(context, ref, () => context.push('/calendar/create')),
+          backgroundColor: const Color(0xFF008CFF),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }

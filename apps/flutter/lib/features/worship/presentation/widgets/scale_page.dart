@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../../core/network/api_client.dart';
+import '../../../../../core/offline/offline_guard.dart';
 import '../../../../../shared/providers/auth_provider.dart';
-import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
-import '../../../events/data/event_api.dart';
 import '../../../events/domain/event_model.dart';
+import '../../../events/presentation/providers/event_provider.dart';
+import '../providers/worship_provider.dart';
 import 'segmented_tab.dart';
 
 class ScaleCardData {
@@ -45,24 +45,41 @@ class _ScalePageState extends ConsumerState<ScalePage> {
 
   Future<void> _load() async {
     try {
-      final worshipApi = WorshipApi(ref.read(apiClientProvider));
-      final eventApi = EventApi(ref.read(apiClientProvider));
-      final res = await worshipApi.listWorshipEvents(limit: 50);
-      final data = (res['data'] as List?) ?? [];
-      final events = data.map((e) => WorshipEvent.fromJson(e as Map<String, dynamic>)).toList();
+      final worshipRepo = ref.read(worshipRepositoryProvider);
+      final eventRepo = ref.read(eventRepositoryProvider);
+
+      final cachedEvents = worshipRepo.peekWorshipEventsCache();
+      if (cachedEvents != null && cachedEvents.isNotEmpty && mounted) {
+        final cachedItems = <ScaleCardData>[];
+        for (final we in cachedEvents) {
+          final eventModel = eventRepo.peekDetailCache(we.eventId);
+          cachedItems.add(ScaleCardData(worshipEvent: we, event: eventModel));
+        }
+        setState(() {
+          _items = cachedItems;
+          _loading = false;
+        });
+      }
+
+      final result = await worshipRepo.listWorshipEvents(limit: 50);
       final items = <ScaleCardData>[];
-      for (final we in events) {
+      for (final we in result.data) {
         EventModel? eventModel;
         try {
-          eventModel = await eventApi.getById(we.eventId);
-        } catch (_) {}
+          eventModel = (await eventRepo.getById(we.eventId)).data;
+        } catch (_) {
+          eventModel = eventRepo.peekDetailCache(we.eventId);
+        }
         items.add(ScaleCardData(worshipEvent: we, event: eventModel));
       }
       if (mounted) {
-        setState(() { _items = items; _loading = false; });
+        setState(() {
+          _items = items;
+          _loading = false;
+        });
       }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && _items.isEmpty) setState(() => _loading = false);
     }
   }
 
@@ -226,18 +243,24 @@ class _ScalePageState extends ConsumerState<ScalePage> {
             alignment: Alignment.bottomRight,
             child: Padding(
               padding: const EdgeInsets.only(right: 20, bottom: 20),
-              child: GestureDetector(
-                onTap: () async { await context.push('/worship/scale/create'); _load(); },
-                child: Container(
-                  width: 56, height: 56,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF008CFF),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
-                    ],
+              child: Opacity(
+                opacity: watchIsOnline(ref) ? 1 : 0.45,
+                child: GestureDetector(
+                  onTap: guardOnlineAction(context, ref, () async {
+                    await context.push('/worship/scale/create');
+                    _load();
+                  }),
+                  child: Container(
+                    width: 56, height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF008CFF),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
                   ),
-                  child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
                 ),
               ),
             ),
