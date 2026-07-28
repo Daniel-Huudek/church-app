@@ -1,14 +1,15 @@
 # @church-app/web — Site da Primeira IPI Avaré
 
-Site institucional público da **Primeira Igreja Presbiteriana Independente de Avaré**.
+Site institucional público baseado no layout Figma da **IPI Avaré**.
 
-## Conteúdo
+## Seções
 
-- Hero com marca (logo farol / IPI Avaré)
-- Horários de culto
-- Sobre a igreja
-- Ministérios
-- Como visitar (endereço, telefone, e-mail, mapa)
+- Header (Nossa Igreja, O que somos, IPI Comunica, redes, Conectar)
+- Banner da série + Eventos e Programações
+- Palavra da semana
+- Notícias IPI Avaré
+- Nossas Transmissões
+- Footer (links, contato, mapa)
 
 Dados editáveis em `src/data/church.ts`.
 
@@ -26,5 +27,3 @@ Abre em `http://localhost:5173`.
 pnpm --filter @church-app/web build
 pnpm --filter @church-app/web preview
 ```
-
-Saída estática em `apps/web/dist` — pode ser servida por Nginx, Cloudflare Pages, Vercel, etc.

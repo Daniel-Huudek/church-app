@@ -1,68 +1,81 @@
 export const church = {
-  brand: 'Primeira IPI Avaré',
-  shortName: 'IPI Avaré',
-  fullName: 'Primeira Igreja Presbiteriana Independente de Avaré',
-  denomination: 'Igreja Presbiteriana Independente do Brasil',
-  tagline: 'Uma comunidade guiada pela Palavra',
-  mission:
-    'Somos uma igreja cristã que procura viver os ensinamentos de Cristo, tornando-os relevantes para o nosso tempo — com acolhimento, adoração e serviço em Avaré.',
-  pastor: 'Rev. Alessandro Richter',
-  address: {
-    street: 'Rua Goiás, 1142',
-    neighborhood: 'Centro',
-    city: 'Avaré',
-    state: 'SP',
-    zip: '18700-140',
-    full: 'Rua Goiás, 1142 — Centro, Avaré/SP — CEP 18700-140',
+  brand: 'IPI Avaré',
+  logoLabel: 'PRIMEIRA IPI AVARÉ',
+  fullName: '1ª Igreja Presbiteriana Independente de Avaré',
+  about:
+    'A 1ª Igreja IPI de Avaré com o objetivo de levar a todos o amor e a salvação que existem em Jesus Cristo.',
+  nav: [
+    { label: 'Nossa Igreja', href: '#nossa-igreja' },
+    { label: 'O que somos', href: '#o-que-somos' },
+    {
+      label: 'IPI Comunica',
+      href: '#ipi-comunica',
+      children: [
+        { label: 'Notícias', href: '#noticias' },
+        { label: 'Transmissões', href: '#transmissoes' },
+        { label: 'Palavra da semana', href: '#palavra' },
+      ],
+    },
+  ] as const,  social: [
+    { label: 'Facebook', href: '#', icon: 'facebook' as const },
+    { label: 'Instagram', href: '#', icon: 'instagram' as const },
+    { label: 'YouTube', href: '#', icon: 'youtube' as const },
+  ],
+  series: {
+    title: 'Adoração e soberania de Deus',
+    subtitle: 'Igreja adoradora',
+    caption: 'Série de mensagens',
   },
-  phone: '(14) 3733-3020',
-  phoneHref: 'tel:+551437333020',
-  email: 'primeiraipiavare@gmail.com',
-  emailHref: 'mailto:primeiraipiavare@gmail.com',
-  mapUrl:
-    'https://www.google.com/maps/search/?api=1&query=Rua+Goi%C3%A1s+1142+Avar%C3%A9+SP',
-  services: [
+  events: [
     {
-      day: 'Domingo',
-      time: '09h00',
-      title: 'Culto matutino',
-      note: 'Adoração, Palavra e comunhão',
+      title: 'Projeto Ipi Avaré',
+      date: '3 de agosto de 2025',
+      time: '12:00',
     },
     {
-      day: 'Domingo',
-      time: '19h00',
-      title: 'Culto noturno',
-      note: 'Venha como está — você é bem-vindo',
+      title: 'Projeto Ipi Avaré',
+      date: '10 de agosto de 2025',
+      time: '12:00',
     },
     {
-      day: 'Quarta',
-      time: '19h30',
-      title: 'Estudo bíblico',
-      note: 'Crescimento na Palavra juntos',
-    },
-  ] as const,
-  /**
-   * Horários iniciais — confirmar com a secretaria e ajustar neste arquivo.
-   * Fonte de contato oficial IPIB: (14) 3733-3020 / primeiraipiavare@gmail.com
-   */
-  servicesNote:
-    'Horários sujeitos a confirmação pela secretaria. Ligue para validar a programação da semana.',
-  ministries: [
-    {
-      name: 'Louvor',
-      description: 'Música e adoração que apontam para Cristo.',
+      title: 'Projeto Ipi Avaré',
+      date: '17 de agosto de 2025',
+      time: '12:00',
     },
     {
-      name: 'Diaconato',
-      description: 'Cuidado prático e acolhimento à comunidade.',
-    },
-    {
-      name: 'Crianças e adolescentes',
-      description: 'Formação e discipulado das novas gerações.',
-    },
-    {
-      name: 'Intercessão',
-      description: 'Oração pela igreja, pela cidade e pelas famílias.',
+      title: 'Projeto Ipi Avaré',
+      date: '24 de agosto de 2025',
+      time: '12:00',
     },
   ],
+  weeklyWord: {
+    text: 'Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento com a destra da minha justiça.',
+    reference: 'Isaías 41:10',
+  },
+  news: [
+    { id: 'n1', title: 'Notícia 1' },
+    { id: 'n2', title: 'Notícia 2' },
+    { id: 'n3', title: 'Notícia 3' },
+    { id: 'n4', title: 'Notícia 4' },
+  ],
+  streams: [
+    { id: 's1', title: 'Transmissão 1' },
+    { id: 's2', title: 'Transmissão 2' },
+    { id: 's3', title: 'Transmissão 3' },
+    { id: 's4', title: 'Transmissão 4' },
+  ],
+  usefulLinks: [
+    { label: 'Notícias', href: '#noticias' },
+    { label: 'O que nós Cremos', href: '#o-que-somos' },
+    { label: 'Eventos', href: '#eventos' },
+  ],
+  address: {
+    line: 'R. Goiás, 1142 — Centro, Avaré — SP, 18700-140',
+    email: 'escritorio@ipiavare.com.br',
+    emailHref: 'mailto:escritorio@ipiavare.com.br',
+    mapUrl:
+      'https://www.google.com/maps/search/?api=1&query=Rua+Goi%C3%A1s+1142+Avar%C3%A9+SP',
+    mapEmbed:
+      'https://maps.google.com/maps?q=Rua%20Goi%C3%A1s%201142%20Avar%C3%A9%20SP&t=&z=16&ie=UTF8&iwloc=&output=embed',
+  },
 } as const;
