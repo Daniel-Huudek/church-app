@@ -18,7 +18,7 @@ class EventDetailScreen extends ConsumerWidget {
     final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
     final state = ref.watch(eventDetailProvider(id));
 
-    if (state.loading) {
+    if (state.loading && state.event == null) {
       return Scaffold(
         backgroundColor: bg,
         appBar: AppBar(backgroundColor: const Color(0xFF008CFF), foregroundColor: Colors.white, elevation: 0),
@@ -26,7 +26,7 @@ class EventDetailScreen extends ConsumerWidget {
       );
     }
 
-    if (state.error != null) {
+    if (state.error != null && state.event == null) {
       return Scaffold(
         backgroundColor: bg,
         appBar: AppBar(

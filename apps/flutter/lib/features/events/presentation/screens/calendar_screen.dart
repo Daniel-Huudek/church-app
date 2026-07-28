@@ -272,9 +272,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
             // Event list
             Expanded(
-              child: state.loading
+              child: state.loading && state.data.isEmpty
                   ? const Center(child: CircularProgressIndicator())
-                  : state.error != null
+                  : state.error != null && state.data.isEmpty
                       ? Center(child: Text('Erro: ${state.error}', style: TextStyle(color: isDark ? Colors.white60 : Colors.black45)))
                       : selectedEvents.isEmpty
                           ? _emptyDay(isDark, accent)
