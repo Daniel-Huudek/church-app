@@ -42,29 +42,19 @@ echo "    IMAGE_TAG=$IMAGE_TAG"
 echo "    Services: $SERVICES"
 echo
 
-# Ensure login
-if ! docker pull hello-world >/dev/null 2>&1; then
-  true
-fi
-if ! docker buildx version >/dev/null 2>&1; then
-  echo "Docker buildx not found. Install/update Docker Desktop."
+# Ensure GHCR login
+if [ -n "${GHCR_TOKEN:-}" ] && [ -n "${GHCR_USER:-}" ]; then
+  echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+elif ! docker buildx imagetools inspect ghcr.io/daniel-huudek/church-app/api-gateway:latest >/dev/null 2>&1 \
+  && [ ! -f "${HOME}/.docker/config.json" ]; then
+  echo "Faça login no GHCR antes:"
+  echo "  export GHCR_USER=seu-usuario-github"
+  echo "  export GHCR_TOKEN=ghp_xxx   # write:packages"
+  echo "  echo \"\$GHCR_TOKEN\" | docker login ghcr.io -u \"\$GHCR_USER\" --password-stdin"
   exit 1
 fi
 
-if ! grep -q "ghcr.io" "${HOME}/.docker/config.json" 2>/dev/null \
-   && ! grep -q "ghcr.io" "${HOME}/.docker/config.json" 2>/dev/null; then
-  if [ -n "${GHCR_TOKEN:-}" ] && [ -n "${GHCR_USER:-}" ]; then
-    echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-  else
-    echo "Not logged in to ghcr.io."
-    echo "  export GHCR_USER=seu-usuario-github"
-    echo "  export GHCR_TOKEN=ghp_xxx   # write:packages"
-    echo "  echo \"\$GHCR_TOKEN\" | docker login ghcr.io -u \"\$GHCR_USER\" --password-stdin"
-    echo "Or run: docker login ghcr.io"
-    exit 1
-  fi
-fi
-
+# If config exists but login expired, push will fail with a clear error from Docker.
 for svc in $SERVICES; do
   echo "────────────────────────────────────────"
   echo "==> Building $svc ..."
