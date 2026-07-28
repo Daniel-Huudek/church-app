@@ -9,27 +9,32 @@
 - **Validação:** Zod
 - **Auth:** JWT (jsonwebtoken + @fastify/jwt) + bcryptjs + Google OAuth
 - **Mobile:** Flutter 3.5+ (Riverpod + GoRouter + Dio)
+- **Web:** Vite + React + TypeScript (`apps/web` — site público IPI Avaré)
 - **Infra:** Docker Compose + Traefik + PostgreSQL 16
 
 ## Monorepo Structure
 
 ```
 church-app/
-├── apps/                          # Backend + Mobile
+├── apps/                          # Backend + Mobile + Web
 │   ├── api/                       # Monólito modular (porta 3030)
 │   │   ├── prisma/                # Schema unificado + migrations
 │   │   └── src/modules/           # Domínios: auth, members, events, …
-│   └── flutter/                   # App mobile (Dart/Flutter)
+│   ├── flutter/                   # App mobile (Dart/Flutter)
+│   └── web/                       # Site público IPI Avaré (porta 5173)
 ├── packages/                      # Pacotes compartilhados
 │   ├── shared/   -> @church-app/shared    # errors, logger, validation, http-client, rbac
 │   ├── tsconfig/ -> @church-app/tsconfig  # Base TS config (estendida por todos)
 │   └── eslint-config/ -> @church-app/eslint-config  # ESLint config
 ├── docker/
-│   ├── Dockerfile.service         # Imagem multi-stage compartilhada
-│   ├── start-service.sh           # Entrypoint de produção
+│   ├── Dockerfile.service         # Imagem multi-stage da API
+│   ├── Dockerfile.web             # Site Vite → nginx (estático)
+│   ├── nginx-web.conf             # SPA + /healthz
+│   ├── start-web.sh               # Injeta WEB_API_URL em /config.js
+│   ├── start-service.sh           # Entrypoint de produção (API)
 │   └── postgres/init.sql          # Init do Postgres
 ├── docker-bake.hcl                # Build (buildx bake)
-├── docker-compose.yml             # api + postgres
+├── docker-compose.yml             # api + web + postgres
 └── .github/workflows/ci.yml       # CI: lint, test, build, security-audit, docker-build
 ```
 
@@ -65,12 +70,12 @@ Imagem Docker: `docker/Dockerfile.service` (args `SERVICE=api` / `PORT=3030` / `
 
 ### Container
 - **Dokploy / VPS 4GB:** nunca buildar na VPS — ver `docs/deploy-dokploy.md`
-- Imagem: `ghcr.io/daniel-huudek/church-app/api` via `.github/workflows/docker-publish.yml`
+- Imagens: `ghcr.io/daniel-huudek/church-app/api` e `.../web` via `.github/workflows/docker-publish.yml`
 - `docker-compose.yml` **sem** `build:` (só `image:` + `pull_policy: always`)
 - Build opcional no PC: `docker-compose.build.yml` + `./scripts/docker-build-push-pc.sh`
-- Dockerfile multi-stage: `docker/Dockerfile.service`
-- Runtime: bundle esbuild + `node dist/index.js`; migrations via `prisma migrate deploy`
-- Heap ~192MB; `mem_limit: 320m` para a API
+- API: `docker/Dockerfile.service` — bundle esbuild + `node dist/index.js`; migrations via `prisma migrate deploy`
+- Web: `docker/Dockerfile.web` — Vite build + nginx; runtime `WEB_API_URL` → `/config.js`
+- Heap ~192MB; `mem_limit: 320m` (API), `64m` (web)
 
 ### Banco de Dados
 - Um PostgreSQL (`church_db`) com schema Prisma unificado
@@ -83,8 +88,9 @@ Imagem Docker: `docker/Dockerfile.service` (args `SERVICE=api` / `PORT=3030` / `
 - RBAC no módulo finance usa `authorize()` / `assertFinanceWriteRole`
 
 ### Rotas
-- API expõe: `/auth/*`, `/members/*`, `/events/*`, `/schedules/*`, `/notifications/*`, `/prayers/*`, `/finance/*`, `/users/*`, `/worship/*`, `/chats/*`
+- API expõe: `/auth/*`, `/members/*`, `/events/*`, `/schedules/*`, `/notifications/*`, `/prayers/*`, `/finance/*`, `/users/*`, `/worship/*`, `/chats/*`, `/website`
 - Health: `GET /health`
+- Website CMS: `GET /website` (público), `PUT /website` (ADMINISTRADOR/PASTOR), `POST /website/uploads` (S3)
 
 ### Padrões de código
 - Fastify + async/await

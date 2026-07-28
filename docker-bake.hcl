@@ -6,8 +6,12 @@ variable "TAG" {
   default = "latest"
 }
 
+variable "WEB_API_URL" {
+  default = "https://api.ipiavare.com.br"
+}
+
 group "default" {
-  targets = ["api"]
+  targets = ["api", "web"]
 }
 
 target "service-base" {
@@ -25,4 +29,14 @@ target "api" {
     HAS_PRISMA   = "true"
   }
   tags = ["church-app-api:${TAG}"]
+}
+
+target "web" {
+  context    = "."
+  dockerfile = "docker/Dockerfile.web"
+  platforms  = ["linux/amd64"]
+  args = {
+    VITE_API_URL = "${WEB_API_URL}"
+  }
+  tags = ["church-app-web:${TAG}"]
 }

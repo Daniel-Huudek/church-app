@@ -829,3 +829,13 @@ model SongHistory {
   @@index([date])
 }
 
+/// Conteúdo público do site institucional (CMS editável no app)
+model WebsiteContent {
+  id        String   @id @default("default")
+  content   Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("website_contents")
+}
+

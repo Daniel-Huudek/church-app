@@ -13,12 +13,13 @@ GitHub Actions "Docker Publish"
         │
         ▼
 ghcr.io/daniel-huudek/church-app/api:latest
+ghcr.io/daniel-huudek/church-app/web:latest
         │
         ▼
 Dokploy na VPS  →  pull  →  docker compose up
 ```
 
-A VPS de 4GB fica bem mais leve com **uma** API + Postgres (em vez de 10 containers Node).
+A VPS de 4GB fica leve com **API + site estático (nginx) + Postgres**.
 
 ---
 
@@ -26,14 +27,15 @@ A VPS de 4GB fica bem mais leve com **uma** API + Postgres (em vez de 10 contain
 
 1. Mergeie o PR deste fluxo na `main`
 2. GitHub → **Actions** → **Docker Publish** → **Run workflow**
-3. Espere ficar verde
+3. Espere ficar verde (publica `api` e `web`)
 
 (Alternativa no PC: `./scripts/docker-build-push-pc.sh` — ver `docs/deploy-pc-vps.md`)
 
-## Passo 2 — Package público (uma vez)
+## Passo 2 — Packages públicos (uma vez)
 
 1. GitHub → **Packages**
-2. `church-app/api` → **Package settings** → **Change visibility** → **Public**
+2. Para cada pacote (`church-app/api` e `church-app/web`):
+   **Package settings** → **Change visibility** → **Public**
 
 Se ficar privado, o Dokploy precisa de login GHCR (`read:packages`).
 
@@ -46,8 +48,11 @@ Se ficar privado, o Dokploy precisa de login GHCR (`read:packages`).
 4. Variáveis de ambiente (iguais ao `.env.example`):
    - `POSTGRES_USER`, `POSTGRES_PASSWORD`
    - `JWT_SECRET` (**obrigatório**)
+   - `CORS_ORIGIN` — inclua a origem do site, ex.:  
+     `https://ipiavare.com.br,https://www.ipiavare.com.br`
+   - `WEB_API_URL=https://api.ipiavare.com.br` (URL pública da API no browser)
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (se usar Google)
-   - opcional: `EVOLUTION_API_*`, `YOUTUBE_API_KEY`, `IMAGE_TAG=latest`
+   - opcional: `EVOLUTION_API_*`, `YOUTUBE_API_KEY`, `AWS_*`, `IMAGE_TAG=latest`
 5. Deploy / Redeploy
 
 O Dokploy deve fazer basicamente:
@@ -56,11 +61,22 @@ docker compose pull
 docker compose up -d
 ```
 
+### Domínios (Traefik)
+
+| Serviço | Host (labels no compose) | Porta container |
+|---------|--------------------------|-----------------|
+| `api`   | `api.ipiavare.com.br`    | 3030            |
+| `web`   | `ipiavare.com.br` + `www` | 80             |
+
+Ajuste os labels Traefik no `docker-compose.yml` se o domínio for outro.
+
+O container `web` gera `/config.js` no start com `WEB_API_URL`, para o site chamar a API correta sem rebuild.
+
 ## Passo 4 — Dia a dia
 
 1. Você faz commit + push na `main`
-2. Actions publica a imagem `api`
-3. No Dokploy: **Redeploy** (pull da imagem nova)
+2. Actions publica as imagens `api` e `web`
+3. No Dokploy: **Redeploy** (pull das imagens novas)
 
 Não precisa buildar na VPS.
 
@@ -68,7 +84,7 @@ Não precisa buildar na VPS.
 
 ## Migração a partir dos microserviços
 
-Esta versão usa **um** banco `church_db` e a imagem `church-app/api`.  
+Esta versão usa **um** banco `church_db` e as imagens `church-app/api` + `church-app/web`.  
 Em ambientes novos (volume Postgres limpo), o `prisma migrate deploy` cria o schema.  
 Se ainda tiver os DBs antigos (`auth_db`, `member_db`, …), faça backup e reimporte para `church_db` (ou suba com volume novo em staging primeiro).
 

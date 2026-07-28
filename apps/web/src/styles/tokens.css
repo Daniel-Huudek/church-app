@@ -1,0 +1,17 @@
+:root {
+  --ink: #1a1a1a;
+  --text: #222222;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --bg: #ffffff;
+  --surface: #f5f5f5;
+  --brand: #008cff;
+  --brand-deep: #0070cc;
+  --series-bg: #f3e6d8;
+  --series-red: #e10600;
+  --series-ink: #2b2b2b;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --container: 1120px;
+  --header-h: 72px;
+}

@@ -45,6 +45,7 @@ import '../../features/chat/presentation/screens/chat_detail_screen.dart';
 import '../../features/users/presentation/screens/user_list_screen.dart';
 import '../../features/users/presentation/screens/user_edit_screen.dart';
 import '../../features/users/presentation/screens/role_manager_screen.dart';
+import '../../features/website/presentation/screens/website_content_screen.dart';
 import '../../features/bible/presentation/screens/bible_home_screen.dart';
 import '../../features/bible/presentation/screens/bible_chapter_screen.dart';
 import '../../features/bible/presentation/screens/bible_verse_screen.dart';
@@ -69,6 +70,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       if (isAuthenticated && user != null) {
         if (location.startsWith(AppRoutes.users) && !user.hasPermission('users_read')) {
+          return AppRoutes.home;
+        }
+        if (location.startsWith(AppRoutes.website) &&
+            !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR'])) {
           return AppRoutes.home;
         }
         if (location.startsWith(AppRoutes.finance) && !user.hasPermission('finance_read')) {
@@ -349,6 +354,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => UserEditScreen(userId: state.pathParameters['id'] ?? ''),
               ),
             ],
+          ),
+          GoRoute(
+            path: AppRoutes.website,
+            builder: (context, state) => const WebsiteContentScreen(),
           ),
         ],
       ),

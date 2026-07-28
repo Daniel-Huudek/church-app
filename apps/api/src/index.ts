@@ -17,6 +17,7 @@ import { prayerRoutes } from './modules/prayers/routes.js';
 import { financeRoutes } from './modules/finance/routes.js';
 import { worshipRoutes } from './modules/worship/routes.js';
 import { chatRoutes } from './modules/chat/routes.js';
+import { websiteRoutes } from './modules/website/routes.js';
 import { userRoutes } from './routes/users.js';
 
 const prisma = new PrismaClient();
@@ -96,6 +97,7 @@ async function bootstrap() {
   await fastify.register(financeRoutes, { prefix: '/finance' });
   await fastify.register(worshipRoutes, { prefix: '/worship' });
   await fastify.register(chatRoutes, { prefix: '/chats' });
+  await fastify.register(websiteRoutes, { prefix: '/website' });
 
   fastify.setErrorHandler((error, request, reply) => {
     logger.error('Error occurred', error, { path: request.url, method: request.method });

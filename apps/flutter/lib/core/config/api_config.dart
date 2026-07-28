@@ -70,4 +70,6 @@ class ApiConfig {
   // Users
   static const String users = '/users';
 
+  // Website CMS
+  static const String website = '/website';
 }

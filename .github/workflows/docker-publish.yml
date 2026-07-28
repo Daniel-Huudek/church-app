@@ -23,9 +23,16 @@ jobs:
       matrix:
         include:
           - service: api
-            port: "3030"
-            package: "@church-app/api"
-            prisma: "true"
+            dockerfile: docker/Dockerfile.service
+            build_args: |
+              SERVICE=api
+              PORT=3030
+              PACKAGE_NAME=@church-app/api
+              HAS_PRISMA=true
+          - service: web
+            dockerfile: docker/Dockerfile.web
+            build_args: |
+              VITE_API_URL=https://api.ipiavare.com.br
     steps:
       - uses: actions/checkout@v4
 
@@ -52,14 +59,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/Dockerfile.service
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            SERVICE=${{ matrix.service }}
-            PORT=${{ matrix.port }}
-            PACKAGE_NAME=${{ matrix.package }}
-            HAS_PRISMA=${{ matrix.prisma }}
+          build-args: ${{ matrix.build_args }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}

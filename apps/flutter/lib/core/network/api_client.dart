@@ -76,6 +76,23 @@ class ApiClient {
     return _dio.delete<T>(path, data: data, queryParameters: queryParameters);
   }
 
+  Future<Response<T>> upload<T>(
+    String path, {
+    required FormData data,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _dio.post<T>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: Options(
+        contentType: 'multipart/form-data',
+        sendTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
+  }
+
   Map<String, dynamic> unwrapData(dynamic responseData) {
     final map = responseData as Map<String, dynamic>;
     if (map.containsKey('data')) {

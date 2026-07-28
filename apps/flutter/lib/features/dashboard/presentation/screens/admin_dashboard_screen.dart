@@ -169,6 +169,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         onTap: () => context.go(AppRoutes.usersRoles),
                       ),
                     ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: _iconButton(
+                        icon: Icons.language_rounded,
+                        color: const Color(0xFF008CFF),
+                        label: 'Site',
+                        onTap: () => context.go(AppRoutes.website),
+                      ),
+                    ),
                   ],
                 ),
               ],
