@@ -43,28 +43,13 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
     image: '',
   },
   slides: [],
-  events: [
-    { title: 'Projeto Ipi Avaré', date: '3 de agosto de 2025', time: '12:00', image: '' },
-    { title: 'Projeto Ipi Avaré', date: '10 de agosto de 2025', time: '12:00', image: '' },
-    { title: 'Projeto Ipi Avaré', date: '17 de agosto de 2025', time: '12:00', image: '' },
-    { title: 'Projeto Ipi Avaré', date: '24 de agosto de 2025', time: '12:00', image: '' },
-  ],
+  events: [],
   weeklyWord: {
     text: 'Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento com a destra da minha justiça.',
     reference: 'Isaías 41:10',
   },
-  news: [
-    { id: 'n1', title: 'Notícia 1', image: '' },
-    { id: 'n2', title: 'Notícia 2', image: '' },
-    { id: 'n3', title: 'Notícia 3', image: '' },
-    { id: 'n4', title: 'Notícia 4', image: '' },
-  ],
-  streams: [
-    { id: 's1', title: 'Transmissão 1', youtubeUrl: '' },
-    { id: 's2', title: 'Transmissão 2', youtubeUrl: '' },
-    { id: 's3', title: 'Transmissão 3', youtubeUrl: '' },
-    { id: 's4', title: 'Transmissão 4', youtubeUrl: '' },
-  ],
+  news: [],
+  streams: [],
   faith: {
     titlePrefix: 'Afirmação de Fé da',
     titleAccent: 'IPI do Brasil',
