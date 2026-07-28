@@ -12,10 +12,11 @@ export GHCR_TOKEN=ghp_xxx   # write:packages + read:packages
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
 ./scripts/docker-build-push-pc.sh
-# (builda e publica ghcr.io/.../church-app/api)
+# (builda e publica api + web no GHCR)
+# Só um serviço: ./scripts/docker-build-push-pc.sh web
 ```
 
-Depois: packages **Public** no GitHub → no Dokploy clique **Redeploy**.
+Depois: packages **Public** no GitHub (`church-app/api` e `church-app/web`) → no Dokploy clique **Redeploy**.
 
 ## Na VPS
 
