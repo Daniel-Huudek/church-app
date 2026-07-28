@@ -175,6 +175,23 @@ button {
   width: 56%;
 }
 
+.media-skeleton--shorter {
+  width: 38%;
+}
+
+.media-card__skeleton-copy {
+  position: absolute;
+  inset: auto 0.75rem 0.85rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.stream-card__title-skeleton {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 0.15rem;
+}
+
 @keyframes skeleton-shimmer {
   0% {
     background-position: 100% 0;

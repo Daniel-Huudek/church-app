@@ -1,10 +1,11 @@
-import { useChurch } from '../church-context';
+import { useChurch, useContentLoading } from '../church-context';
 import { HeroSlider } from './HeroSlider';
-import { latestNews } from '../data/news';
+import { hasText, latestNews } from '../data/news';
 import '../styles/home.css';
 
 export function HomeTop() {
   const church = useChurch();
+  const loading = useContentLoading();
   const news = latestNews(church.news, 4);
 
   return (
@@ -19,10 +20,10 @@ export function HomeTop() {
               ver mais
             </a>
           </div>
-          <ul className="news-panel__list">
+          <ul className="news-panel__list" aria-busy={loading || undefined}>
             {news.map((item, index) => {
-              const image = item.image?.trim();
-              const hasTitle = Boolean(item.title?.trim());
+              const image = !loading ? item.image?.trim() : '';
+              const title = !loading && hasText(item.title) ? item.title.trim() : '';
               return (
                 <li className="news-panel__item" key={item.id || `news-${index}`}>
                   <div
@@ -31,16 +32,16 @@ export function HomeTop() {
                     aria-hidden="true"
                   />
                   <div className="news-panel__body">
-                    {hasTitle ? (
-                      <h3>{item.title}</h3>
+                    {title ? (
+                      <h3>{title}</h3>
                     ) : (
-                      <div className="media-skeleton media-skeleton--line" aria-hidden="true" />
-                    )}
-                    {!hasTitle && (
-                      <div
-                        className="media-skeleton media-skeleton--line media-skeleton--short"
-                        aria-hidden="true"
-                      />
+                      <>
+                        <div className="media-skeleton media-skeleton--line" aria-hidden="true" />
+                        <div
+                          className="media-skeleton media-skeleton--line media-skeleton--short"
+                          aria-hidden="true"
+                        />
+                      </>
                     )}
                   </div>
                 </li>

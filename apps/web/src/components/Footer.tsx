@@ -21,9 +21,8 @@ export function Footer() {
       <div className="container">
         <div className="site-footer__grid">
           <div>
-            <Link className="site-footer__brand" to="/">
-              <BrandLogo src={church.logoUrl} width={36} height={36} />
-              <strong>IPI Avaré</strong>
+            <Link className="site-footer__brand" to="/" aria-label={church.brand}>
+              <BrandLogo src={church.logoUrl} alt={church.logoLabel || church.brand} width={44} height={44} />
             </Link>
             <p className="site-footer__about">{church.about}</p>
           </div>
