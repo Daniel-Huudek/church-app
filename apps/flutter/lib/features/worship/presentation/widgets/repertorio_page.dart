@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
@@ -70,39 +71,42 @@ class _RepertorioPageState extends ConsumerState<RepertorioPage> {
             alignment: Alignment.bottomRight,
             child: Padding(
               padding: const EdgeInsets.only(right: 20, bottom: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () => context.push(AppRoutes.worshipRepertorioFetch),
-                    child: Container(
-                      width: 56, height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
-                        ],
+              child: Opacity(
+                opacity: watchIsOnline(ref) ? 1 : 0.45,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: guardOnlineAction(context, ref, () => context.push(AppRoutes.worshipRepertorioFetch)),
+                      child: Container(
+                        width: 56, height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.success,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: const Icon(Icons.language_rounded, color: Colors.white, size: 26),
                       ),
-                      child: const Icon(Icons.language_rounded, color: Colors.white, size: 26),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () => context.push(AppRoutes.worshipRepertorioCreate),
-                    child: Container(
-                      width: 56, height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
-                        ],
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: guardOnlineAction(context, ref, () => context.push(AppRoutes.worshipRepertorioCreate)),
+                      child: Container(
+                        width: 56, height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
                       ),
-                      child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

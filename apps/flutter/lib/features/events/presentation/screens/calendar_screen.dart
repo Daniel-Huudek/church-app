@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/theme/app_colors.dart';
+import '../../../../core/offline/offline_guard.dart';
 import '../../domain/event_model.dart';
 import '../providers/event_provider.dart';
 
@@ -295,11 +296,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/calendar/create'),
-        backgroundColor: const Color(0xFF008CFF),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Opacity(
+        opacity: watchIsOnline(ref) ? 1 : 0.45,
+        child: FloatingActionButton(
+          onPressed: guardOnlineAction(context, ref, () => context.push('/calendar/create')),
+          backgroundColor: const Color(0xFF008CFF),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }

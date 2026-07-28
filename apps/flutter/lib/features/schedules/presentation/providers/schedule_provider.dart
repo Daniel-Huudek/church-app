@@ -1,11 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/offline/local_cache.dart';
+import '../../../../core/offline/offline_mutation_queue.dart';
 import '../../data/schedule_api.dart';
 import '../../data/schedule_repository.dart';
 import '../../domain/schedule_model.dart';
 import '../../../../shared/providers/async_state.dart';
 import '../../../../shared/utils/error_helper.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final scheduleApiProvider = Provider<ScheduleApi>((ref) {
   return ScheduleApi(ref.read(apiClientProvider));
@@ -15,6 +16,7 @@ final scheduleRepositoryProvider = Provider<ScheduleRepository>((ref) {
   return ScheduleRepository(
     ref.read(scheduleApiProvider),
     ref.read(localCacheProvider),
+    ref.read(offlineMutationQueueProvider),
   );
 });
 
