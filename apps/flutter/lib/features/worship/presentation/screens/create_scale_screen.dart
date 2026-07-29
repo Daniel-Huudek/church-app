@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../events/data/event_api.dart';
+import '../../../events/domain/event_model.dart';
+import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
@@ -45,6 +47,30 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
   final _startTimeCtrl = TextEditingController(text: '19:00');
   final _endTimeCtrl = TextEditingController(text: '21:00');
   String _eventType = 'WORSHIP';
+  EventLinkMode _eventLinkMode = EventLinkMode.existing;
+  List<EventModel> _availableEvents = [];
+  Set<String> _eventsWithWorshipScale = {};
+
+  String _datePayload(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  void _applyEvent(EventModel event) {
+    _eventId = event.id;
+    _titleCtrl.text = event.title;
+    _selectedDate = event.date;
+    _startTimeCtrl.text = event.startTime;
+    _endTimeCtrl.text = event.endTime ?? '';
+    _eventType = event.type;
+  }
+
+  void _clearEventFields() {
+    _eventId = null;
+    _titleCtrl.clear();
+    _selectedDate = DateTime.now();
+    _startTimeCtrl.text = '19:00';
+    _endTimeCtrl.text = '21:00';
+    _eventType = 'WORSHIP';
+  }
 
   @override
   void initState() {
@@ -71,19 +97,35 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         }
       } catch (_) {}
 
+      List<EventModel> events = [];
+      Set<String> usedEventIds = {};
+      if (!_isEditing) {
+        try {
+          final now = DateTime.now();
+          final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+          final end = start.add(const Duration(days: 120));
+          events = await _eventApi.list(startDate: start, endDate: end);
+          events.sort((a, b) => a.date.compareTo(b.date));
+        } catch (_) {}
+
+        try {
+          final worshipList = await ref.read(worshipRepositoryProvider).listWorshipEvents(limit: 100);
+          usedEventIds = worshipList.data.map((e) => e.eventId).toSet();
+        } catch (_) {}
+      }
+
       if (_isEditing && widget.scaleId != null) {
         try {
           final weData = await _worshipApi.getWorshipEvent(widget.scaleId!);
-          final we = WorshipEvent.fromJson(weData);
+          final raw = weData.containsKey('data') && weData['data'] is Map
+              ? Map<String, dynamic>.from(weData['data'] as Map)
+              : weData;
+          final we = WorshipEvent.fromJson(raw);
           final ev = await _eventApi.getById(we.eventId);
 
-          _titleCtrl.text = ev.title;
-          _eventId = ev.id;
-          _selectedDate = ev.date;
-          _startTimeCtrl.text = ev.startTime;
-          _endTimeCtrl.text = ev.endTime ?? '';
-          _eventType = ev.type;
+          _applyEvent(ev);
           _notesCtrl.text = we.notes ?? '';
+          _eventLinkMode = EventLinkMode.existing;
 
           if (we.songs != null) {
             _selectedSongs = we.songs!.map((s) => s.song).toList();
@@ -98,11 +140,15 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
             }
           }
         } catch (_) {}
+      } else if (events.isEmpty) {
+        _eventLinkMode = EventLinkMode.createNew;
       }
 
       setState(() {
         _allSongs = songs;
         _allUsers = usersList;
+        _availableEvents = events;
+        _eventsWithWorshipScale = usedEventIds;
         _loading = false;
       });
     } catch (e) {
@@ -112,7 +158,20 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
   }
 
   Future<void> _save() async {
-    if (_titleCtrl.text.trim().isEmpty) return;
+    if (_titleCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe o título do evento')),
+      );
+      return;
+    }
+    if (!_isEditing &&
+        _eventLinkMode == EventLinkMode.existing &&
+        (_eventId == null || _eventId!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione um evento existente')),
+      );
+      return;
+    }
 
     setState(() => _saving = true);
     try {
@@ -126,16 +185,17 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         };
       }).toList();
       final songIds = _selectedSongs.map((s) => s.id).toList();
+      final eventPayload = {
+        'title': _titleCtrl.text.trim(),
+        'type': _eventType,
+        'date': _datePayload(_selectedDate),
+        'startTime': _startTimeCtrl.text.trim().isEmpty ? '19:00' : _startTimeCtrl.text.trim(),
+        'endTime': _endTimeCtrl.text.trim().isEmpty ? '21:00' : _endTimeCtrl.text.trim(),
+      };
 
       if (_isEditing && widget.scaleId != null) {
         savedWorshipEventId = widget.scaleId;
-        await _eventApi.update(_eventId!, {
-          'title': _titleCtrl.text.trim(),
-          'type': _eventType,
-          'date': '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}',
-          'startTime': _startTimeCtrl.text.trim(),
-          'endTime': _endTimeCtrl.text.trim(),
-        });
+        await _eventApi.update(_eventId!, eventPayload);
 
         await _worshipApi.updateWorshipEvent(widget.scaleId!, {
           'notes': _notesCtrl.text.trim(),
@@ -145,17 +205,22 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         await _worshipApi.reorderWorshipEventSongs(widget.scaleId!, songIds);
         await _worshipApi.setWorshipEventMusicians(widget.scaleId!, musiciansPayload);
       } else {
-        final event = await _eventApi.create({
-          'title': _titleCtrl.text.trim(),
-          'type': _eventType,
-          'date': '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}',
-          'startTime': _startTimeCtrl.text.trim(),
-          'endTime': _endTimeCtrl.text.trim(),
-        });
+        late final String linkedEventId;
+        if (_eventLinkMode == EventLinkMode.existing) {
+          linkedEventId = _eventId!;
+          if (_eventsWithWorshipScale.contains(linkedEventId)) {
+            throw Exception('Este evento já possui escala de louvor');
+          }
+          // Keep shared event details in sync for Louvor + Diáconos.
+          await _eventApi.update(linkedEventId, eventPayload);
+        } else {
+          final event = await _eventApi.create(eventPayload);
+          linkedEventId = event.id;
+        }
 
         final notes = _notesCtrl.text.trim();
         final weRes = await _worshipApi.createWorshipEvent({
-          'eventId': event.id,
+          'eventId': linkedEventId,
           if (notes.isNotEmpty) 'notes': notes,
         });
 
@@ -343,6 +408,29 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
+          if (!_isEditing) ...[
+            EventSourceSection(
+              isDark: isDark,
+              mode: _eventLinkMode,
+              onModeChanged: (mode) {
+                setState(() {
+                  _eventLinkMode = mode;
+                  if (mode == EventLinkMode.createNew) {
+                    _clearEventFields();
+                  } else if (_eventId != null) {
+                    final match = _availableEvents.where((e) => e.id == _eventId);
+                    if (match.isNotEmpty) _applyEvent(match.first);
+                  }
+                });
+              },
+              events: _availableEvents,
+              unavailableEventIds: _eventsWithWorshipScale,
+              selectedEventId: _eventId,
+              onSelectEvent: (event) => setState(() => _applyEvent(event)),
+              unavailableHint: 'Já tem escala de louvor',
+            ),
+            const SizedBox(height: 16),
+          ],
           _field('Título do evento', _inputBox(
             TextField(
               controller: _titleCtrl,
@@ -430,14 +518,19 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
               );
             }).toList(),
           )),
-          _field('Observações', _inputBox(
-            TextField(
-              controller: _notesCtrl,
-              maxLines: 3,
-              style: TextStyle(fontSize: 15, color: isDark ? Colors.white : const Color(0xFF111827)),
-              decoration: const InputDecoration(hintText: 'Observações...', border: InputBorder.none),
+          _field(
+            _eventLinkMode == EventLinkMode.existing && !_isEditing
+                ? 'Observações da escala de louvor'
+                : 'Observações',
+            _inputBox(
+              TextField(
+                controller: _notesCtrl,
+                maxLines: 3,
+                style: TextStyle(fontSize: 15, color: isDark ? Colors.white : const Color(0xFF111827)),
+                decoration: const InputDecoration(hintText: 'Observações da escala...', border: InputBorder.none),
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../events/data/event_api.dart';
+import '../../../events/domain/event_model.dart';
+import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
 import '../../../schedules/data/schedule_api.dart';
@@ -31,11 +33,16 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
   final _startCtrl = TextEditingController(text: '19:00');
   final _endCtrl = TextEditingController(text: '21:00');
   final _searchCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
   bool _loading = true;
   bool _saving = false;
   String? _ministryId;
+  String? _eventId;
+  EventLinkMode _eventLinkMode = EventLinkMode.existing;
+  List<EventModel> _availableEvents = [];
+  Set<String> _eventsWithDeaconScale = {};
   List<MemberModel> _members = [];
   final List<_DeaconAssignment> _assignments = [];
 
@@ -51,22 +58,67 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
     _startCtrl.dispose();
     _endCtrl.dispose();
     _searchCtrl.dispose();
+    _notesCtrl.dispose();
     super.dispose();
+  }
+
+  String _datePayload(DateTime date) =>
+      DateTime(date.year, date.month, date.day).toIso8601String();
+
+  void _applyEvent(EventModel event) {
+    _eventId = event.id;
+    _titleCtrl.text = event.title;
+    _selectedDate = event.date;
+    _startCtrl.text = event.startTime;
+    _endCtrl.text = event.endTime ?? '21:00';
+  }
+
+  void _clearEventFields() {
+    _eventId = null;
+    _titleCtrl.clear();
+    _selectedDate = DateTime.now();
+    _startCtrl.text = '19:00';
+    _endCtrl.text = '21:00';
   }
 
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final memberApi = MemberApi(ref.read(apiClientProvider));
+      final eventApi = EventApi(ref.read(apiClientProvider));
+      final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
+
       final ministry = await DeaconMinistryHelper.ensureMinistry(memberApi);
       var members = await memberApi.list(role: 'DIACONO', limit: 100, status: 'ATIVO');
       if (members.isEmpty) {
         members = await memberApi.list(limit: 100, status: 'ATIVO');
       }
+
+      List<EventModel> events = [];
+      Set<String> usedEventIds = {};
+      try {
+        final now = DateTime.now();
+        final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+        final end = start.add(const Duration(days: 120));
+        events = await eventApi.list(startDate: start, endDate: end);
+        events.sort((a, b) => a.date.compareTo(b.date));
+      } catch (_) {}
+
+      try {
+        final schedules = await scheduleApi.list(ministryId: ministry.id);
+        usedEventIds = schedules
+            .map((s) => s.eventId)
+            .whereType<String>()
+            .toSet();
+      } catch (_) {}
+
       if (!mounted) return;
       setState(() {
         _ministryId = ministry.id;
         _members = members;
+        _availableEvents = events;
+        _eventsWithDeaconScale = usedEventIds;
+        _eventLinkMode = events.isEmpty ? EventLinkMode.createNew : EventLinkMode.existing;
         _loading = false;
       });
     } catch (e) {
@@ -100,24 +152,49 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
       );
       return;
     }
+    if (_eventLinkMode == EventLinkMode.existing && (_eventId == null || _eventId!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione um evento existente')),
+      );
+      return;
+    }
 
     setState(() => _saving = true);
     try {
       final eventApi = EventApi(ref.read(apiClientProvider));
       final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
-
-      final dateIso = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day).toIso8601String();
-      final event = await eventApi.create({
+      final dateIso = _datePayload(_selectedDate);
+      final eventPayload = {
         'title': _titleCtrl.text.trim(),
-        'description': 'Escala de diáconos',
+        'description': _notesCtrl.text.trim().isEmpty
+            ? 'Escala de diáconos'
+            : _notesCtrl.text.trim(),
         'type': 'WORSHIP',
         'date': dateIso,
         'startTime': _startCtrl.text.trim(),
         'endTime': _endCtrl.text.trim(),
-      });
+      };
+
+      late final String linkedEventId;
+      if (_eventLinkMode == EventLinkMode.existing) {
+        linkedEventId = _eventId!;
+        if (_eventsWithDeaconScale.contains(linkedEventId)) {
+          throw Exception('Este evento já possui escala de diáconos');
+        }
+        await eventApi.update(linkedEventId, {
+          'title': _titleCtrl.text.trim(),
+          'date': dateIso,
+          'startTime': _startCtrl.text.trim(),
+          'endTime': _endCtrl.text.trim(),
+          if (_notesCtrl.text.trim().isNotEmpty) 'description': _notesCtrl.text.trim(),
+        });
+      } else {
+        final event = await eventApi.create(eventPayload);
+        linkedEventId = event.id;
+      }
 
       await scheduleApi.create({
-        'eventId': event.id,
+        'eventId': linkedEventId,
         'ministryId': _ministryId,
         'date': dateIso,
         'startTime': _startCtrl.text.trim(),
@@ -175,7 +252,28 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _field('Título', _titleCtrl, 'Ex: Culto de domingo', t1, t2, card, border),
+                EventSourceSection(
+                  isDark: isDark,
+                  mode: _eventLinkMode,
+                  onModeChanged: (mode) {
+                    setState(() {
+                      _eventLinkMode = mode;
+                      if (mode == EventLinkMode.createNew) {
+                        _clearEventFields();
+                      } else if (_eventId != null) {
+                        final match = _availableEvents.where((e) => e.id == _eventId);
+                        if (match.isNotEmpty) _applyEvent(match.first);
+                      }
+                    });
+                  },
+                  events: _availableEvents,
+                  unavailableEventIds: _eventsWithDeaconScale,
+                  selectedEventId: _eventId,
+                  onSelectEvent: (event) => setState(() => _applyEvent(event)),
+                  unavailableHint: 'Já tem escala de diáconos',
+                ),
+                const SizedBox(height: 16),
+                _field('Título do evento', _titleCtrl, 'Ex: Culto de domingo', t1, t2, card, border),
                 const SizedBox(height: 16),
                 Text('Data', style: TextStyle(color: t2, fontSize: 14)),
                 const SizedBox(height: 8),
@@ -197,6 +295,16 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
                     const SizedBox(width: 12),
                     Expanded(child: _field('Término', _endCtrl, '21:00', t1, t2, card, border)),
                   ],
+                ),
+                const SizedBox(height: 16),
+                _field(
+                  'Observações da escala',
+                  _notesCtrl,
+                  'Info específica dos diáconos (opcional)',
+                  t1,
+                  t2,
+                  card,
+                  border,
                 ),
                 const SizedBox(height: 24),
                 Text('Diáconos escalados', style: TextStyle(color: t1, fontWeight: FontWeight.w600, fontSize: 16)),
