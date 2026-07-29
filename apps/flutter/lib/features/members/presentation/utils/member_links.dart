@@ -77,3 +77,16 @@ Future<bool> openExternalUri(Uri? uri) async {
   if (uri == null) return false;
   return launchUrl(uri, mode: LaunchMode.externalApplication);
 }
+
+/// Abre no navegador (Custom Tabs / Safari), sem forçar o app do Maps.
+Future<bool> openInBrowser(Uri? uri) async {
+  if (uri == null) return false;
+  try {
+    final opened = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    if (opened) return true;
+  } catch (_) {
+    // Alguns dispositivos não suportam inAppBrowserView.
+  }
+  return launchUrl(uri, mode: LaunchMode.platformDefault);
+}
+

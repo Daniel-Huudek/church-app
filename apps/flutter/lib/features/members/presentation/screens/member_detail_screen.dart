@@ -62,7 +62,7 @@ class MemberDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _openMaps(BuildContext context, MemberAddress address) async {
-    final ok = await openExternalUri(
+    final ok = await openInBrowser(
       googleMapsUri(
         street: address.street,
         number: address.number,
