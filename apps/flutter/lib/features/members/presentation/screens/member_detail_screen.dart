@@ -11,6 +11,7 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../domain/member_model.dart';
 import '../providers/member_provider.dart';
+import '../utils/member_links.dart';
 
 class MemberDetailScreen extends ConsumerWidget {
   final String id;
@@ -49,6 +50,34 @@ class MemberDetailScreen extends ConsumerWidget {
       if (address.zipCode != null && address.zipCode!.isNotEmpty) 'CEP ${address.zipCode}',
     ];
     return parts.join('\n');
+  }
+
+  Future<void> _openWhatsApp(BuildContext context, String phone) async {
+    final ok = await openExternalUri(whatsAppUri(phone));
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o WhatsApp')),
+      );
+    }
+  }
+
+  Future<void> _openMaps(BuildContext context, MemberAddress address) async {
+    final ok = await openInBrowser(
+      googleMapsUri(
+        street: address.street,
+        number: address.number,
+        complement: address.complement,
+        neighborhood: address.neighborhood,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zipCode,
+      ),
+    );
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o Google Maps')),
+      );
+    }
   }
 
   @override
@@ -149,11 +178,30 @@ class MemberDetailScreen extends ConsumerWidget {
                     child: Column(
                       children: [
                         if (member.phone != null) ...[
-                          _ContactRow(icon: Icons.phone, value: member.phone!, onTap: () {}),
+                          _ContactRow(
+                            icon: Icons.chat,
+                            value: member.phone!,
+                            onTap: () => _openWhatsApp(context, member.phone!),
+                          ),
                           if (member.email != null) const Divider(),
                         ],
                         if (member.email != null)
-                          _ContactRow(icon: Icons.email, value: member.email!, onTap: () {}),
+                          _ContactRow(
+                            icon: Icons.email,
+                            value: member.email!,
+                            onTap: () async {
+                              final uri = Uri(
+                                scheme: 'mailto',
+                                path: member.email,
+                              );
+                              final ok = await openExternalUri(uri);
+                              if (!ok && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Não foi possível abrir o e-mail')),
+                                );
+                              }
+                            },
+                          ),
                       ],
                     ),
                   ),
@@ -261,11 +309,23 @@ class MemberDetailScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: AppCard(
+                    padding: EdgeInsets.zero,
+                    onTap: () => _openMaps(context, member.address!),
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpacing.xl),
-                      child: Text(
-                        _formatAddress(member.address!),
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.map_outlined, size: 20, color: AppColors.primary),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              _formatAddress(member.address!),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, size: 20),
+                        ],
                       ),
                     ),
                   ),
