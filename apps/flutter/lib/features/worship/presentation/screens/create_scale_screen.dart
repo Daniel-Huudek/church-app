@@ -143,7 +143,14 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
               } else {
                 // Legacy scales stored userId in memberId — resolve via userId.
                 final byUser = members.where((mem) => mem.userId == m.memberId).toList();
-                if (byUser.isNotEmpty) member = byUser.first;
+                if (byUser.isNotEmpty) {
+                  member = byUser.first;
+                } else {
+                  // Still show already-scheduled people even if ministry changed.
+                  try {
+                    member = await memberApi.getById(m.memberId);
+                  } catch (_) {}
+                }
               }
               if (member != null) {
                 selected.add(member);
@@ -712,7 +719,7 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
           }),
         const SizedBox(height: 16),
         Text(
-          'Adicionar músico',
+          'Adicionar músico do Louvor',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t1),
         ),
         const SizedBox(height: 8),
