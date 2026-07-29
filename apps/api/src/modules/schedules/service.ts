@@ -86,12 +86,18 @@ export class ScheduleService {
   }
 
   async findByMember(memberId: string) {
-    const data = await this.prisma.schedulePosition.findMany({ where: { memberId }, include: { schedule: true } });
+    const data = await this.prisma.schedulePosition.findMany({
+      where: { memberId, schedule: { deletedAt: null } },
+      include: { schedule: true },
+    });
     return { success: true, data };
   }
 
   async getConflicts(memberId: string) {
-    const positions = await this.prisma.schedulePosition.findMany({ where: { memberId }, include: { schedule: true } });
+    const positions = await this.prisma.schedulePosition.findMany({
+      where: { memberId, schedule: { deletedAt: null } },
+      include: { schedule: true },
+    });
     const conflicts: any[] = [];
     for (let i = 0; i < positions.length; i++) {
       for (let j = i + 1; j < positions.length; j++) {

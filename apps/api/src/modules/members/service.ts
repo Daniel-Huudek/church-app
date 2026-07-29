@@ -644,7 +644,16 @@ export class MemberService {
   async findAllMinistries() {
     const data = await this.prisma.ministry.findMany({
       where: { deletedAt: null },
-      include: { leader: true, _count: { select: { members: true } } },
+      include: {
+        leader: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        _count: { select: { members: true } },
+      },
     });
     return { success: true, data };
   }
@@ -654,7 +663,12 @@ export class MemberService {
       const leader = await this.prisma.member.findFirst({ where: { id: body.leaderId, deletedAt: null } });
       if (!leader) throw new BadRequestError('leaderId does not reference an existing member');
     }
-    const data = await this.prisma.ministry.create({ data: body, include: { leader: true } });
+    const data = await this.prisma.ministry.create({
+      data: body,
+      include: {
+        leader: { select: { id: true, name: true, avatar: true } },
+      },
+    });
     return { success: true, data };
   }
 
@@ -665,7 +679,13 @@ export class MemberService {
       const leader = await this.prisma.member.findFirst({ where: { id: body.leaderId, deletedAt: null } });
       if (!leader) throw new BadRequestError('leaderId does not reference an existing member');
     }
-    const data = await this.prisma.ministry.update({ where: { id }, data: body, include: { leader: true } });
+    const data = await this.prisma.ministry.update({
+      where: { id },
+      data: body,
+      include: {
+        leader: { select: { id: true, name: true, avatar: true } },
+      },
+    });
     return { success: true, data };
   }
 

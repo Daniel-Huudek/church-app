@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { validate, parsePagination, authenticate } from '@church-app/shared';
+import { validate, parsePagination, authenticate, authorizePermissions } from '@church-app/shared';
 import { z } from 'zod';
 import { EventService } from './service';
 
@@ -9,34 +9,38 @@ const eventSchema = z.object({
   isRecurring: z.boolean().default(false), recurrenceRule: z.string().optional(),
 });
 
+const canRead = authorizePermissions('events_read');
+const canWrite = authorizePermissions('events_write');
+const canDelete = authorizePermissions('events_delete', 'events_write');
+
 export async function eventRoutes(fastify: FastifyInstance) {
   const service = new EventService(fastify.prisma);
 
   fastify.addHook('preHandler', authenticate());
 
-  fastify.get('/', async (request: FastifyRequest, _reply) => {
+  fastify.get('/', { preHandler: [canRead] }, async (request: FastifyRequest, _reply) => {
     const { page, limit } = parsePagination(request.query);
     const { startDate, endDate, type } = request.query as Record<string, string | undefined>;
     return service.findAll({ page, limit, startDate, endDate, type });
   });
 
   // Static path before /:id
-  fastify.get('/calendar', async (request: FastifyRequest, _reply) => {
+  fastify.get('/calendar', { preHandler: [canRead] }, async (request: FastifyRequest, _reply) => {
     const { startDate, endDate } = request.query as Record<string, string | undefined>;
     return service.getCalendar(startDate, endDate);
   });
 
-  fastify.get('/:id', async (request, _reply) => service.findById((request.params as any).id));
+  fastify.get('/:id', { preHandler: [canRead] }, async (request, _reply) => service.findById((request.params as any).id));
 
-  fastify.post('/', async (request: FastifyRequest, _reply) => {
+  fastify.post('/', { preHandler: [canWrite] }, async (request: FastifyRequest, _reply) => {
     const body = validate(eventSchema, request.body);
     return service.create(body);
   });
 
-  fastify.put('/:id', async (request, _reply) => {
+  fastify.put('/:id', { preHandler: [canWrite] }, async (request, _reply) => {
     const body = validate(eventSchema.partial(), request.body);
     return service.update((request.params as any).id, body);
   });
 
-  fastify.delete('/:id', async (request, _reply) => service.delete((request.params as any).id));
+  fastify.delete('/:id', { preHandler: [canDelete] }, async (request, _reply) => service.delete((request.params as any).id));
 }

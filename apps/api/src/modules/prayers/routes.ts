@@ -52,10 +52,14 @@ async function enrichWithAuthors(prisma: FastifyInstance['prisma'], payload: any
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
   for (const item of itemsArr) {
-    const u = userMap[item.authorId];
-    if (u && !item.isAnonymous) {
-      item.authorName = u.name;
-      item.authorAvatar = u.avatar;
+    if (item?.isAnonymous) {
+      delete item.authorId;
+    } else {
+      const u = item?.authorId ? userMap[item.authorId] : undefined;
+      if (u) {
+        item.authorName = u.name;
+        item.authorAvatar = u.avatar;
+      }
     }
     if (item.comments) {
       for (const c of item.comments) {
@@ -173,7 +177,8 @@ export async function prayerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/:id/intercessors', async (request, reply: FastifyReply) => {
-    const data = await service.getIntercessors((request.params as any).id);
+    const { userId } = requireAuthUser(request);
+    const data = await service.getIntercessors((request.params as any).id, userId);
     return reply.send(data);
   });
 
