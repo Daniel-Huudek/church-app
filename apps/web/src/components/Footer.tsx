@@ -17,7 +17,7 @@ export function Footer() {
   const church = useChurch();
 
   return (
-    <footer className="site-footer" id="conectar">
+    <footer className="site-footer" id="contato">
       <div className="container">
         <div className="site-footer__grid">
           <div>
