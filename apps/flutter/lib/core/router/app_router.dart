@@ -79,7 +79,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (location.startsWith(AppRoutes.finance) && !user.hasPermission('finance_read')) {
           return AppRoutes.home;
         }
-        if ((location.startsWith(AppRoutes.members) || location == AppRoutes.birthdays) &&
+        if ((location.startsWith(AppRoutes.members)) &&
             !user.hasPermission('members_read')) {
           return AppRoutes.home;
         }

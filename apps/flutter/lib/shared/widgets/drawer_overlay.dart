@@ -110,18 +110,17 @@ class _DrawerOverlayState extends ConsumerState<DrawerOverlay>
                     label: 'Escalas',
                     onTap: () => _go(AppRoutes.schedules),
                   ),
-                  if (user?.hasPermission('members_read') == true) ...[
+                  _drawerItem(
+                    icon: Icons.cake_rounded,
+                    label: 'Aniversariantes',
+                    onTap: () => _go(AppRoutes.birthdays),
+                  ),
+                  if (user?.hasPermission('members_read') == true)
                     _drawerItem(
                       icon: Icons.people_rounded,
                       label: 'Membros',
                       onTap: () => _go(AppRoutes.members),
                     ),
-                    _drawerItem(
-                      icon: Icons.cake_rounded,
-                      label: 'Aniversariantes',
-                      onTap: () => _go(AppRoutes.birthdays),
-                    ),
-                  ],
                   if (user?.hasPermission('finance_read') == true)
                     _drawerItem(
                       icon: Icons.attach_money_rounded,
