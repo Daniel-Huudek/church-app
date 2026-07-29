@@ -37,4 +37,8 @@ class ScheduleApi {
       },
     );
   }
+
+  Future<void> delete(String id) async {
+    await _client.delete('${ApiConfig.schedules}/$id');
+  }
 }

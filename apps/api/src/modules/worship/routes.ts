@@ -60,6 +60,7 @@ export async function worshipRoutes(fastify: FastifyInstance) {
     secured.get('/worship-events/:id', async (r) => worshipEventService.getById((r.params as any).id));
     secured.post('/worship-events', async (r, reply) => { const b = validate(weCreate, r.body); return reply.status(201).send({ success: true, data: await worshipEventService.create(b) }); });
     secured.put('/worship-events/:id', async (r) => worshipEventService.update((r.params as any).id, validate(weUpdate, r.body)));
+    secured.delete('/worship-events/:id', async (r) => worshipEventService.remove((r.params as any).id));
     secured.put('/worship-events/:id/songs', async (r) => { await worshipEventService.reorderSongs((r.params as any).id, validate(reorder, r.body).songIds); return { success: true }; });
     secured.put('/worship-events/:id/musicians', async (r) => worshipEventService.setMusicians((r.params as any).id, validate(musiciansSchema, r.body).musicians));
     secured.post('/worship-events/:id/musicians/:memberId/confirm', async (r) => { const body = r.body as any; await worshipEventService.confirmMusician((r.params as any).id, (r.params as any).memberId, body?.status ?? 'confirmado'); return { success: true }; });

@@ -28,6 +28,7 @@ class WorshipApi {
   Future<Map<String, dynamic>> listWorshipEvents({int page = 1, int limit = 50}) async { final r = await _client.get(ApiConfig.worshipEvents, queryParameters: {'page': page, 'limit': limit}); return r.data; }
   Future<Map<String, dynamic>> createWorshipEvent(Map<String, dynamic> data) async { final r = await _client.post(ApiConfig.worshipEvents, data: data); return r.data; }
   Future<void> updateWorshipEvent(String id, Map<String, dynamic> data) async { await _client.put('${ApiConfig.worshipEvents}/$id', data: data); }
+  Future<void> deleteWorshipEvent(String id) async { await _client.delete('${ApiConfig.worshipEvents}/$id'); }
   Future<void> reorderWorshipEventSongs(String id, List<String> songIds) async { await _client.put('${ApiConfig.worshipEvents}/$id/songs', data: {'songIds': songIds}); }
   Future<void> setWorshipEventMusicians(String id, List<Map<String, dynamic>> musicians) async { await _client.put('${ApiConfig.worshipEvents}/$id/musicians', data: {'musicians': musicians}); }
   Future<void> confirmMusician(String weId, String memberId, {String status = 'confirmado'}) async { await _client.post('${ApiConfig.worshipEvents}/$weId/musicians/$memberId/confirm', data: {'status': status}); }

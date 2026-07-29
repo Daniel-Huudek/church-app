@@ -169,6 +169,21 @@ class WorshipRepository {
     }
   }
 
+  Future<void> deleteWorshipEvent(String id) async {
+    await _api.deleteWorshipEvent(id);
+    final list = peekWorshipEventsCache();
+    if (list != null) {
+      final next = list.where((e) => e.id != id).toList();
+      await _cache.setJson(
+        CacheKeys.worshipEventsList,
+        next.map(_worshipEventToCache).toList(),
+      );
+    } else {
+      await _cache.remove(CacheKeys.worshipEventsList);
+    }
+    await _cache.remove(CacheKeys.worshipEventDetail(id));
+  }
+
   Future<MutationOutcome> confirmMusician(
     String worshipEventId,
     String memberId, {

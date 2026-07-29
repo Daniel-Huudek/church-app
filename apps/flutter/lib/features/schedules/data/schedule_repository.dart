@@ -67,6 +67,19 @@ class ScheduleRepository {
 
   Future<ScheduleModel> create(Map<String, dynamic> data) => _api.create(data);
 
+  Future<void> delete(String id) async {
+    await _api.delete(id);
+    await _cache.remove(CacheKeys.scheduleDetail(id));
+    final list = peekListCache();
+    if (list != null) {
+      final next = list.where((s) => s.id != id).toList();
+      await _cache.setJson(
+        CacheKeys.schedulesList,
+        next.map(_toCacheJson).toList(),
+      );
+    }
+  }
+
   Future<MutationOutcome> confirmPresence(
     String scheduleId,
     String positionId, {
