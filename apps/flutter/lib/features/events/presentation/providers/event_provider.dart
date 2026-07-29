@@ -88,17 +88,8 @@ class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
   }
 
   Future<void> delete(String id) async {
-    try {
-      await _repository.delete(id);
-      await load();
-    } catch (e) {
-      state = AsyncState(
-        data: state.data,
-        loading: false,
-        error: formatError(e),
-        fromCache: state.fromCache,
-      );
-    }
+    await _repository.delete(id);
+    await load();
   }
 }
 
