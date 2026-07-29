@@ -189,8 +189,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         'title': _titleCtrl.text.trim(),
         'type': _eventType,
         'date': _datePayload(_selectedDate),
-        'startTime': _startTimeCtrl.text.trim(),
-        'endTime': _endTimeCtrl.text.trim(),
+        'startTime': _startTimeCtrl.text.trim().isEmpty ? '19:00' : _startTimeCtrl.text.trim(),
+        'endTime': _endTimeCtrl.text.trim().isEmpty ? '21:00' : _endTimeCtrl.text.trim(),
       };
 
       if (_isEditing && widget.scaleId != null) {

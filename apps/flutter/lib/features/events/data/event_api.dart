@@ -11,8 +11,13 @@ class EventApi {
     DateTime? startDate,
     DateTime? endDate,
     String? type,
+    int page = 1,
+    int limit = 100,
   }) async {
-    final params = <String, dynamic>{};
+    final params = <String, dynamic>{
+      'page': page,
+      'limit': limit,
+    };
     if (startDate != null) params['startDate'] = startDate.toIso8601String();
     if (endDate != null) params['endDate'] = endDate.toIso8601String();
     if (type != null) params['type'] = type;
