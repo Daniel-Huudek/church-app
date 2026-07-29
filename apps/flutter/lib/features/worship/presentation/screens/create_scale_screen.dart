@@ -96,13 +96,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
       try {
         final ministry = await WorshipMinistryHelper.ensureMinistry(memberApi);
         members = await memberApi.list(ministryId: ministry.id, limit: 100, status: 'ATIVO');
-        if (members.isEmpty) {
-          members = await memberApi.list(limit: 100, status: 'ATIVO');
-        }
-      } catch (_) {
-        try {
-          members = await memberApi.list(limit: 100, status: 'ATIVO');
-        } catch (_) {}
+      } catch (e) {
+        debugPrint('Erro ao carregar membros do louvor: $e');
       }
 
       List<EventModel> events = [];
@@ -747,8 +742,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
               _allMembers.isEmpty
-                  ? 'Nenhum membro encontrado. Cadastre em Membros.'
-                  : (query.isEmpty ? 'Todos os membros já foram adicionados' : 'Nenhum membro encontrado'),
+                  ? 'Nenhum membro no ministério de Louvor. Cadastre membros nesse ministério.'
+                  : (query.isEmpty ? 'Todos os membros do louvor já foram adicionados' : 'Nenhum membro encontrado'),
               style: TextStyle(color: t2, fontSize: 13),
             ),
           )
