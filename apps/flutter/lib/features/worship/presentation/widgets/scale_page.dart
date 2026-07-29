@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../../core/network/api_client.dart';
 import '../../../../../core/offline/offline_guard.dart';
 import '../../../../../shared/providers/auth_provider.dart';
@@ -38,12 +40,97 @@ class ScalePage extends ConsumerStatefulWidget {
 class _ScalePageState extends ConsumerState<ScalePage> {
   List<ScaleCardData> _items = [];
   bool _loading = true;
+  bool _copying = false;
   String? _myMemberId;
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  String _capitalize(String value) {
+    if (value.isEmpty) return value;
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
+  Future<void> _copyMonthForWhatsApp() async {
+    if (_copying) return;
+    final now = DateTime.now();
+    final monthItems = _items.where((item) {
+      final date = item.event?.date ?? item.worshipEvent.createdAt;
+      return date.year == now.year && date.month == now.month;
+    }).toList()
+      ..sort((a, b) {
+        final aDate = a.event?.date ?? a.worshipEvent.createdAt;
+        final bDate = b.event?.date ?? b.worshipEvent.createdAt;
+        return aDate.compareTo(bDate);
+      });
+
+    if (monthItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma escala neste mês para copiar')),
+      );
+      return;
+    }
+
+    setState(() => _copying = true);
+    try {
+      final memberApi = MemberApi(ref.read(apiClientProvider));
+      final nameCache = <String, String>{};
+      final buffer = StringBuffer();
+      final monthLabel = _capitalize(DateFormat('MMMM/yyyy', 'pt_BR').format(now));
+
+      buffer.writeln('*Escala de Louvor — $monthLabel*');
+      buffer.writeln();
+
+      for (final item in monthItems) {
+        final we = item.worshipEvent;
+        final date = item.event?.date ?? we.createdAt;
+        final startTime = item.event?.startTime ?? '--:--';
+        final title = item.event?.title ?? 'Evento';
+        final dayLabel = _capitalize(DateFormat("EEEE, dd/MM", 'pt_BR').format(date));
+
+        buffer.writeln('*$dayLabel — $startTime*');
+        buffer.writeln(title);
+
+        final musicians = we.musicians ?? [];
+        if (musicians.isEmpty) {
+          buffer.writeln('• (sem pessoas escaladas)');
+        } else {
+          for (final musician in musicians) {
+            var name = nameCache[musician.memberId];
+            if (name == null) {
+              try {
+                final member = await memberApi.getById(musician.memberId);
+                name = member.name;
+              } catch (_) {
+                name = 'Músico';
+              }
+              nameCache[musician.memberId] = name!;
+            }
+            final role = musician.instrument?.trim().isNotEmpty == true
+                ? musician.instrument!
+                : (musician.role?.trim().isNotEmpty == true ? musician.role! : 'Louvor');
+            buffer.writeln('• $name — $role');
+          }
+        }
+        buffer.writeln();
+      }
+
+      await Clipboard.setData(ClipboardData(text: buffer.toString().trim()));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escala do mês copiada! Cole no WhatsApp')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao copiar: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _copying = false);
+    }
   }
 
   Future<void> _load() async {
@@ -130,11 +217,30 @@ class _ScalePageState extends ConsumerState<ScalePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text('Minhas Escalas',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF008CFF))),
+                padding: const EdgeInsets.only(left: 8, right: 4),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Minhas Escalas',
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Color(0xFF008CFF)),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Copiar mês para WhatsApp',
+                      onPressed: _loading || _copying ? null : _copyMonthForWhatsApp,
+                      icon: _copying
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.content_copy_rounded, color: Color(0xFF008CFF)),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               SegmentedTab(
                 isDark: isDark, currentTab: scaleTab, onTabChanged: widget.onTabChanged,
                 labels: const ['Próximas', 'Anteriores'],

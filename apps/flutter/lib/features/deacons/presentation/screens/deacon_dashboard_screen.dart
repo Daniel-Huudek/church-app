@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +23,7 @@ class DeaconDashboardScreen extends ConsumerStatefulWidget {
 class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
   int _tab = 0;
   bool _loading = true;
+  bool _copying = false;
   String? _error;
   String? _ministryId;
   List<_DeaconScaleItem> _items = [];
@@ -72,6 +74,94 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
     }
   }
 
+  String _capitalize(String value) {
+    if (value.isEmpty) return value;
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
+  Future<void> _copyMonthForWhatsApp() async {
+    if (_copying) return;
+    final now = DateTime.now();
+    final monthItems = _items.where((item) {
+      final date = item.schedule.date;
+      return date.year == now.year && date.month == now.month;
+    }).toList()
+      ..sort((a, b) => a.schedule.date.compareTo(b.schedule.date));
+
+    if (monthItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma escala neste mês para copiar')),
+      );
+      return;
+    }
+
+    setState(() => _copying = true);
+    try {
+      final memberApi = MemberApi(ref.read(apiClientProvider));
+      final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
+      final nameCache = <String, String>{};
+      final buffer = StringBuffer();
+      final monthLabel = _capitalize(DateFormat('MMMM/yyyy', 'pt_BR').format(now));
+
+      buffer.writeln('*Escala de Diáconos — $monthLabel*');
+      buffer.writeln();
+
+      for (final item in monthItems) {
+        ScheduleModel schedule = item.schedule;
+        try {
+          schedule = await scheduleApi.getById(item.schedule.id);
+        } catch (_) {}
+
+        final dayLabel = _capitalize(
+          DateFormat("EEEE, dd/MM", 'pt_BR').format(schedule.date),
+        );
+        buffer.writeln('*$dayLabel — ${schedule.startTime}*');
+        if (item.title.trim().isNotEmpty) {
+          buffer.writeln(item.title.trim());
+        }
+
+        if (schedule.positionDetails.isEmpty) {
+          buffer.writeln('• (sem funções atribuídas)');
+        } else {
+          for (final position in schedule.positionDetails) {
+            final memberId = position.memberId;
+            var name = position.memberName?.trim();
+            if ((name == null || name.isEmpty) && memberId != null) {
+              if (nameCache.containsKey(memberId)) {
+                name = nameCache[memberId];
+              } else {
+                try {
+                  final member = await memberApi.getById(memberId);
+                  name = member.name;
+                  nameCache[memberId] = member.name;
+                } catch (_) {
+                  name = 'Membro';
+                  nameCache[memberId] = name!;
+                }
+              }
+            }
+            name ??= 'Membro';
+            buffer.writeln('• $name — ${position.position}');
+          }
+        }
+        buffer.writeln();
+      }
+
+      await Clipboard.setData(ClipboardData(text: buffer.toString().trim()));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escala do mês copiada! Cole no WhatsApp')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao copiar: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _copying = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -115,6 +205,17 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
                       'Escala de Diáconos',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: t1),
                     ),
+                  ),
+                  IconButton(
+                    tooltip: 'Copiar mês para WhatsApp',
+                    onPressed: _loading || _copying ? null : _copyMonthForWhatsApp,
+                    icon: _copying
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.content_copy_rounded, color: Color(0xFF008CFF)),
                   ),
                   if (canCreate)
                     Opacity(
