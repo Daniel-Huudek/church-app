@@ -7,6 +7,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/widgets/scale_month_picker.dart';
 import '../../../events/data/event_api.dart';
 import '../../../members/data/member_api.dart';
 import '../../../schedules/data/schedule_api.dart';
@@ -81,10 +82,24 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
 
   Future<void> _copyMonthForWhatsApp() async {
     if (_copying) return;
-    final now = DateTime.now();
+
+    final availableDates = _items.map((item) => item.schedule.date).toList();
+    if (availableDates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma escala para copiar')),
+      );
+      return;
+    }
+
+    final selectedMonth = await showScaleMonthPicker(
+      context: context,
+      dates: availableDates,
+    );
+    if (selectedMonth == null || !mounted) return;
+
     final monthItems = _items.where((item) {
       final date = item.schedule.date;
-      return date.year == now.year && date.month == now.month;
+      return date.year == selectedMonth.year && date.month == selectedMonth.month;
     }).toList()
       ..sort((a, b) => a.schedule.date.compareTo(b.schedule.date));
 
@@ -101,7 +116,9 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
       final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
       final nameCache = <String, String>{};
       final buffer = StringBuffer();
-      final monthLabel = _capitalize(DateFormat('MMMM/yyyy', 'pt_BR').format(now));
+      final monthLabel = _capitalize(
+        DateFormat('MMMM/yyyy', 'pt_BR').format(selectedMonth),
+      );
 
       buffer.writeln('*Escala de Diáconos — $monthLabel*');
       buffer.writeln();
@@ -150,7 +167,7 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
       await Clipboard.setData(ClipboardData(text: buffer.toString().trim()));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escala do mês copiada! Cole no WhatsApp')),
+        SnackBar(content: Text('Escala de $monthLabel copiada! Cole no WhatsApp')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -207,7 +224,7 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Copiar mês para WhatsApp',
+                    tooltip: 'Copiar escala do mês',
                     onPressed: _loading || _copying ? null : _copyMonthForWhatsApp,
                     icon: _copying
                         ? const SizedBox(
