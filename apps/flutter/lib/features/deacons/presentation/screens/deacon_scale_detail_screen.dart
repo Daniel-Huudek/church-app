@@ -180,12 +180,21 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
         ),
         title: Text('Detalhe da escala', style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
         actions: [
-          if (canManage)
+          if (canManage) ...[
+            IconButton(
+              tooltip: 'Editar escala',
+              onPressed: () async {
+                await context.push(AppRoutes.deaconEdit(widget.id));
+                if (mounted) _load();
+              },
+              icon: const Icon(Icons.edit_outlined, color: Color(0xFF008CFF)),
+            ),
             IconButton(
               tooltip: 'Excluir escala',
               onPressed: _deleteScale,
               icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
             ),
+          ],
         ],
       ),
       body: RefreshIndicator(
