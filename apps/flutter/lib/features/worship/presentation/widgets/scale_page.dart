@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../../core/network/api_client.dart';
 import '../../../../../core/offline/offline_guard.dart';
 import '../../../../../shared/providers/auth_provider.dart';
+import '../../../../../shared/widgets/scale_month_picker.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/data/member_api.dart';
@@ -56,10 +57,27 @@ class _ScalePageState extends ConsumerState<ScalePage> {
 
   Future<void> _copyMonthForWhatsApp() async {
     if (_copying) return;
-    final now = DateTime.now();
+
+    final availableDates = _items
+        .map((item) => item.event?.date ?? item.worshipEvent.createdAt)
+        .toList();
+
+    if (availableDates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma escala para copiar')),
+      );
+      return;
+    }
+
+    final selectedMonth = await showScaleMonthPicker(
+      context: context,
+      dates: availableDates,
+    );
+    if (selectedMonth == null || !mounted) return;
+
     final monthItems = _items.where((item) {
       final date = item.event?.date ?? item.worshipEvent.createdAt;
-      return date.year == now.year && date.month == now.month;
+      return date.year == selectedMonth.year && date.month == selectedMonth.month;
     }).toList()
       ..sort((a, b) {
         final aDate = a.event?.date ?? a.worshipEvent.createdAt;
@@ -79,7 +97,9 @@ class _ScalePageState extends ConsumerState<ScalePage> {
       final memberApi = MemberApi(ref.read(apiClientProvider));
       final nameCache = <String, String>{};
       final buffer = StringBuffer();
-      final monthLabel = _capitalize(DateFormat('MMMM/yyyy', 'pt_BR').format(now));
+      final monthLabel = _capitalize(
+        DateFormat('MMMM/yyyy', 'pt_BR').format(selectedMonth),
+      );
 
       buffer.writeln('*Escala de Louvor — $monthLabel*');
       buffer.writeln();
@@ -121,7 +141,7 @@ class _ScalePageState extends ConsumerState<ScalePage> {
       await Clipboard.setData(ClipboardData(text: buffer.toString().trim()));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escala do mês copiada! Cole no WhatsApp')),
+        SnackBar(content: Text('Escala de $monthLabel copiada! Cole no WhatsApp')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -227,7 +247,7 @@ class _ScalePageState extends ConsumerState<ScalePage> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Copiar mês para WhatsApp',
+                      tooltip: 'Copiar escala do mês',
                       onPressed: _loading || _copying ? null : _copyMonthForWhatsApp,
                       icon: _copying
                           ? const SizedBox(
