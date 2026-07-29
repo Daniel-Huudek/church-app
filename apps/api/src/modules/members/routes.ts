@@ -26,6 +26,7 @@ const memberSchema = z.object({
   status: z.enum(['ATIVO', 'INATIVO', 'AFASTADO', 'TRANSFERIDO', 'EXCLUIDO']).default('ATIVO'),
   role: z.enum(['MEMBRO', 'DIACONO', 'PRESBITERO', 'PASTOR']).default('MEMBRO'),
   ministryId: z.string().uuid().optional(),
+  ministryIds: z.array(z.string().uuid()).optional(),
   occupation: z.string().optional(),
   notes: z.string().optional(),
   userId: z.string().uuid().optional(),

@@ -30,21 +30,78 @@ function normalizePhone(phone?: string | null): string | undefined {
 export class MemberService {
   constructor(private prisma: PrismaClient) {}
 
+  private readonly memberInclude = {
+    ministry: true,
+    address: true,
+    memberMinistries: { include: { ministry: true } },
+  } as const;
+
   private withPublicAvatar<T extends { id: string; avatar?: string | null }>(member: T): T {
     if (!member.avatar) return member;
     return { ...member, avatar: `/members/${member.id}/avatar` };
+  }
+
+  private serializeMember<T extends {
+    id: string;
+    avatar?: string | null;
+    ministryId?: string | null;
+    ministry?: { id: string; name: string } | null;
+    memberMinistries?: Array<{ ministry?: { id: string; name: string } | null }>;
+  }>(member: T) {
+    const withAvatar = this.withPublicAvatar(member);
+    const fromJoin = (member.memberMinistries ?? [])
+      .map((row) => row.ministry)
+      .filter((m): m is { id: string; name: string } => !!m);
+    const ministries = fromJoin.length > 0
+      ? fromJoin
+      : (member.ministry ? [member.ministry] : []);
+    const ministryIds = [...new Set(ministries.map((m) => m.id))];
+    const ministryNames = ministries.map((m) => m.name);
+    return {
+      ...withAvatar,
+      ministryId: ministryIds[0] ?? member.ministryId ?? null,
+      ministry: ministries[0] ?? member.ministry ?? null,
+      ministryIds,
+      ministries: ministryNames,
+    };
+  }
+
+  private resolveMinistryIds(body: { ministryId?: string; ministryIds?: string[] }): string[] {
+    if (Array.isArray(body.ministryIds)) {
+      return [...new Set(body.ministryIds.filter(Boolean))];
+    }
+    if (body.ministryId) return [body.ministryId];
+    return [];
+  }
+
+  private async syncMemberMinistries(memberId: string, ministryIds: string[]) {
+    await this.prisma.memberMinistry.deleteMany({ where: { memberId } });
+    if (ministryIds.length === 0) return;
+    await this.prisma.memberMinistry.createMany({
+      data: ministryIds.map((ministryId) => ({ memberId, ministryId })),
+      skipDuplicates: true,
+    });
+  }
+
+  private ministryFilter(ministryId?: string) {
+    if (!ministryId) return {};
+    return {
+      OR: [
+        { ministryId },
+        { memberMinistries: { some: { ministryId } } },
+      ],
+    };
   }
 
   async findAll({ page = 1, limit = 20, name, email, status, role, ministryId, birthdayMonth }: {
     page?: number; limit?: number; name?: string; email?: string;
     status?: string; role?: string; ministryId?: string; birthdayMonth?: number;
   }) {
-    const where: any = { deletedAt: null };
+    const where: any = { deletedAt: null, ...this.ministryFilter(ministryId) };
     if (name) where.name = { contains: name, mode: 'insensitive' };
     if (email) where.email = { contains: email, mode: 'insensitive' };
     if (status) where.status = status;
     if (role) where.role = role;
-    if (ministryId) where.ministryId = ministryId;
 
     if (birthdayMonth && birthdayMonth >= 1 && birthdayMonth <= 12) {
       const candidates = await this.prisma.member.findMany({
@@ -61,14 +118,14 @@ export class MemberService {
       const data = pageIds.length
         ? await this.prisma.member.findMany({
             where: { id: { in: pageIds } },
-            include: { ministry: true, address: true },
+            include: this.memberInclude,
             orderBy: { name: 'asc' },
           })
         : [];
       return {
         success: true,
         data: {
-          data: data.map((m) => this.withPublicAvatar(m)),
+          data: data.map((m) => this.serializeMember(m)),
           total,
           page,
           limit,
@@ -81,7 +138,7 @@ export class MemberService {
     const [data, total] = await Promise.all([
       this.prisma.member.findMany({
         skip, take: limit, where,
-        include: { ministry: true, address: true },
+        include: this.memberInclude,
         orderBy: { name: 'asc' },
       }),
       this.prisma.member.count({ where }),
@@ -90,7 +147,7 @@ export class MemberService {
     return {
       success: true,
       data: {
-        data: data.map((m) => this.withPublicAvatar(m)),
+        data: data.map((m) => this.serializeMember(m)),
         total,
         page,
         limit,
@@ -111,13 +168,13 @@ export class MemberService {
     };
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.prisma.member.findMany({ skip, take: limit, where, include: { ministry: true } }),
+      this.prisma.member.findMany({ skip, take: limit, where, include: this.memberInclude }),
       this.prisma.member.count({ where }),
     ]);
     return {
       success: true,
       data: {
-        data: data.map((m) => this.withPublicAvatar(m)),
+        data: data.map((m) => this.serializeMember(m)),
         total,
         page,
         limit,
@@ -129,10 +186,15 @@ export class MemberService {
   async findById(id: string) {
     const data = await this.prisma.member.findFirst({
       where: { id, deletedAt: null },
-      include: { ministry: true, address: true, documents: true, familyMembers: true, ministerialHistory: true },
+      include: {
+        ...this.memberInclude,
+        documents: true,
+        familyMembers: true,
+        ministerialHistory: true,
+      },
     });
     if (!data) throw new NotFoundError('Member not found');
-    return { success: true, data: this.withPublicAvatar(data) };
+    return { success: true, data: this.serializeMember(data) };
   }
 
   async findBirthdays(period: BirthdayPeriod = 'week', now = new Date()) {
@@ -143,7 +205,7 @@ export class MemberService {
         dateOfBirth: { not: null },
         status: { not: 'EXCLUIDO' },
       },
-      include: { ministry: true },
+      include: { ministry: true, memberMinistries: { include: { ministry: true } } },
       orderBy: { name: 'asc' },
     });
 
@@ -153,7 +215,7 @@ export class MemberService {
         const occurrence = birthdayOccurrenceInRange(birth, start, end);
         if (!occurrence) return null;
         return {
-          ...this.withPublicAvatar(member),
+          ...this.serializeMember(member),
           birthdayThisYear: toDateOnlyIso(occurrence),
           turningAge: turningAge(birth, occurrence),
           isToday: isSameDay(occurrence, now),
@@ -221,9 +283,10 @@ export class MemberService {
   }
 
   async create(body: any, changedBy?: string) {
-    const { address, documents, familyMembers, ministerialHistory, forceDuplicate, ...memberData } = body;
+    const { address, documents, familyMembers, ministerialHistory, forceDuplicate, ministryIds: _ignored, ...memberData } = body;
     const email = normalizeEmail(memberData.email);
     const phone = memberData.phone?.trim() || undefined;
+    const ministryIds = this.resolveMinistryIds(body);
 
     await this.assertUserExists(memberData.userId);
     await this.assertEmailUnique(email);
@@ -240,6 +303,7 @@ export class MemberService {
         ...memberData,
         email,
         phone,
+        ministryId: ministryIds[0] ?? memberData.ministryId ?? null,
         dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
         baptismDate: body.baptismDate ? new Date(body.baptismDate) : undefined,
         conversionDate: body.conversionDate ? new Date(body.conversionDate) : undefined,
@@ -249,17 +313,22 @@ export class MemberService {
         familyMembers: familyMembers ? { create: familyMembers } : undefined,
         ministerialHistory: ministerialHistory ? { create: ministerialHistory } : undefined,
       },
-      include: { ministry: true, address: true, documents: true, familyMembers: true },
+      include: this.memberInclude,
     });
-    await this.createAuditLog(data.id, 'CREATED', null, data, changedBy);
-    return { success: true, data: this.withPublicAvatar(data) };
+    await this.syncMemberMinistries(data.id, ministryIds.length > 0 ? ministryIds : (data.ministryId ? [data.ministryId] : []));
+    const refreshed = await this.prisma.member.findFirst({
+      where: { id: data.id },
+      include: { ...this.memberInclude, documents: true, familyMembers: true },
+    });
+    await this.createAuditLog(data.id, 'CREATED', null, refreshed, changedBy);
+    return { success: true, data: this.serializeMember(refreshed!) };
   }
 
   async update(id: string, body: any, changedBy?: string) {
     const existing = await this.prisma.member.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundError('Member not found');
 
-    const { address, forceDuplicate, ...memberData } = body;
+    const { address, forceDuplicate, ministryIds: bodyMinistryIds, ...memberData } = body;
     if (memberData.userId !== undefined) await this.assertUserExists(memberData.userId);
     if (memberData.email !== undefined) {
       memberData.email = normalizeEmail(memberData.email);
@@ -283,20 +352,31 @@ export class MemberService {
       }
     }
 
+    const hasMinistryUpdate = bodyMinistryIds !== undefined || memberData.ministryId !== undefined;
+    const ministryIds = hasMinistryUpdate ? this.resolveMinistryIds(body) : null;
+
     const data = await this.prisma.member.update({
       where: { id },
       data: {
         ...memberData,
+        ...(ministryIds ? { ministryId: ministryIds[0] ?? null } : {}),
         dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
         baptismDate: body.baptismDate ? new Date(body.baptismDate) : undefined,
         conversionDate: body.conversionDate ? new Date(body.conversionDate) : undefined,
         admissionDate: body.admissionDate ? new Date(body.admissionDate) : undefined,
         address: address ? { upsert: { create: address, update: address } } : undefined,
       },
-      include: { ministry: true, address: true, documents: true, familyMembers: true },
+      include: this.memberInclude,
     });
-    await this.createAuditLog(id, 'UPDATED', existing, data, changedBy);
-    return { success: true, data: this.withPublicAvatar(data) };
+    if (ministryIds) {
+      await this.syncMemberMinistries(id, ministryIds);
+    }
+    const refreshed = await this.prisma.member.findFirst({
+      where: { id },
+      include: { ...this.memberInclude, documents: true, familyMembers: true },
+    });
+    await this.createAuditLog(id, 'UPDATED', existing, refreshed, changedBy);
+    return { success: true, data: this.serializeMember(refreshed!) };
   }
 
   async delete(id: string, changedBy?: string) {
@@ -313,10 +393,10 @@ export class MemberService {
   async findByUserId(userId: string) {
     const data = await this.prisma.member.findFirst({
       where: { userId, deletedAt: null },
-      include: { ministry: true, address: true },
+      include: this.memberInclude,
     });
     if (!data) throw new NotFoundError('Member not found');
-    return { success: true, data: this.withPublicAvatar(data) };
+    return { success: true, data: this.serializeMember(data) };
   }
 
   async getAddress(memberId: string) {
@@ -501,6 +581,7 @@ export class MemberService {
     const existing = await this.prisma.ministry.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundError('Ministry not found');
     await this.prisma.$transaction([
+      this.prisma.memberMinistry.deleteMany({ where: { ministryId: id } }),
       this.prisma.member.updateMany({ where: { ministryId: id }, data: { ministryId: null } }),
       this.prisma.ministry.update({ where: { id }, data: { deletedAt: new Date(), leaderId: null } }),
     ]);

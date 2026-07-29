@@ -89,10 +89,11 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
       final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
 
       final ministry = await DeaconMinistryHelper.ensureMinistry(memberApi);
-      var members = await memberApi.list(role: 'DIACONO', limit: 100, status: 'ATIVO');
-      if (members.isEmpty) {
-        members = await memberApi.list(limit: 100, status: 'ATIVO');
-      }
+      final members = await memberApi.list(
+        ministryId: ministry.id,
+        limit: 100,
+        status: 'ATIVO',
+      );
 
       List<EventModel> events = [];
       Set<String> usedEventIds = {};
@@ -354,19 +355,35 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
                   );
                 }),
                 const SizedBox(height: 20),
-                Text('Adicionar diácono', style: TextStyle(color: t1, fontWeight: FontWeight.w600, fontSize: 16)),
+                Text('Adicionar diácono do ministério', style: TextStyle(color: t1, fontWeight: FontWeight.w600, fontSize: 16)),
                 const SizedBox(height: 8),
                 _field('Buscar', _searchCtrl, 'Nome do membro', t1, t2, card, border, onChanged: (_) => setState(() {})),
                 const SizedBox(height: 8),
-                ...available.take(12).map((member) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(member.name, style: TextStyle(color: t1)),
-                      subtitle: Text(member.role, style: TextStyle(color: t2, fontSize: 12)),
-                      trailing: IconButton(
-                        onPressed: () => _addAssignment(member),
-                        icon: const Icon(Icons.add_circle, color: Color(0xFF008CFF)),
-                      ),
-                    )),
+                if (available.isEmpty)
+                  Text(
+                    _members.isEmpty
+                        ? 'Nenhum membro no ministério de Diáconos. Cadastre membros nesse ministério.'
+                        : (query.isEmpty
+                            ? 'Todos os membros do diaconato já foram adicionados'
+                            : 'Nenhum membro encontrado'),
+                    style: TextStyle(color: t2),
+                  )
+                else
+                  ...available.take(20).map((member) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(member.name, style: TextStyle(color: t1)),
+                        subtitle: Text(
+                          [
+                            if (member.ministryName != null && member.ministryName!.isNotEmpty) member.ministryName!,
+                            if (member.email != null) member.email!,
+                          ].join(' · '),
+                          style: TextStyle(color: t2, fontSize: 12),
+                        ),
+                        trailing: IconButton(
+                          onPressed: () => _addAssignment(member),
+                          icon: const Icon(Icons.add_circle, color: Color(0xFF008CFF)),
+                        ),
+                      )),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,

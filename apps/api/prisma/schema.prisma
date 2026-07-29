@@ -136,6 +136,7 @@ model Member {
   deletedAt       DateTime?
 
   ministry        Ministry? @relation("MinistryMembers", fields: [ministryId], references: [id])
+  memberMinistries MemberMinistry[]
   ledMinistry     Ministry? @relation("MinistryLeader")
   address         Address?
   documents       Document[]
@@ -239,8 +240,24 @@ model Ministry {
 
   leader      Member?  @relation("MinistryLeader", fields: [leaderId], references: [id])
   members     Member[] @relation("MinistryMembers")
+  memberMinistries MemberMinistry[]
 
   @@map("ministries")
+}
+
+model MemberMinistry {
+  id         String   @id @default(uuid())
+  memberId   String
+  ministryId String
+  createdAt  DateTime @default(now())
+
+  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  ministry Ministry @relation(fields: [ministryId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, ministryId])
+  @@index([memberId])
+  @@index([ministryId])
+  @@map("member_ministries")
 }
 
 enum MemberStatus {

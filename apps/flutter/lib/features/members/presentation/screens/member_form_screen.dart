@@ -44,7 +44,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   String? _gender;
   String? _maritalStatus;
   String? _admissionType;
-  String? _ministryId;
+  final Set<String> _ministryIds = {};
   bool _isBaptized = false;
 
   bool _loading = false;
@@ -109,7 +109,11 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     _gender = member.gender;
     _maritalStatus = member.maritalStatus;
     _admissionType = member.admissionType;
-    _ministryId = member.ministryId;
+    _ministryIds
+      ..clear()
+      ..addAll(member.ministryIds.isNotEmpty
+          ? member.ministryIds
+          : (member.ministryId != null ? [member.ministryId!] : const <String>[]));
     _isBaptized = member.isBaptized;
     final address = member.address;
     if (address != null) {
@@ -152,7 +156,8 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     if (_notesCtrl.text.trim().isNotEmpty) data['notes'] = _notesCtrl.text.trim();
     if (_gender != null) data['gender'] = _gender;
     if (_maritalStatus != null) data['maritalStatus'] = _maritalStatus;
-    if (_ministryId != null) data['ministryId'] = _ministryId;
+    data['ministryIds'] = _ministryIds.toList();
+    if (_ministryIds.isNotEmpty) data['ministryId'] = _ministryIds.first;
     if (_birthDate != null) data['dateOfBirth'] = _birthDate!.toIso8601String();
     if (_baptismDate != null) data['baptismDate'] = _baptismDate!.toIso8601String();
     if (_conversionDate != null) data['conversionDate'] = _conversionDate!.toIso8601String();
@@ -227,6 +232,71 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $msg')));
       setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _createMinistry(Color t1, Color t2, Color card, Color border) async {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Novo ministério'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nome *',
+                hintText: 'Ex: Louvor, Diáconos, Jovens',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Descrição',
+                hintText: 'Opcional',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008CFF)),
+            child: const Text('Criar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    final name = nameCtrl.text.trim();
+    nameCtrl.dispose();
+    final description = descCtrl.text.trim();
+    descCtrl.dispose();
+
+    if (created != true || name.isEmpty || !mounted) return;
+
+    try {
+      final ministry = await ref.read(memberRepositoryProvider).createMinistry(
+            name: name,
+            description: description.isEmpty ? null : description,
+          );
+      ref.invalidate(ministryListProvider);
+      if (!mounted) return;
+      setState(() => _ministryIds.add(ministry.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ministério "$name" criado')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao criar ministério: $e')),
+      );
     }
   }
 
@@ -317,13 +387,62 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
                     (v) => setState(() => _admissionType = v),
                     t1, t2, card, border,
                   ),
-                  _dropdown<String>(
-                    'Ministério',
-                    ministries.any((m) => m.id == _ministryId) ? _ministryId : null,
-                    ministries.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
-                    (v) => setState(() => _ministryId = v),
-                    t1, t2, card, border,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Ministérios', style: TextStyle(color: t2, fontSize: 13)),
+                            const SizedBox(height: 6),
+                            if (ministries.isEmpty)
+                              Text('Nenhum ministério cadastrado', style: TextStyle(color: t2))
+                            else
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: ministries.map((m) {
+                                  final selected = _ministryIds.contains(m.id);
+                                  return FilterChip(
+                                    label: Text(m.name),
+                                    selected: selected,
+                                    onSelected: (value) {
+                                      setState(() {
+                                        if (value) {
+                                          _ministryIds.add(m.id);
+                                        } else {
+                                          _ministryIds.remove(m.id);
+                                        }
+                                      });
+                                    },
+                                    selectedColor: const Color(0xFF008CFF).withValues(alpha: 0.2),
+                                    checkmarkColor: const Color(0xFF008CFF),
+                                    labelStyle: TextStyle(
+                                      color: selected ? const Color(0xFF008CFF) : t1,
+                                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                                    ),
+                                    backgroundColor: card,
+                                    side: BorderSide(color: selected ? const Color(0xFF008CFF) : border),
+                                  );
+                                }).toList(),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Novo ministério',
+                        onPressed: () => _createMinistry(t1, t2, card, border),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFF008CFF).withValues(alpha: 0.1),
+                          foregroundColor: const Color(0xFF008CFF),
+                        ),
+                        icon: const Icon(Icons.add_rounded),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
                   _text('Observações', _notesCtrl, t1, t2, card, border, maxLines: 3),
                   const SizedBox(height: 20),
                   _section('Endereço', t1),

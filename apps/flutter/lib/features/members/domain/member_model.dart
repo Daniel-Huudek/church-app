@@ -60,6 +60,7 @@ class MemberModel {
   final String role;
   final String? ministryId;
   final String? ministryName;
+  final List<String> ministryIds;
   final List<String> ministries;
   final DateTime? baptismDate;
   final String? baptismChurch;
@@ -86,6 +87,7 @@ class MemberModel {
     this.role = 'MEMBRO',
     this.ministryId,
     this.ministryName,
+    this.ministryIds = const [],
     this.ministries = const [],
     this.baptismDate,
     this.baptismChurch,
@@ -115,13 +117,33 @@ class MemberModel {
       ministryId ??= ministry['id'] as String?;
     }
 
+    final ministryIds = <String>[];
+    if (json['ministryIds'] is List) {
+      for (final item in json['ministryIds'] as List) {
+        final value = item?.toString();
+        if (value != null && value.isNotEmpty && !ministryIds.contains(value)) {
+          ministryIds.add(value);
+        }
+      }
+    }
+    if (ministryId != null && !ministryIds.contains(ministryId)) {
+      ministryIds.insert(0, ministryId);
+    }
+
     final ministries = <String>[];
-    if (ministryName != null) ministries.add(ministryName);
     if (json['ministries'] is List) {
       for (final item in json['ministries'] as List) {
-        final value = item.toString();
-        if (value.isNotEmpty && !ministries.contains(value)) ministries.add(value);
+        if (item is Map && item['name'] != null) {
+          final value = item['name'].toString();
+          if (value.isNotEmpty && !ministries.contains(value)) ministries.add(value);
+        } else {
+          final value = item.toString();
+          if (value.isNotEmpty && !ministries.contains(value)) ministries.add(value);
+        }
       }
+    }
+    if (ministryName != null && !ministries.contains(ministryName)) {
+      ministries.insert(0, ministryName);
     }
 
     return MemberModel(
@@ -136,8 +158,9 @@ class MemberModel {
       maritalStatus: json['maritalStatus'] as String?,
       status: json['status'] as String? ?? 'ATIVO',
       role: json['role'] as String? ?? 'MEMBRO',
-      ministryId: ministryId,
-      ministryName: ministryName,
+      ministryId: ministryIds.isNotEmpty ? ministryIds.first : ministryId,
+      ministryName: ministries.isNotEmpty ? ministries.first : ministryName,
+      ministryIds: ministryIds,
       ministries: ministries,
       baptismDate: json['baptismDate'] != null ? DateTime.parse(json['baptismDate'] as String) : null,
       baptismChurch: json['baptismChurch'] as String?,
@@ -167,6 +190,8 @@ class MemberModel {
         'status': status,
         'role': role,
         'ministryId': ministryId,
+        'ministryIds': ministryIds,
+        'ministries': ministries,
         'baptismDate': baptismDate?.toIso8601String(),
         'baptismChurch': baptismChurch,
         'conversionDate': conversionDate?.toIso8601String(),
