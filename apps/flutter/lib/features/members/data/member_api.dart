@@ -37,6 +37,16 @@ class MemberApi {
     return MemberModel.fromJson(_client.unwrapData(response.data));
   }
 
+  /// Linked member profile for the authenticated user (`GET /members/me`).
+  Future<MemberModel?> getMe() async {
+    try {
+      final response = await _client.get(ApiConfig.membersMe);
+      return MemberModel.fromJson(_client.unwrapData(response.data));
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<MemberModel> create(Map<String, dynamic> data) async {
     final response = await _client.post(ApiConfig.members, data: data);
     return MemberModel.fromJson(_client.unwrapData(response.data));

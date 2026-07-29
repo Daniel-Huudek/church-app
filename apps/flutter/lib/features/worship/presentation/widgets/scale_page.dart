@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../core/network/api_client.dart';
 import '../../../../../core/offline/offline_guard.dart';
 import '../../../../../shared/providers/auth_provider.dart';
-import '../../domain/worship_models.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
+import '../../../members/data/member_api.dart';
+import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
 import 'segmented_tab.dart';
 
@@ -36,6 +38,7 @@ class ScalePage extends ConsumerStatefulWidget {
 class _ScalePageState extends ConsumerState<ScalePage> {
   List<ScaleCardData> _items = [];
   bool _loading = true;
+  String? _myMemberId;
 
   @override
   void initState() {
@@ -47,6 +50,12 @@ class _ScalePageState extends ConsumerState<ScalePage> {
     try {
       final worshipRepo = ref.read(worshipRepositoryProvider);
       final eventRepo = ref.read(eventRepositoryProvider);
+      final memberApi = MemberApi(ref.read(apiClientProvider));
+
+      try {
+        final me = await memberApi.getMe();
+        _myMemberId = me?.id;
+      } catch (_) {}
 
       final cachedEvents = worshipRepo.peekWorshipEventsCache();
       if (cachedEvents != null && cachedEvents.isNotEmpty && mounted) {
@@ -96,7 +105,12 @@ class _ScalePageState extends ConsumerState<ScalePage> {
     final filtered = _items.where((item) {
       if (!showAll) {
         final musicians = item.worshipEvent.musicians ?? [];
-        if (currentUserId != null && musicians.isNotEmpty && !musicians.any((m) => m.memberId == currentUserId)) return false;
+        if (currentUserId != null && musicians.isNotEmpty) {
+          final isMine = musicians.any((m) =>
+              m.memberId == currentUserId ||
+              (_myMemberId != null && m.memberId == _myMemberId));
+          if (!isMine) return false;
+        }
       }
       final date = item.event?.date ?? item.worshipEvent.createdAt;
       final eventDate = DateTime(date.year, date.month, date.day);

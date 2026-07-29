@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/network/api_client.dart';
 import '../../../../core/offline/offline_guard.dart';
 import '../../../../shared/providers/auth_provider.dart';
-import '../../domain/worship_models.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
+import '../../../members/data/member_api.dart';
+import '../../../members/domain/member_model.dart';
+import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
+import '../../../../core/network/api_client.dart';
 
 class ScaleDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -22,7 +24,7 @@ class ScaleDetailScreen extends ConsumerStatefulWidget {
 class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
   WorshipEvent? _worshipEvent;
   EventModel? _event;
-  List<Map<String, dynamic>> _users = [];
+  final Map<String, MemberModel> _membersById = {};
   bool _loading = true;
 
   @override
@@ -35,6 +37,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     try {
       final worshipRepo = ref.read(worshipRepositoryProvider);
       final eventRepo = ref.read(eventRepositoryProvider);
+      final memberApi = MemberApi(ref.read(apiClientProvider));
 
       final cached = worshipRepo.peekWorshipEventCache(widget.id);
       if (cached != null && mounted) {
@@ -53,19 +56,24 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
       } catch (_) {
         ev = eventRepo.peekDetailCache(we.eventId);
       }
-      List<Map<String, dynamic>> users = [];
-      try {
-        final usersResponse = await ref.read(apiClientProvider).get('/users');
-        final usersData = ((usersResponse.data as Map)['data']);
-        if (usersData is List) {
-          users = usersData.cast<Map<String, dynamic>>();
+
+      final members = <String, MemberModel>{};
+      for (final musician in we.musicians ?? []) {
+        try {
+          final member = await memberApi.getById(musician.memberId);
+          members[musician.memberId] = member;
+        } catch (_) {
+          // Legacy rows may store userId in memberId — ignore lookup miss.
         }
-      } catch (_) {}
+      }
+
       if (mounted) {
         setState(() {
           _worshipEvent = we;
           _event = ev;
-          _users = users;
+          _membersById
+            ..clear()
+            ..addAll(members);
           _loading = false;
         });
       }
@@ -241,48 +249,58 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     final month = months[date.month - 1];
     final year = date.year;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(isDark, title, day, month, year, we),
-          const SizedBox(height: 24),
-          if (songs.isNotEmpty) ...[
-            _buildSectionTitle(isDark, 'Músicas (${songs.length})', Icons.music_note_rounded),
-            const SizedBox(height: 12),
-            ...songs.asMap().entries.map((e) => Padding(
-              padding: EdgeInsets.only(top: e.key > 0 ? 10 : 0),
-              child: _buildSongCard(isDark, e.value.song),
-            )),
-          ],
-          if (musicians.isNotEmpty) ...[
+    return RefreshIndicator(
+      color: const Color(0xFF008CFF),
+      onRefresh: _load,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(isDark, title, day, month, year, we),
+            const SizedBox(height: 24),
+            if (songs.isNotEmpty) ...[
+              _buildSectionTitle(isDark, 'Músicas (${songs.length})', Icons.music_note_rounded),
+              const SizedBox(height: 12),
+              ...songs.asMap().entries.map((e) => Padding(
+                padding: EdgeInsets.only(top: e.key > 0 ? 10 : 0),
+                child: _buildSongCard(isDark, e.value.song),
+              )),
+            ] else ...[
+              _buildSectionTitle(isDark, 'Músicas', Icons.music_note_rounded),
+              const SizedBox(height: 12),
+              Text('Nenhuma música na escala.', style: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF))),
+            ],
             const SizedBox(height: 24),
             _buildSectionTitle(isDark, 'Músicos (${musicians.length})', Icons.people_rounded),
             const SizedBox(height: 12),
-            ...musicians.asMap().entries.map((e) => Padding(
-              padding: EdgeInsets.only(top: e.key > 0 ? 10 : 0),
-              child: _buildMusicianCard(isDark, e.value, currentUserId),
-            )),
-          ],
-          if (we.notes != null && we.notes!.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            _buildSectionTitle(isDark, 'Observações', Icons.edit_note_rounded),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF161622) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFF3F4F6)),
+            if (musicians.isEmpty)
+              Text('Nenhum músico escalado.', style: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)))
+            else
+              ...musicians.asMap().entries.map((e) => Padding(
+                padding: EdgeInsets.only(top: e.key > 0 ? 10 : 0),
+                child: _buildMusicianCard(isDark, e.value, currentUserId),
+              )),
+            if (we.notes != null && we.notes!.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _buildSectionTitle(isDark, 'Observações', Icons.edit_note_rounded),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF161622) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFF3F4F6)),
+                ),
+                child: Text(we.notes!,
+                  style: TextStyle(fontSize: 14, height: 1.5,
+                    color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151))),
               ),
-              child: Text(we.notes!,
-                style: TextStyle(fontSize: 14, height: 1.5,
-                  color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151))),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -341,6 +359,11 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
               const Icon(Icons.music_note_rounded, size: 16, color: Colors.white70),
               const SizedBox(width: 6),
               Text('${songs.length} músicas',
+                style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.8))),
+              const SizedBox(width: 14),
+              const Icon(Icons.people_rounded, size: 16, color: Colors.white70),
+              const SizedBox(width: 6),
+              Text('${(we.musicians ?? []).length} músicos',
                 style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.8))),
             ],
           ),
@@ -441,11 +464,12 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
   }
 
   Widget _buildMusicianCard(bool isDark, WorshipEventMusician musician, String? currentUserId) {
-    final isCurrentUser = musician.memberId == currentUserId;
-    final userData = _users.where((u) => u['id'] == musician.memberId).toList();
-    final name = userData.isNotEmpty ? (userData.first['name'] as String? ?? '') : musician.memberId;
-    final email = userData.isNotEmpty ? (userData.first['email'] as String? ?? '') : '';
-    final avatarUrl = userData.isNotEmpty ? (userData.first['avatar'] as String?) : null;
+    final member = _membersById[musician.memberId];
+    final isCurrentUser = currentUserId != null &&
+        (musician.memberId == currentUserId || member?.userId == currentUserId);
+    final name = member?.name ?? musician.memberId;
+    final email = member?.email ?? '';
+    final avatarUrl = member?.avatar;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
     return Container(

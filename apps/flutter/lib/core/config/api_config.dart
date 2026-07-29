@@ -34,6 +34,7 @@ class ApiConfig {
 
   // Members
   static const String members = '/members';
+  static const String membersMe = '/members/me';
   static const String membersSearch = '/members/search';
   static const String membersBirthdays = '/members/birthdays';
   static const String ministries = '/members/ministries';

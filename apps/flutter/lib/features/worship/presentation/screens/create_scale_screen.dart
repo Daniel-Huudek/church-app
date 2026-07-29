@@ -5,7 +5,10 @@ import '../../../../core/network/api_client.dart';
 import '../../../events/data/event_api.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/widgets/event_source_section.dart';
+import '../../../members/data/member_api.dart';
+import '../../../members/domain/member_model.dart';
 import '../../data/worship_api.dart';
+import '../../data/worship_ministry_helper.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
 
@@ -27,8 +30,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
 
   List<Song> _allSongs = [];
   List<Song> _selectedSongs = [];
-  List<Map<String, dynamic>> _allUsers = [];
-  List<Map<String, dynamic>> _selectedMusicians = [];
+  List<MemberModel> _allMembers = [];
+  List<MemberModel> _selectedMusicians = [];
   final Map<String, String> _musicianInstruments = {};
   bool _loading = true;
 
@@ -84,18 +87,23 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
+      final memberApi = MemberApi(ref.read(apiClientProvider));
       final songsRes = await _worshipApi.listSongs(limit: 200).catchError((_) => <String, dynamic>{});
       final songsData = (songsRes['data'] as List?) ?? [];
       final songs = songsData.cast<Map<String, dynamic>>().map((s) => Song.fromJson(s)).toList();
 
-      List<Map<String, dynamic>> usersList = [];
+      List<MemberModel> members = [];
       try {
-        final usersResponse = await ref.read(apiClientProvider).get('/users');
-        final usersData = ((usersResponse.data as Map)['data']);
-        if (usersData is List) {
-          usersList = usersData.cast<Map<String, dynamic>>();
+        final ministry = await WorshipMinistryHelper.ensureMinistry(memberApi);
+        members = await memberApi.list(ministryId: ministry.id, limit: 100, status: 'ATIVO');
+        if (members.isEmpty) {
+          members = await memberApi.list(limit: 100, status: 'ATIVO');
         }
-      } catch (_) {}
+      } catch (_) {
+        try {
+          members = await memberApi.list(limit: 100, status: 'ATIVO');
+        } catch (_) {}
+      }
 
       List<EventModel> events = [];
       Set<String> usedEventIds = {};
@@ -114,6 +122,7 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         } catch (_) {}
       }
 
+      final selected = <MemberModel>[];
       if (_isEditing && widget.scaleId != null) {
         try {
           final weData = await _worshipApi.getWorshipEvent(widget.scaleId!);
@@ -132,10 +141,18 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
           }
           if (we.musicians != null) {
             for (final m in we.musicians!) {
-              final user = usersList.where((u) => u['id'] == m.memberId).toList();
-              if (user.isNotEmpty) {
-                _selectedMusicians.add(user.first);
-                if (m.instrument != null) _musicianInstruments[m.memberId] = m.instrument!;
+              MemberModel? member;
+              final byId = members.where((mem) => mem.id == m.memberId).toList();
+              if (byId.isNotEmpty) {
+                member = byId.first;
+              } else {
+                // Legacy scales stored userId in memberId — resolve via userId.
+                final byUser = members.where((mem) => mem.userId == m.memberId).toList();
+                if (byUser.isNotEmpty) member = byUser.first;
+              }
+              if (member != null) {
+                selected.add(member);
+                if (m.instrument != null) _musicianInstruments[member.id] = m.instrument!;
               }
             }
           }
@@ -146,7 +163,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
 
       setState(() {
         _allSongs = songs;
-        _allUsers = usersList;
+        _allMembers = members;
+        _selectedMusicians = selected;
         _availableEvents = events;
         _eventsWithWorshipScale = usedEventIds;
         _loading = false;
@@ -177,10 +195,9 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
     try {
       String? savedWorshipEventId;
       final musiciansPayload = _selectedMusicians.map((m) {
-        final id = m['id'] as String;
-        final instrument = _musicianInstruments[id];
+        final instrument = _musicianInstruments[m.id];
         return <String, dynamic>{
-          'memberId': id,
+          'memberId': m.id,
           if (instrument != null) 'instrument': instrument,
         };
       }).toList();
@@ -364,7 +381,7 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
                 children: [
                   _tabItem('Detalhes', Icons.info_outline, Icons.info, 0),
                   _tabItem('Músicas', Icons.music_note_outlined, Icons.music_note, 1),
-                  _tabItem('Participantes', Icons.people_outline, Icons.people, 2),
+                  _tabItem('Músicos', Icons.people_outline, Icons.people, 2),
                 ],
               ),
             ),
@@ -611,127 +628,149 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
   }
 
   Widget _buildParticipantes(bool isDark) {
-    final allowedRoles = ['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR', 'LOUVOR'];
-    final eligibleUsers = _allUsers.where((u) => allowedRoles.contains(u['role'] as String? ?? '')).toList();
-    final query = _searchMemberCtrl.text.toLowerCase();
-    final filtered = query.isEmpty
-        ? eligibleUsers
-        : eligibleUsers.where((u) {
-            final name = (u['name'] as String? ?? '').toLowerCase();
-            final email = (u['email'] as String? ?? '').toLowerCase();
-            return name.contains(query) || email.contains(query);
-          }).toList();
+    final query = _searchMemberCtrl.text.trim().toLowerCase();
+    final available = _allMembers.where((m) {
+      final selected = _selectedMusicians.any((s) => s.id == m.id);
+      if (selected) return false;
+      if (query.isEmpty) return true;
+      return m.name.toLowerCase().contains(query) ||
+          (m.email?.toLowerCase().contains(query) ?? false);
+    }).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final t1 = isDark ? Colors.white : const Color(0xFF111827);
+    final t2 = isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
+    final card = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF9FAFB);
+    final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB);
+    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
+
+    return ListView(
       children: [
+        Text(
+          'Músicos escalados',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t1),
+        ),
+        const SizedBox(height: 8),
+        if (_selectedMusicians.isEmpty)
+          Text('Nenhum músico adicionado ainda.', style: TextStyle(color: t2, fontSize: 13))
+        else
+          ..._selectedMusicians.asMap().entries.map((entry) {
+            final index = entry.key;
+            final member = entry.value;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: border),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(member.name, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+                        if (member.email != null) ...[
+                          const SizedBox(height: 2),
+                          Text(member.email!, style: TextStyle(color: t2, fontSize: 12)),
+                        ],
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: bg,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: border),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _musicianInstruments[member.id],
+                              isExpanded: true,
+                              hint: Text('Selecionar instrumento', style: TextStyle(fontSize: 13, color: t2)),
+                              items: _instruments
+                                  .map((inst) => DropdownMenuItem(
+                                        value: inst,
+                                        child: Text(inst, style: TextStyle(fontSize: 13, color: t1)),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v == null) return;
+                                setState(() => _musicianInstruments[member.id] = v);
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() {
+                      _selectedMusicians.removeAt(index);
+                      _musicianInstruments.remove(member.id);
+                    }),
+                    icon: const Icon(Icons.close, color: Colors.redAccent),
+                  ),
+                ],
+              ),
+            );
+          }),
+        const SizedBox(height: 16),
+        Text(
+          'Adicionar músico',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t1),
+        ),
+        const SizedBox(height: 8),
         Container(
           height: 52,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF9FAFB),
+            color: card,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB)),
+            border: Border.all(color: border),
           ),
           child: TextField(
             controller: _searchMemberCtrl,
             onChanged: (_) => setState(() {}),
-            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827)),
+            style: TextStyle(color: t1),
             decoration: InputDecoration(
-              hintText: 'Buscar participantes...',
-              hintStyle: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
-              prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
+              hintText: 'Buscar membro...',
+              hintStyle: TextStyle(color: t2),
+              prefixIcon: Icon(Icons.search_rounded, color: t2),
               border: InputBorder.none,
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        Text('${_selectedMusicians.length} selecionados',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF008CFF))),
         const SizedBox(height: 8),
-        Expanded(
-          child: filtered.isEmpty
-              ? Center(
-                  child: Text(
-                    query.isEmpty ? 'Nenhum usuário com permissão' : 'Nenhum participante encontrado',
-                    style: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
-                  ),
-                )
-              : ListView.separated(
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final user = filtered[i];
-                    final userId = user['id'] as String;
-                    final name = user['name'] as String? ?? '';
-                    final email = user['email'] as String?;
-                    final role = user['role'] as String? ?? '';
-                    final selected = _selectedMusicians.any((m) => m['id'] == userId);
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      leading: Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(
-                          color: selected ? const Color(0xFF008CFF) : const Color(0xFF008CFF).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(selected ? Icons.check_rounded : Icons.person_rounded,
-                          color: selected ? Colors.white : const Color(0xFF008CFF), size: 20),
-                      ),
-                      title: Row(children: [
-                        Flexible(child: Text(name, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF111827)))),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF008CFF).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(role,
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF008CFF))),
-                        ),
-                      ]),
-                      subtitle: selected
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF9FAFB),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _musicianInstruments[userId],
-                                    isExpanded: true,
-                                    hint: Text('Selecionar instrumento',
-                                      style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF))),
-                                    items: _instruments.map((inst) => DropdownMenuItem(
-                                      value: inst,
-                                      child: Text(inst, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF111827))),
-                                    )).toList(),
-                                    onChanged: (v) => setState(() { if (v != null) _musicianInstruments[userId] = v; }),
-                                  ),
-                                ),
-                              ),
-                            )
-                          : (email != null
-                              ? Text(email, style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)))
-                              : null),
-                      trailing: selected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF008CFF), size: 22) : null,
-                      onTap: () => setState(() {
-                        if (selected) {
-                          _selectedMusicians.removeWhere((m) => m['id'] == userId);
-                          _musicianInstruments.remove(userId);
-                        } else {
-                          _selectedMusicians.add(user);
-                        }
-                      }),
-                    );
-                  },
+        if (available.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              _allMembers.isEmpty
+                  ? 'Nenhum membro encontrado. Cadastre em Membros.'
+                  : (query.isEmpty ? 'Todos os membros já foram adicionados' : 'Nenhum membro encontrado'),
+              style: TextStyle(color: t2, fontSize: 13),
+            ),
+          )
+        else
+          ...available.take(20).map((member) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(member.name, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  [
+                    if (member.ministryName != null && member.ministryName!.isNotEmpty) member.ministryName!,
+                    if (member.email != null) member.email!,
+                  ].join(' · '),
+                  style: TextStyle(color: t2, fontSize: 12),
                 ),
-        ),
+                trailing: IconButton(
+                  onPressed: () => setState(() {
+                    _selectedMusicians.add(member);
+                    _musicianInstruments.putIfAbsent(member.id, () => 'Vocal');
+                  }),
+                  icon: const Icon(Icons.add_circle, color: Color(0xFF008CFF)),
+                ),
+              )),
       ],
     );
   }
