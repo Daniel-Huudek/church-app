@@ -129,111 +129,127 @@ class _ScalePageState extends ConsumerState<ScalePage> {
               Expanded(
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
-                    : filtered.isEmpty
-                        ? Center(
-                            child: Text(
-                              scaleTab == 0 ? 'Nenhuma escala futura' : 'Nenhuma escala passada',
-                              style: TextStyle(fontSize: 14, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 14),
-                            itemBuilder: (_, i) {
-                              final item = filtered[i];
-                              final we = item.worshipEvent;
-                              final ev = item.event;
-                              final songs = we.songs ?? [];
-                              final musicians = we.musicians ?? [];
-                              final startTime = ev?.startTime ?? '--:--';
-                              final confirmedCount = musicians.where((m) => m.isConfirmed).length;
-                              final title = ev?.title ?? 'Evento';
-                              final date = ev?.date ?? we.createdAt;
-                              final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                              final day = date.day.toString().padLeft(2, '0');
-                              final month = months[date.month - 1];
-
-                              return GestureDetector(
-                                onTap: () => context.push('/worship/scale/${we.id}'),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF008CFF),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFF008CFF), width: 1.5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF008CFF).withValues(alpha: 0.3),
-                                        blurRadius: 12, offset: const Offset(0, 4),
+                    : RefreshIndicator(
+                        color: const Color(0xFF008CFF),
+                        onRefresh: _load,
+                        child: filtered.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.35,
+                                    child: Center(
+                                      child: Text(
+                                        scaleTab == 0 ? 'Nenhuma escala futura' : 'Nenhuma escala passada',
+                                        style: TextStyle(fontSize: 14, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                                ],
+                              )
+                            : ListView.separated(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 14),
+                                itemBuilder: (_, i) {
+                                  final item = filtered[i];
+                                  final we = item.worshipEvent;
+                                  final ev = item.event;
+                                  final songs = we.songs ?? [];
+                                  final musicians = we.musicians ?? [];
+                                  final startTime = ev?.startTime ?? '--:--';
+                                  final confirmedCount = musicians.where((m) => m.isConfirmed).length;
+                                  final title = ev?.title ?? 'Evento';
+                                  final date = ev?.date ?? we.createdAt;
+                                  final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                                  final day = date.day.toString().padLeft(2, '0');
+                                  final month = months[date.month - 1];
+
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      await context.push('/worship/scale/${we.id}');
+                                      if (mounted) _load();
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF008CFF),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(color: const Color(0xFF008CFF), width: 1.5),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF008CFF).withValues(alpha: 0.3),
+                                            blurRadius: 12, offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Container(
-                                            width: 48, height: 48,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(alpha: 0.2),
-                                              borderRadius: BorderRadius.circular(14),
-                                            ),
-                                            child: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 24),
-                                          ),
-                                          const SizedBox(width: 14),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(title,
-                                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                                                const SizedBox(height: 4),
-                                                Row(
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Container(
+                                                width: 48, height: 48,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withValues(alpha: 0.2),
+                                                  borderRadius: BorderRadius.circular(14),
+                                                ),
+                                                child: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 24),
+                                              ),
+                                              const SizedBox(width: 14),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                    const Icon(Icons.schedule_rounded, size: 14, color: Colors.white70),
-                                                    const SizedBox(width: 4),
-                                                    Text(startTime, style: const TextStyle(fontSize: 13, color: Colors.white70)),
+                                                    Text(title,
+                                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                                                    const SizedBox(height: 4),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(Icons.schedule_rounded, size: 14, color: Colors.white70),
+                                                        const SizedBox(width: 4),
+                                                        Text(startTime, style: const TextStyle(fontSize: 13, color: Colors.white70)),
+                                                      ],
+                                                    ),
                                                   ],
                                                 ),
-                                              ],
-                                            ),
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                child: Column(
+                                                  children: [
+                                                    Text(day,
+                                                      style: const TextStyle(color: Color(0xFF008CFF), fontSize: 18, fontWeight: FontWeight.w800)),
+                                                    Text(month,
+                                                      style: const TextStyle(color: Color(0xFF008CFF), fontSize: 10, fontWeight: FontWeight.w600)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: Column(
-                                              children: [
-                                                Text(day,
-                                                  style: const TextStyle(color: Color(0xFF008CFF), fontSize: 18, fontWeight: FontWeight.w800)),
-                                                Text(month,
-                                                  style: const TextStyle(color: Color(0xFF008CFF), fontSize: 10, fontWeight: FontWeight.w600)),
-                                              ],
-                                            ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.2)),
+                                          ),
+                                          Row(
+                                            children: [
+                                              _statBadge(Icons.music_note_rounded, '${songs.length} músicas', isDark),
+                                              const SizedBox(width: 10),
+                                              _statBadge(Icons.people_rounded, '$confirmedCount/${musicians.length} pessoas', isDark),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.2)),
-                                      ),
-                                      Row(
-                                        children: [
-                                          _statBadge(Icons.music_note_rounded, '${songs.length} músicas', isDark),
-                                          const SizedBox(width: 10),
-                                          _statBadge(Icons.people_rounded, '$confirmedCount/${musicians.length} pessoas', isDark),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
               ),
             ],
           ),
@@ -248,7 +264,7 @@ class _ScalePageState extends ConsumerState<ScalePage> {
                 child: GestureDetector(
                   onTap: guardOnlineAction(context, ref, () async {
                     await context.push('/worship/scale/create');
-                    _load();
+                    if (mounted) _load();
                   }),
                   child: Container(
                     width: 56, height: 56,

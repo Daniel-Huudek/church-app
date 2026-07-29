@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../events/data/event_api.dart';
-import '../../../events/domain/event_model.dart';
 import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
+import '../providers/worship_provider.dart';
 
 class CreateScaleScreen extends ConsumerStatefulWidget {
   final String? scaleId;
@@ -116,8 +116,20 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
 
     setState(() => _saving = true);
     try {
+      String? savedWorshipEventId;
+      final musiciansPayload = _selectedMusicians.map((m) {
+        final id = m['id'] as String;
+        final instrument = _musicianInstruments[id];
+        return <String, dynamic>{
+          'memberId': id,
+          if (instrument != null) 'instrument': instrument,
+        };
+      }).toList();
+      final songIds = _selectedSongs.map((s) => s.id).toList();
+
       if (_isEditing && widget.scaleId != null) {
-        final event = await _eventApi.update(_eventId!, {
+        savedWorshipEventId = widget.scaleId;
+        await _eventApi.update(_eventId!, {
           'title': _titleCtrl.text.trim(),
           'type': _eventType,
           'date': '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}',
@@ -125,21 +137,13 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
           'endTime': _endTimeCtrl.text.trim(),
         });
 
-        final notes = _notesCtrl.text.trim();
         await _worshipApi.updateWorshipEvent(widget.scaleId!, {
-          if (notes.isNotEmpty) 'notes': notes,
+          'notes': _notesCtrl.text.trim(),
         });
 
-        if (_selectedSongs.isNotEmpty) {
-          await _worshipApi.reorderWorshipEventSongs(widget.scaleId!, _selectedSongs.map((s) => s.id).toList());
-        }
-        if (_selectedMusicians.isNotEmpty) {
-          final musicians = _selectedMusicians.map((m) => {
-            'memberId': m['id'] as String,
-            'instrument': _musicianInstruments[m['id'] as String],
-          }).toList();
-          await _worshipApi.setWorshipEventMusicians(widget.scaleId!, musicians);
-        }
+        // Always sync songs/musicians so removals are persisted.
+        await _worshipApi.reorderWorshipEventSongs(widget.scaleId!, songIds);
+        await _worshipApi.setWorshipEventMusicians(widget.scaleId!, musiciansPayload);
       } else {
         final event = await _eventApi.create({
           'title': _titleCtrl.text.trim(),
@@ -157,20 +161,21 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
 
         final weData = weRes['data'] as Map<String, dynamic>? ?? weRes;
         final worshipEventId = weData['id'] as String;
+        savedWorshipEventId = worshipEventId;
 
-        if (_selectedSongs.isNotEmpty) {
-          await _worshipApi.reorderWorshipEventSongs(worshipEventId, _selectedSongs.map((s) => s.id).toList());
+        if (songIds.isNotEmpty) {
+          await _worshipApi.reorderWorshipEventSongs(worshipEventId, songIds);
         }
-        if (_selectedMusicians.isNotEmpty) {
-          final musicians = _selectedMusicians.map((m) => {
-            'memberId': m['id'] as String,
-            'instrument': _musicianInstruments[m['id'] as String],
-          }).toList();
-          await _worshipApi.setWorshipEventMusicians(worshipEventId, musicians);
+        if (musiciansPayload.isNotEmpty) {
+          await _worshipApi.setWorshipEventMusicians(worshipEventId, musiciansPayload);
         }
       }
 
-      if (mounted) context.pop();
+      await ref.read(worshipRepositoryProvider).invalidateWorshipEventCaches(
+            id: savedWorshipEventId,
+          );
+
+      if (mounted) context.pop(true);
     } catch (e) {
       debugPrint('Erro ao salvar: $e');
       if (mounted) {
@@ -275,8 +280,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Nova Escala',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF008CFF)),
+          _isEditing ? 'Editar Escala' : 'Nova Escala',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF008CFF)),
         ),
       ),
       body: Padding(
