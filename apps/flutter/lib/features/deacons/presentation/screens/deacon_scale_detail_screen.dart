@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/offline/offline_guard.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/presentation/providers/member_provider.dart';
