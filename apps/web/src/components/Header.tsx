@@ -100,9 +100,6 @@ export function Header() {
               </a>
             ))}
           </div>
-          <a className="btn btn-primary" href="#conectar">
-            Conectar
-          </a>
           <button
             className="site-header__toggle"
             type="button"
