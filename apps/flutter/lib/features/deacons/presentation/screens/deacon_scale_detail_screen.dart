@@ -24,6 +24,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
   String _title = 'Escala de Diáconos';
   Map<String, String> _memberNames = {};
   Map<String, String?> _memberUserIds = {};
+  Map<String, String?> _memberEmails = {};
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
 
       final names = <String, String>{};
       final userIds = <String, String?>{};
+      final emails = <String, String?>{};
       for (final position in schedule.positionDetails) {
         final memberId = position.memberId;
         if (memberId == null) continue;
@@ -68,6 +70,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
           final member = (await memberRepo.getById(memberId)).data;
           names[memberId] = member.name;
           userIds[memberId] = member.userId;
+          emails[memberId] = member.email;
         } catch (_) {
           names[memberId] = position.memberName ?? 'Membro';
         }
@@ -79,6 +82,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
         _title = title;
         _memberNames = names;
         _memberUserIds = userIds;
+        _memberEmails = emails;
         _loading = false;
       });
     } catch (e) {
@@ -178,8 +182,15 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
               ...schedule.positionDetails.map((position) {
                 final name = _memberNames[position.memberId] ?? position.memberName ?? 'Membro';
                 final linkedUserId = _memberUserIds[position.memberId];
+                final memberEmail = _memberEmails[position.memberId]?.trim().toLowerCase();
+                final userEmail = user?.email.trim().toLowerCase();
                 final isMine = user != null &&
-                    (position.memberId == user.id || linkedUserId == user.id);
+                    (position.memberId == user.id ||
+                        linkedUserId == user.id ||
+                        (userEmail != null &&
+                            userEmail.isNotEmpty &&
+                            memberEmail != null &&
+                            memberEmail == userEmail));
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),

@@ -183,6 +183,16 @@ class MemberDetailScreen extends ConsumerWidget {
                         const Divider(),
                         _InfoItem(label: 'Profissão', value: member.occupation!),
                       ],
+                      if (member.birthDate != null ||
+                          member.age.isNotEmpty ||
+                          member.gender != null ||
+                          member.maritalStatus != null ||
+                          member.occupation != null)
+                        const Divider(),
+                      _InfoItem(
+                        label: 'Conta do app',
+                        value: member.userId != null ? 'Vinculada (pode confirmar escalas)' : 'Não vinculada',
+                      ),
                     ],
                   ),
                 ),

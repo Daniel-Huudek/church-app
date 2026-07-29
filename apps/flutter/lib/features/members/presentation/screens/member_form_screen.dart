@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../shared/models/user_model.dart';
 import '../../../../shared/utils/error_helper.dart';
+import '../../../users/presentation/providers/user_provider.dart';
 import '../../domain/member_model.dart';
 import '../providers/member_provider.dart';
 
@@ -46,6 +48,10 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   String? _admissionType;
   final Set<String> _ministryIds = {};
   bool _isBaptized = false;
+  String? _linkedUserId;
+  String? _originalUserId;
+  List<UserModel> _appUsers = const [];
+  bool _usersLoaded = false;
 
   bool _loading = false;
   bool _saving = false;
@@ -64,6 +70,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(_loadAppUsers);
     if (widget.isEditing) {
       Future.microtask(_loadMember);
     }
@@ -78,6 +85,20 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
       c.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _loadAppUsers() async {
+    try {
+      final users = await ref.read(userApiProvider).list(page: 1, limit: 200);
+      if (!mounted) return;
+      setState(() {
+        _appUsers = users..sort((a, b) => a.name.compareTo(b.name));
+        _usersLoaded = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _usersLoaded = true);
+    }
   }
 
   Future<void> _loadMember() async {
@@ -109,6 +130,8 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     _gender = member.gender;
     _maritalStatus = member.maritalStatus;
     _admissionType = member.admissionType;
+    _linkedUserId = member.userId;
+    _originalUserId = member.userId;
     _ministryIds
       ..clear()
       ..addAll(member.ministryIds.isNotEmpty
@@ -164,6 +187,13 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     if (_admissionDate != null) data['admissionDate'] = _admissionDate!.toIso8601String();
     if (_admissionType != null) data['admissionType'] = _admissionType;
     if (_baptismChurchCtrl.text.trim().isNotEmpty) data['baptismChurch'] = _baptismChurchCtrl.text.trim();
+    if (_linkedUserId != null) {
+      data['userId'] = _linkedUserId;
+    } else if (widget.isEditing && _originalUserId != null) {
+      // Usuário removeu o vínculo manualmente.
+      data['userId'] = null;
+    }
+    // Sem userId no payload: API tenta vincular pelo mesmo e-mail da conta do app.
 
     final hasAddress = _streetCtrl.text.trim().isNotEmpty &&
         _neighborhoodCtrl.text.trim().isNotEmpty &&
@@ -335,6 +365,37 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
                   _text('Nome completo *', _nameCtrl, t1, t2, card, border, requiredField: true),
                   _text('Telefone', _phoneCtrl, t1, t2, card, border, keyboard: TextInputType.phone),
                   _text('E-mail', _emailCtrl, t1, t2, card, border, keyboard: TextInputType.emailAddress),
+                  if (_usersLoaded && _appUsers.isNotEmpty)
+                    _dropdown<String?>(
+                      'Conta do app (para confirmar escalas)',
+                      _linkedUserId != null && _appUsers.any((u) => u.id == _linkedUserId)
+                          ? _linkedUserId
+                          : null,
+                      [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Nenhuma / vincular pelo e-mail'),
+                        ),
+                        ..._appUsers.map(
+                          (u) => DropdownMenuItem<String?>(
+                            value: u.id,
+                            child: Text('${u.name} (${u.email})', overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
+                      ],
+                      (v) => setState(() => _linkedUserId = v),
+                      t1, t2, card, border,
+                    )
+                  else if (_usersLoaded)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        _linkedUserId != null
+                            ? 'Conta do app vinculada. Se o e-mail do membro for o mesmo do login, a confirmação nas escalas funciona automaticamente.'
+                            : 'Dica: use o mesmo e-mail da conta do app para vincular e permitir confirmação nas escalas.',
+                        style: TextStyle(color: t2, fontSize: 12),
+                      ),
+                    ),
                   _dateField('Data de nascimento', _birthDate, () => _pickDate(current: _birthDate, onPicked: (d) => setState(() => _birthDate = d)), t1, t2, card, border),
                   _dropdown<String>(
                     'Gênero',

@@ -29,7 +29,7 @@ const memberSchema = z.object({
   ministryIds: z.array(z.string().uuid()).optional(),
   occupation: z.string().optional(),
   notes: z.string().optional(),
-  userId: z.string().uuid().optional(),
+  userId: z.string().uuid().nullable().optional(),
   forceDuplicate: z.boolean().optional(),
   address: z.object({
     street: z.string().min(1),

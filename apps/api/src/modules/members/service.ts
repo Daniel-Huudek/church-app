@@ -269,6 +269,40 @@ export class MemberService {
     if (!user) throw new BadRequestError('userId does not reference an existing user');
   }
 
+  private async assertUserAvailable(userId?: string | null, excludeMemberId?: string) {
+    if (!userId) return;
+    await this.assertUserExists(userId);
+    const linked = await this.prisma.member.findFirst({
+      where: {
+        userId,
+        deletedAt: null,
+        ...(excludeMemberId ? { id: { not: excludeMemberId } } : {}),
+      },
+    });
+    if (linked) throw new ConflictError('Esta conta do app já está vinculada a outro membro');
+  }
+
+  /** Prefer explicit userId; otherwise link by matching email with a User account. */
+  private async resolveLinkedUserId(opts: {
+    email?: string | null;
+    userId?: string | null;
+    excludeMemberId?: string;
+  }): Promise<string | null | undefined> {
+    if (opts.userId === null) return null;
+    if (opts.userId) {
+      await this.assertUserAvailable(opts.userId, opts.excludeMemberId);
+      return opts.userId;
+    }
+    const email = normalizeEmail(opts.email);
+    if (!email) return undefined;
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' }, deletedAt: null },
+    });
+    if (!user) return undefined;
+    await this.assertUserAvailable(user.id, opts.excludeMemberId);
+    return user.id;
+  }
+
   private async assertEmailUnique(email?: string, excludeId?: string) {
     const normalized = normalizeEmail(email);
     if (!normalized) return;
@@ -288,7 +322,10 @@ export class MemberService {
     const phone = memberData.phone?.trim() || undefined;
     const ministryIds = this.resolveMinistryIds(body);
 
-    await this.assertUserExists(memberData.userId);
+    const linkedUserId = await this.resolveLinkedUserId({
+      email,
+      userId: memberData.userId ?? undefined,
+    });
     await this.assertEmailUnique(email);
 
     if (!forceDuplicate) {
@@ -301,6 +338,7 @@ export class MemberService {
     const data = await this.prisma.member.create({
       data: {
         ...memberData,
+        userId: linkedUserId ?? null,
         email,
         phone,
         ministryId: ministryIds[0] ?? memberData.ministryId ?? null,
@@ -329,10 +367,29 @@ export class MemberService {
     if (!existing) throw new NotFoundError('Member not found');
 
     const { address, forceDuplicate, ministryIds: bodyMinistryIds, ...memberData } = body;
-    if (memberData.userId !== undefined) await this.assertUserExists(memberData.userId);
     if (memberData.email !== undefined) {
       memberData.email = normalizeEmail(memberData.email);
       await this.assertEmailUnique(memberData.email, id);
+    }
+
+    const emailForLink = memberData.email ?? existing.email;
+    let linkedUserId: string | null | undefined;
+    if (Object.prototype.hasOwnProperty.call(body, 'userId')) {
+      linkedUserId = await this.resolveLinkedUserId({
+        email: emailForLink,
+        userId: memberData.userId ?? null,
+        excludeMemberId: id,
+      });
+    } else if (!existing.userId) {
+      linkedUserId = await this.resolveLinkedUserId({
+        email: emailForLink,
+        excludeMemberId: id,
+      });
+    }
+    if (linkedUserId !== undefined) {
+      memberData.userId = linkedUserId;
+    } else {
+      delete memberData.userId;
     }
 
     if (!forceDuplicate && (memberData.email || memberData.phone || memberData.name)) {
@@ -391,10 +448,36 @@ export class MemberService {
   }
 
   async findByUserId(userId: string) {
-    const data = await this.prisma.member.findFirst({
+    let data = await this.prisma.member.findFirst({
       where: { userId, deletedAt: null },
       include: this.memberInclude,
     });
+
+    // Auto-link: member cadastrado sem userId, mas com o mesmo e-mail da conta do app.
+    if (!data) {
+      const user = await this.prisma.user.findFirst({
+        where: { id: userId, deletedAt: null },
+      });
+      const email = normalizeEmail(user?.email);
+      if (email) {
+        const byEmail = await this.prisma.member.findFirst({
+          where: {
+            deletedAt: null,
+            userId: null,
+            email: { equals: email, mode: 'insensitive' },
+          },
+          include: this.memberInclude,
+        });
+        if (byEmail) {
+          data = await this.prisma.member.update({
+            where: { id: byEmail.id },
+            data: { userId },
+            include: this.memberInclude,
+          });
+        }
+      }
+    }
+
     if (!data) throw new NotFoundError('Member not found');
     return { success: true, data: this.serializeMember(data) };
   }
