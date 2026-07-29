@@ -141,6 +141,8 @@ class MemberRepository {
       'status': member.status,
       'role': member.role,
       'ministryId': member.ministryId,
+      'ministryIds': member.ministryIds,
+      'ministries': member.ministries,
       if (member.ministryName != null)
         'ministry': {
           'id': member.ministryId,
