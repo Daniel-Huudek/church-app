@@ -1,7 +1,3 @@
-function isRemoteAsset(src: string) {
-  return /^https?:\/\//i.test(src);
-}
-
 type BrandLogoProps = {
   src?: string;
   alt?: string;
@@ -10,15 +6,16 @@ type BrandLogoProps = {
   className?: string;
 };
 
+const DEFAULT_LOGO = '/logo.png';
+
 export function BrandLogo({
-  src = '/logo.png',
+  src = DEFAULT_LOGO,
   alt = '',
-  width = 38,
-  height = 38,
+  width = 168,
+  height = 64,
   className,
 }: BrandLogoProps) {
-  const resolved = src.trim() || '/logo.png';
-  const invert = !isRemoteAsset(resolved);
+  const resolved = src.trim() || DEFAULT_LOGO;
 
   return (
     <img
@@ -27,7 +24,7 @@ export function BrandLogo({
       alt={alt}
       width={width}
       height={height}
-      style={invert ? { filter: 'invert(1)' } : undefined}
+      decoding="async"
     />
   );
 }

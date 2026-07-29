@@ -22,7 +22,7 @@ export function Footer() {
         <div className="site-footer__grid">
           <div>
             <Link className="site-footer__brand" to="/" aria-label={church.brand}>
-              <BrandLogo src={church.logoUrl} alt={church.logoLabel || church.brand} width={44} height={44} />
+              <BrandLogo src={church.logoUrl} alt={church.logoLabel || church.brand} width={150} height={56} />
             </Link>
             <p className="site-footer__about">{church.about}</p>
           </div>

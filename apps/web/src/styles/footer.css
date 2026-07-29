@@ -18,8 +18,9 @@
 }
 
 .site-footer__brand img {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: auto;
+  height: 2.5rem;
+  max-width: 10.5rem;
   object-fit: contain;
 }
 
