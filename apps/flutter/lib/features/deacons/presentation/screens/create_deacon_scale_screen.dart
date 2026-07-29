@@ -11,7 +11,8 @@ import '../../../schedules/data/schedule_api.dart';
 import '../../data/deacon_ministry_helper.dart';
 
 class CreateDeaconScaleScreen extends ConsumerStatefulWidget {
-  const CreateDeaconScaleScreen({super.key});
+  final String? scheduleId;
+  const CreateDeaconScaleScreen({super.key, this.scheduleId});
 
   @override
   ConsumerState<CreateDeaconScaleScreen> createState() => _CreateDeaconScaleScreenState();
@@ -38,6 +39,7 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
   DateTime _selectedDate = DateTime.now();
   bool _loading = true;
   bool _saving = false;
+  bool get _isEditing => widget.scheduleId != null;
   String? _ministryId;
   String? _eventId;
   EventLinkMode _eventLinkMode = EventLinkMode.existing;
@@ -81,6 +83,12 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
     _endCtrl.text = '21:00';
   }
 
+  String _normalizeFunction(String? value) {
+    if (value == null || value.isEmpty) return _functions.first;
+    if (_functions.contains(value)) return value;
+    return 'Outro';
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
@@ -97,29 +105,87 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
 
       List<EventModel> events = [];
       Set<String> usedEventIds = {};
-      try {
-        final now = DateTime.now();
-        final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
-        final end = start.add(const Duration(days: 120));
-        events = await eventApi.list(startDate: start, endDate: end);
-        events.sort((a, b) => a.date.compareTo(b.date));
-      } catch (_) {}
+      if (!_isEditing) {
+        try {
+          final now = DateTime.now();
+          final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+          final end = start.add(const Duration(days: 120));
+          events = await eventApi.list(startDate: start, endDate: end);
+          events.sort((a, b) => a.date.compareTo(b.date));
+        } catch (_) {}
 
-      try {
-        final schedules = await scheduleApi.list(ministryId: ministry.id);
-        usedEventIds = schedules
-            .map((s) => s.eventId)
-            .whereType<String>()
-            .toSet();
-      } catch (_) {}
+        try {
+          final schedules = await scheduleApi.list(ministryId: ministry.id);
+          usedEventIds = schedules
+              .map((s) => s.eventId)
+              .whereType<String>()
+              .toSet();
+        } catch (_) {}
+      }
+
+      final assignments = <_DeaconAssignment>[];
+      if (_isEditing && widget.scheduleId != null) {
+        final schedule = await scheduleApi.getById(widget.scheduleId!);
+        _ministryId = schedule.ministryId ?? ministry.id;
+        _eventLinkMode = EventLinkMode.existing;
+        _selectedDate = schedule.date;
+        _startCtrl.text = schedule.startTime;
+        _endCtrl.text = schedule.endTime;
+
+        if (schedule.eventId != null) {
+          try {
+            final event = await eventApi.getById(schedule.eventId!);
+            _applyEvent(event);
+            _notesCtrl.text = (event.description != null && event.description != 'Escala de diáconos')
+                ? event.description!
+                : '';
+          } catch (_) {
+            _eventId = schedule.eventId;
+            _titleCtrl.text = schedule.eventName ?? 'Escala de diáconos';
+          }
+        } else {
+          _titleCtrl.text = schedule.eventName ?? 'Escala de diáconos';
+        }
+
+        for (final position in schedule.positionDetails) {
+          final memberId = position.memberId;
+          if (memberId == null) continue;
+          MemberModel? member;
+          final byId = members.where((m) => m.id == memberId).toList();
+          if (byId.isNotEmpty) {
+            member = byId.first;
+          } else {
+            try {
+              member = await memberApi.getById(memberId);
+            } catch (_) {
+              member = MemberModel(
+                id: memberId,
+                name: position.memberName ?? 'Membro',
+                createdAt: DateTime.now(),
+              );
+            }
+          }
+          assignments.add(
+            _DeaconAssignment(
+              member: member,
+              function: _normalizeFunction(position.position),
+            ),
+          );
+        }
+      }
 
       if (!mounted) return;
       setState(() {
-        _ministryId = ministry.id;
+        _ministryId ??= ministry.id;
         _members = members;
         _availableEvents = events;
         _eventsWithDeaconScale = usedEventIds;
-        _eventLinkMode = events.isEmpty ? EventLinkMode.createNew : EventLinkMode.existing;
+        if (!_isEditing) {
+          _eventLinkMode = events.isEmpty ? EventLinkMode.createNew : EventLinkMode.existing;
+        }
+        _assignments
+          ..clear()
+          ..addAll(assignments);
         _loading = false;
       });
     } catch (e) {
@@ -133,7 +199,7 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) setState(() => _selectedDate = picked);
@@ -153,9 +219,17 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
       );
       return;
     }
-    if (_eventLinkMode == EventLinkMode.existing && (_eventId == null || _eventId!.isEmpty)) {
+    if (!_isEditing &&
+        _eventLinkMode == EventLinkMode.existing &&
+        (_eventId == null || _eventId!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecione um evento existente')),
+      );
+      return;
+    }
+    if (_isEditing && (_eventId == null || _eventId!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Evento da escala não encontrado')),
       );
       return;
     }
@@ -175,42 +249,61 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
         'startTime': _startCtrl.text.trim(),
         'endTime': _endCtrl.text.trim(),
       };
+      final positions = _assignments
+          .map((a) => {
+                'memberId': a.member.id,
+                'position': a.function,
+              })
+          .toList();
 
-      late final String linkedEventId;
-      if (_eventLinkMode == EventLinkMode.existing) {
-        linkedEventId = _eventId!;
-        if (_eventsWithDeaconScale.contains(linkedEventId)) {
-          throw Exception('Este evento já possui escala de diáconos');
-        }
-        await eventApi.update(linkedEventId, {
+      if (_isEditing && widget.scheduleId != null) {
+        await eventApi.update(_eventId!, {
           'title': _titleCtrl.text.trim(),
           'date': dateIso,
           'startTime': _startCtrl.text.trim(),
           'endTime': _endCtrl.text.trim(),
           if (_notesCtrl.text.trim().isNotEmpty) 'description': _notesCtrl.text.trim(),
         });
+        await scheduleApi.update(widget.scheduleId!, {
+          'eventId': _eventId,
+          'ministryId': _ministryId,
+          'date': dateIso,
+          'startTime': _startCtrl.text.trim(),
+          'endTime': _endCtrl.text.trim(),
+          'positions': positions,
+        });
       } else {
-        final event = await eventApi.create(eventPayload);
-        linkedEventId = event.id;
-      }
+        late final String linkedEventId;
+        if (_eventLinkMode == EventLinkMode.existing) {
+          linkedEventId = _eventId!;
+          if (_eventsWithDeaconScale.contains(linkedEventId)) {
+            throw Exception('Este evento já possui escala de diáconos');
+          }
+          await eventApi.update(linkedEventId, {
+            'title': _titleCtrl.text.trim(),
+            'date': dateIso,
+            'startTime': _startCtrl.text.trim(),
+            'endTime': _endCtrl.text.trim(),
+            if (_notesCtrl.text.trim().isNotEmpty) 'description': _notesCtrl.text.trim(),
+          });
+        } else {
+          final event = await eventApi.create(eventPayload);
+          linkedEventId = event.id;
+        }
 
-      await scheduleApi.create({
-        'eventId': linkedEventId,
-        'ministryId': _ministryId,
-        'date': dateIso,
-        'startTime': _startCtrl.text.trim(),
-        'endTime': _endCtrl.text.trim(),
-        'positions': _assignments
-            .map((a) => {
-                  'memberId': a.member.id,
-                  'position': a.function,
-                })
-            .toList(),
-      });
+        await scheduleApi.create({
+          'eventId': linkedEventId,
+          'ministryId': _ministryId,
+          'date': dateIso,
+          'startTime': _startCtrl.text.trim(),
+          'endTime': _endCtrl.text.trim(),
+          'positions': positions,
+        });
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escala de diáconos criada!')),
+        SnackBar(content: Text(_isEditing ? 'Escala atualizada!' : 'Escala de diáconos criada!')),
       );
       context.pop();
     } catch (e) {
@@ -246,34 +339,38 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
           onPressed: () => context.pop(),
           icon: Icon(Icons.arrow_back, color: t1),
         ),
-        title: Text('Nova escala de diáconos', style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+        title: Text(
+          _isEditing ? 'Editar escala de diáconos' : 'Nova escala de diáconos',
+          style: TextStyle(color: t1, fontWeight: FontWeight.w600),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                EventSourceSection(
-                  isDark: isDark,
-                  mode: _eventLinkMode,
-                  onModeChanged: (mode) {
-                    setState(() {
-                      _eventLinkMode = mode;
-                      if (mode == EventLinkMode.createNew) {
-                        _clearEventFields();
-                      } else if (_eventId != null) {
-                        final match = _availableEvents.where((e) => e.id == _eventId);
-                        if (match.isNotEmpty) _applyEvent(match.first);
-                      }
-                    });
-                  },
-                  events: _availableEvents,
-                  unavailableEventIds: _eventsWithDeaconScale,
-                  selectedEventId: _eventId,
-                  onSelectEvent: (event) => setState(() => _applyEvent(event)),
-                  unavailableHint: 'Já tem escala de diáconos',
-                ),
-                const SizedBox(height: 16),
+                if (!_isEditing)
+                  EventSourceSection(
+                    isDark: isDark,
+                    mode: _eventLinkMode,
+                    onModeChanged: (mode) {
+                      setState(() {
+                        _eventLinkMode = mode;
+                        if (mode == EventLinkMode.createNew) {
+                          _clearEventFields();
+                        } else if (_eventId != null) {
+                          final match = _availableEvents.where((e) => e.id == _eventId);
+                          if (match.isNotEmpty) _applyEvent(match.first);
+                        }
+                      });
+                    },
+                    events: _availableEvents,
+                    unavailableEventIds: _eventsWithDeaconScale,
+                    selectedEventId: _eventId,
+                    onSelectEvent: (event) => setState(() => _applyEvent(event)),
+                    unavailableHint: 'Já tem escala de diáconos',
+                  ),
+                if (!_isEditing) const SizedBox(height: 16),
                 _field('Título do evento', _titleCtrl, 'Ex: Culto de domingo', t1, t2, card, border),
                 const SizedBox(height: 16),
                 Text('Data', style: TextStyle(color: t2, fontSize: 14)),
@@ -394,7 +491,12 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text(_saving ? 'Salvando...' : 'Criar escala', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      _saving
+                          ? 'Salvando...'
+                          : (_isEditing ? 'Salvar alterações' : 'Criar escala'),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
               ],

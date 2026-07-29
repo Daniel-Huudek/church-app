@@ -185,12 +185,51 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     } catch (_) {}
   }
 
+  Future<void> _deleteScale() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Excluir escala'),
+        content: const Text('Tem certeza que deseja excluir esta escala de louvor? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    try {
+      await ref.read(worshipRepositoryProvider).deleteWorshipEvent(widget.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escala excluída')),
+      );
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao excluir: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
     final we = _worshipEvent;
     final ev = _event;
+    final canManage = ref.read(authProvider).user?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR']) == true;
 
     return Scaffold(
       backgroundColor: bg,
@@ -214,14 +253,15 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF111827)),
         ),
         actions: [
-          if (ref.read(authProvider).user?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR']) == true)
+          if (canManage) ...[
             Container(
-              margin: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFF008CFF).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
+                tooltip: 'Editar',
                 icon: const Icon(Icons.edit_rounded, color: Color(0xFF008CFF), size: 22),
                 onPressed: () async {
                   await context.push('/worship/scale/${widget.id}/edit');
@@ -229,6 +269,19 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
                 },
               ),
             ),
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 8, right: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                tooltip: 'Excluir escala',
+                icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22),
+                onPressed: _deleteScale,
+              ),
+            ),
+          ],
         ],
       ),
       body: _loading

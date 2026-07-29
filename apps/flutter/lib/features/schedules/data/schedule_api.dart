@@ -27,6 +27,11 @@ class ScheduleApi {
     return ScheduleModel.fromJson(_client.unwrapData(response.data));
   }
 
+  Future<ScheduleModel> update(String id, Map<String, dynamic> data) async {
+    final response = await _client.put('${ApiConfig.schedules}/$id', data: data);
+    return ScheduleModel.fromJson(_client.unwrapData(response.data));
+  }
+
   Future<void> confirmPresence(String scheduleId, String positionId, {bool confirmed = true}) async {
     await _client.post(
       '${ApiConfig.schedules}/confirm',
@@ -36,5 +41,9 @@ class ScheduleApi {
         'confirmed': confirmed,
       },
     );
+  }
+
+  Future<void> delete(String id) async {
+    await _client.delete('${ApiConfig.schedules}/$id');
   }
 }

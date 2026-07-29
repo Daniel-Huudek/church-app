@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/offline/offline_guard.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/presentation/providers/member_provider.dart';
@@ -113,6 +114,38 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
     }
   }
 
+  Future<void> _deleteScale() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir escala'),
+        content: const Text('Tem certeza que deseja excluir esta escala de diáconos? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    try {
+      await ref.read(scheduleRepositoryProvider).delete(widget.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escala excluída')),
+      );
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao excluir: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -122,6 +155,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
     final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
     final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
     final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
+    final canManage = user?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS']) ?? false;
 
     if (_loading && _schedule == null) {
       return Scaffold(backgroundColor: bg, body: const Center(child: CircularProgressIndicator()));
@@ -146,6 +180,23 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
           icon: Icon(Icons.arrow_back, color: t1),
         ),
         title: Text('Detalhe da escala', style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+        actions: [
+          if (canManage) ...[
+            IconButton(
+              tooltip: 'Editar escala',
+              onPressed: () async {
+                await context.push(AppRoutes.deaconEdit(widget.id));
+                if (mounted) _load();
+              },
+              icon: const Icon(Icons.edit_outlined, color: Color(0xFF008CFF)),
+            ),
+            IconButton(
+              tooltip: 'Excluir escala',
+              onPressed: _deleteScale,
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
+            ),
+          ],
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _load,

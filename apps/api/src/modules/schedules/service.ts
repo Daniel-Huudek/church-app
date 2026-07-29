@@ -31,9 +31,43 @@ export class ScheduleService {
     return this.findById(data.id);
   }
 
-  async update(id: string, body: Partial<{ eventId: string; ministryId: string; date: string; startTime: string; endTime: string }>) {
-    const data = await this.prisma.schedule.update({ where: { id }, data: body as any });
-    return { success: true, data };
+  async update(
+    id: string,
+    body: Partial<{
+      eventId: string;
+      ministryId: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      positions: { memberId: string; position: string }[];
+    }>,
+  ) {
+    const existing = await this.prisma.schedule.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw new NotFoundError('Schedule not found');
+
+    const { positions, date, ...rest } = body;
+    await this.prisma.schedule.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(date ? { date: new Date(date) } : {}),
+      },
+    });
+
+    if (positions) {
+      await this.prisma.schedulePosition.deleteMany({ where: { scheduleId: id } });
+      if (positions.length > 0) {
+        await this.prisma.schedulePosition.createMany({
+          data: positions.map((p) => ({
+            scheduleId: id,
+            memberId: p.memberId,
+            position: p.position,
+          })),
+        });
+      }
+    }
+
+    return this.findById(id);
   }
 
   async delete(id: string) {

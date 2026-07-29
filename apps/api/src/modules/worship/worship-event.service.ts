@@ -48,6 +48,13 @@ export class WorshipEventService {
     return this.prisma.worshipEvent.update({ where: { id }, data });
   }
 
+  async remove(id: string) {
+    const existing = await this.prisma.worshipEvent.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError('Worship event not found');
+    await this.prisma.worshipEvent.delete({ where: { id } });
+    return { success: true };
+  }
+
   async reorderSongs(worshipEventId: string, songIds: string[]) {
     if (!await this.prisma.worshipEvent.findUnique({ where: { id: worshipEventId } })) throw new NotFoundError('Worship event not found');
     await this.prisma.worshipEventSong.deleteMany({ where: { worshipEventId } });

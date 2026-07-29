@@ -100,6 +100,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS'])) {
           return AppRoutes.deacons;
         }
+        if (location.startsWith('${AppRoutes.deacons}/') &&
+            location.endsWith('/edit') &&
+            !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS'])) {
+          return AppRoutes.deacons;
+        }
       }
       return null;
     },
@@ -291,6 +296,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => DeaconScaleDetailScreen(
                   id: state.pathParameters['id'] ?? '',
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => CreateDeaconScaleScreen(
+                      scheduleId: state.pathParameters['id'],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

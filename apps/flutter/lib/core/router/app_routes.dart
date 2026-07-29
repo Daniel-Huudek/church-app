@@ -38,6 +38,7 @@ class AppRoutes {
   static const String deacons = '/deacons';
   static const String deaconsCreate = '/deacons/create';
   static String deaconDetail(String id) => '/deacons/$id';
+  static String deaconEdit(String id) => '/deacons/$id/edit';
   static const String notifications = '/notifications';
   static const String chat = '/chat';
   static String chatDetail(String id) => '/chat/$id';
