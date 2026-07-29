@@ -10,8 +10,9 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
   nav: [
     {
       label: 'Nossa Igreja',
-      href: '/',
+      href: '/nossa-igreja',
       children: [
+        { label: 'Nossa Igreja', href: '/nossa-igreja' },
         { label: 'Início', href: '/' },
         { label: 'Nossa Liderança', href: '/lideranca' },
       ],
@@ -71,10 +72,24 @@ export const DEFAULT_WEBSITE_CONTENT: WebsiteContentPayload = {
     image: '/pastor.png',
     bio: 'Atualize a biografia do pastor no app (Painel → Site).',
   },
+  ourChurch: {
+    titlePrefix: 'Nossa',
+    titleAccent: 'Igreja',
+    history: [
+      'A 1ª Igreja Presbiteriana Independente de Avaré nasceu do desejo de anunciar o Evangelho de Jesus Cristo nesta cidade, formando uma comunidade de fé, comunhão e serviço.',
+      'Ao longo dos anos, temos buscado viver a Palavra com simplicidade e fidelidade — acolhendo famílias, discipulando gerações e sendo luz no Centro de Avaré.',
+      'Somos uma igreja local da IPI do Brasil, guiada pela graça de Deus e comprometida com a missão de proclamar o Reino até que Cristo volte.',
+    ],
+    image: '',
+    schedule: [
+      { day: 'Quartas-feiras', time: '20h', label: 'Culto' },
+      { day: 'Domingos', time: '19h30', label: 'Culto' },
+    ],
+  },
   usefulLinks: [
+    { label: 'Nossa Igreja', href: '/nossa-igreja' },
     { label: 'Notícias', href: '/#noticias' },
     { label: 'O que nós Cremos', href: '/afirmacao-de-fe' },
-    { label: 'Eventos', href: '/#eventos' },
   ],
   address: {
     line: 'R. Goiás, 1142 — Centro, Avaré — SP, 18700-140',

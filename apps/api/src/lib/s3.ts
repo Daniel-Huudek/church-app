@@ -6,7 +6,7 @@ import { AppError } from '@church-app/shared';
 const ALLOWED_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-export type WebsiteUploadKind = 'leadership' | 'series' | 'news' | 'streams' | 'events' | 'logo' | 'general';
+export type WebsiteUploadKind = 'leadership' | 'series' | 'news' | 'streams' | 'events' | 'logo' | 'church' | 'general';
 
 export function getS3Config() {
   const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || '';

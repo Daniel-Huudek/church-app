@@ -5,6 +5,7 @@ Site institucional público baseado no layout Figma da **IPI Avaré**.
 ## Seções / páginas
 
 - `/` — Home (banner, eventos, palavra, notícias, transmissões)
+- `/nossa-igreja` — História, programação e mapa
 - `/afirmacao-de-fe` — Afirmação de Fé da IPI do Brasil
 - `/lideranca` — Nossa Liderança
 
@@ -23,6 +24,7 @@ Todas sobem para S3 pelo botão **Enviar imagem (S3)**:
 | Slot | Campo CMS |
 |------|-----------|
 | Logo (header/footer) | `logoUrl` |
+| Foto da igreja (página Nossa Igreja) | `ourChurch.image` |
 | Banner da série | `series.image` |
 | Miniaturas de eventos | `events[].image` |
 | Notícias | `news[].image` |

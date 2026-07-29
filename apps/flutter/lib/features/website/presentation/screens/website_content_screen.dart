@@ -38,6 +38,10 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
   late final TextEditingController _leaderImage;
   late final TextEditingController _leaderBio;
   late final TextEditingController _faithParagraphs;
+  late final TextEditingController _churchHistory;
+  late final TextEditingController _churchImage;
+  late final TextEditingController _scheduleWed;
+  late final TextEditingController _scheduleSun;
 
   final List<_EventDraft> _events = [];
   final List<_MediaDraft> _news = [];
@@ -66,6 +70,10 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     _leaderImage = TextEditingController();
     _leaderBio = TextEditingController();
     _faithParagraphs = TextEditingController();
+    _churchHistory = TextEditingController();
+    _churchImage = TextEditingController();
+    _scheduleWed = TextEditingController(text: '20h');
+    _scheduleSun = TextEditingController(text: '19h30');
   }
 
   @override
@@ -74,6 +82,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
       _brand, _fullName, _about, _logoUrl, _addressLine, _email, _facebook, _instagram, _youtube,
       _seriesTitle, _seriesSubtitle, _seriesCaption, _seriesImage, _weeklyText, _weeklyRef,
       _leaderName, _leaderRole, _leaderImage, _leaderBio, _faithParagraphs,
+      _churchHistory, _churchImage, _scheduleWed, _scheduleSun,
     ]) {
       c.dispose();
     }
@@ -126,6 +135,19 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     _leaderRole.text = '${leadership['role'] ?? ''}';
     _leaderImage.text = '${leadership['image'] ?? ''}';
     _leaderBio.text = '${leadership['bio'] ?? ''}';
+
+    final ourChurch = Map<String, dynamic>.from((content['ourChurch'] as Map?) ?? {});
+    final history = (ourChurch['history'] as List?)?.map((e) => '$e').toList() ?? [];
+    _churchHistory.text = history.join('\n\n');
+    _churchImage.text = '${ourChurch['image'] ?? ''}';
+    final schedule = (ourChurch['schedule'] as List?) ?? [];
+    for (final item in schedule) {
+      final map = Map<String, dynamic>.from(item as Map);
+      final day = '${map['day'] ?? ''}'.toLowerCase();
+      final time = '${map['time'] ?? ''}';
+      if (day.contains('quarta')) _scheduleWed.text = time;
+      if (day.contains('domingo')) _scheduleSun.text = time;
+    }
 
     final faith = Map<String, dynamic>.from((content['faith'] as Map?) ?? {});
     final paragraphs = (faith['paragraphs'] as List?)?.map((e) => '$e').toList() ?? [];
@@ -218,6 +240,33 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
     leadership['titlePrefix'] = leadership['titlePrefix'] ?? 'Nossa';
     leadership['titleAccent'] = leadership['titleAccent'] ?? 'Liderança';
 
+    final ourChurch = Map<String, dynamic>.from((current['ourChurch'] as Map?) ?? {});
+    ourChurch['titlePrefix'] = ourChurch['titlePrefix'] ?? 'Nossa';
+    ourChurch['titleAccent'] = ourChurch['titleAccent'] ?? 'Igreja';
+    ourChurch['image'] = _churchImage.text.trim();
+    ourChurch['history'] = _churchHistory.text
+        .split(RegExp(r'\n\s*\n'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if ((ourChurch['history'] as List).isEmpty) {
+      ourChurch['history'] = [
+        'Atualize a história da igreja no app (Painel → Site).',
+      ];
+    }
+    ourChurch['schedule'] = [
+      {
+        'day': 'Quartas-feiras',
+        'time': _scheduleWed.text.trim().isEmpty ? '20h' : _scheduleWed.text.trim(),
+        'label': 'Culto',
+      },
+      {
+        'day': 'Domingos',
+        'time': _scheduleSun.text.trim().isEmpty ? '19h30' : _scheduleSun.text.trim(),
+        'label': 'Culto',
+      },
+    ];
+
     final faith = Map<String, dynamic>.from((current['faith'] as Map?) ?? {});
     faith['titlePrefix'] = faith['titlePrefix'] ?? 'Afirmação de Fé da';
     faith['titleAccent'] = faith['titleAccent'] ?? 'IPI do Brasil';
@@ -274,6 +323,7 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
               })
           .toList(),
       'leadership': leadership,
+      'ourChurch': ourChurch,
       'faith': faith,
       'nav': current['nav'] ?? [],
       'usefulLinks': current['usefulLinks'] ?? [],
@@ -554,6 +604,27 @@ class _WebsiteContentScreenState extends ConsumerState<WebsiteContentScreen> {
                             icon: const Icon(Icons.add_rounded),
                             label: const Text('Adicionar transmissão'),
                           ),
+                        ],
+                      ),
+                      _section(
+                        card: card,
+                        title: 'Nossa Igreja (página)',
+                        children: [
+                          Text(
+                            'História à esquerda, foto à direita. Separe parágrafos com linha em branco.',
+                            style: TextStyle(color: t2, fontSize: 13),
+                          ),
+                          const SizedBox(height: 8),
+                          _field(_churchHistory, 'História', t1, maxLines: 10, requiredField: true),
+                          _imageField(
+                            controller: _churchImage,
+                            kind: 'church',
+                            label: 'Foto da igreja',
+                            t1: t1,
+                            t2: t2,
+                          ),
+                          _field(_scheduleWed, 'Horário das quartas', t1, requiredField: true),
+                          _field(_scheduleSun, 'Horário dos domingos', t1, requiredField: true),
                         ],
                       ),
                       _section(
