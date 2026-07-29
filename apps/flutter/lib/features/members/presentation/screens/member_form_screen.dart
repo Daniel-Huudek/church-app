@@ -1,10 +1,13 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../shared/models/user_model.dart';
 import '../../../../shared/utils/error_helper.dart';
 import '../../../users/presentation/providers/user_provider.dart';
+import '../../data/cep_lookup_service.dart';
 import '../../domain/member_model.dart';
 import '../providers/member_provider.dart';
 
@@ -55,6 +58,8 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
 
   bool _loading = false;
   bool _saving = false;
+  bool _lookingUpCep = false;
+  String? _lastLookedUpCep;
 
   static const _statuses = ['ATIVO', 'INATIVO', 'AFASTADO', 'TRANSFERIDO'];
   static const _roles = ['MEMBRO', 'DIACONO', 'PRESBITERO', 'PASTOR'];
@@ -140,7 +145,8 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     _isBaptized = member.isBaptized;
     final address = member.address;
     if (address != null) {
-      _zipCtrl.text = address.zipCode ?? '';
+      _zipCtrl.text = formatCep(address.zipCode ?? '');
+      _lastLookedUpCep = normalizeCep(_zipCtrl.text);
       _streetCtrl.text = address.street ?? '';
       _numberCtrl.text = address.number ?? '';
       _complementCtrl.text = address.complement ?? '';
@@ -164,6 +170,64 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
       lastDate: DateTime.now().add(const Duration(days: 1)),
     );
     if (picked != null) onPicked(picked);
+  }
+
+  Future<void> _onCepChanged(String value) async {
+    final formatted = formatCep(value);
+    if (_zipCtrl.text != formatted) {
+      final selection = formatted.length;
+      _zipCtrl.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: selection),
+      );
+    }
+
+    final digits = normalizeCep(formatted);
+    if (digits.length != 8) {
+      _lastLookedUpCep = null;
+      return;
+    }
+    if (digits == _lastLookedUpCep || _lookingUpCep) return;
+
+    final requested = digits;
+    setState(() => _lookingUpCep = true);
+    try {
+      final address = await ref.read(cepLookupServiceProvider).lookup(requested);
+      if (!mounted || address == null) return;
+      _lastLookedUpCep = requested;
+      setState(() {
+        _zipCtrl.text = address.zipCode;
+        if (address.street.isNotEmpty) _streetCtrl.text = address.street;
+        if (address.neighborhood.isNotEmpty) _neighborhoodCtrl.text = address.neighborhood;
+        _cityCtrl.text = address.city;
+        _stateCtrl.text = address.state;
+      });
+    } on CepNotFoundException {
+      if (!mounted) return;
+      _lastLookedUpCep = requested;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('CEP não encontrado')),
+      );
+    } on DioException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível consultar o CEP. Tente novamente.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível consultar o CEP. Tente novamente.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _lookingUpCep = false);
+        final current = normalizeCep(_zipCtrl.text);
+        // Só busca de novo se o usuário alterou o CEP durante a consulta.
+        if (current.length == 8 && current != requested && current != _lastLookedUpCep) {
+          _onCepChanged(_zipCtrl.text);
+        }
+      }
+    }
   }
 
   Map<String, dynamic> _payload() {
@@ -507,7 +571,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
                   _text('Observações', _notesCtrl, t1, t2, card, border, maxLines: 3),
                   const SizedBox(height: 20),
                   _section('Endereço', t1),
-                  _text('CEP', _zipCtrl, t1, t2, card, border, keyboard: TextInputType.number),
+                  _cepField(t1, t2, card, border),
                   _text('Rua', _streetCtrl, t1, t2, card, border),
                   Row(
                     children: [
@@ -551,6 +615,65 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, top: 4),
       child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: t1)),
+    );
+  }
+
+  Widget _cepField(Color t1, Color t2, Color card, Color border) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('CEP', style: TextStyle(color: t2, fontSize: 13)),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: border),
+            ),
+            child: TextFormField(
+              controller: _zipCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d-]')),
+                LengthLimitingTextInputFormatter(9),
+              ],
+              onChanged: _onCepChanged,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(14),
+                hintText: '00000-000',
+                hintStyle: TextStyle(color: t2.withValues(alpha: 0.6)),
+                suffixIcon: _lookingUpCep
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : IconButton(
+                        tooltip: 'Buscar CEP',
+                        onPressed: _lookingUpCep
+                            ? null
+                            : () => _onCepChanged(_zipCtrl.text),
+                        icon: Icon(Icons.search_rounded, color: t2),
+                      ),
+              ),
+              style: TextStyle(color: t1),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'Digite o CEP para preencher rua, bairro, cidade e UF automaticamente',
+              style: TextStyle(color: t2, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
