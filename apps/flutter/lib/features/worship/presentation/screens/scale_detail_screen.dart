@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/offline/offline_guard.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../shared/models/user_model.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
@@ -11,7 +13,6 @@ import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
-import '../../../../core/network/api_client.dart';
 
 class ScaleDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -241,7 +242,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
   Widget _buildContent(bool isDark, WorshipEvent we, EventModel? ev) {
     final songs = we.songs ?? [];
     final musicians = we.musicians ?? [];
-    final currentUserId = ref.read(authProvider).user?.id;
+    final currentUser = ref.read(authProvider).user;
     final title = ev?.title ?? 'Evento';
     final date = ev?.date ?? we.createdAt;
     final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -280,7 +281,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
             else
               ...musicians.asMap().entries.map((e) => Padding(
                 padding: EdgeInsets.only(top: e.key > 0 ? 10 : 0),
-                child: _buildMusicianCard(isDark, e.value, currentUserId),
+                child: _buildMusicianCard(isDark, e.value, currentUser),
               )),
             if (we.notes != null && we.notes!.isNotEmpty) ...[
               const SizedBox(height: 24),
@@ -463,10 +464,20 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     );
   }
 
-  Widget _buildMusicianCard(bool isDark, WorshipEventMusician musician, String? currentUserId) {
+  Widget _buildMusicianCard(bool isDark, WorshipEventMusician musician, UserModel? currentUser) {
     final member = _membersById[musician.memberId];
-    final isCurrentUser = currentUserId != null &&
-        (musician.memberId == currentUserId || member?.userId == currentUserId);
+    final currentUserId = currentUser?.id;
+    final currentEmail = currentUser?.email.trim().toLowerCase();
+    final memberEmail = member?.email?.trim().toLowerCase();
+    final isMine = currentUserId != null && (
+        musician.memberId == currentUserId ||
+        member?.userId == currentUserId ||
+        (currentEmail != null &&
+            currentEmail.isNotEmpty &&
+            memberEmail != null &&
+            memberEmail == currentEmail));
+    final canManage = isMine ||
+        (currentUser?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR']) ?? false);
     final name = member?.name ?? musician.memberId;
     final email = member?.email ?? '';
     final avatarUrl = member?.avatar;
@@ -560,7 +571,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
               ),
             ],
           ),
-          if (isCurrentUser) ...[
+          if (canManage) ...[
             const SizedBox(height: 10),
             if (!musician.isConfirmed && !musician.isSubstituted)
               Row(
@@ -589,7 +600,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
-                      child: const Text('Não disponível', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      child: Text(isMine ? 'Não disponível' : 'Indisponível', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
