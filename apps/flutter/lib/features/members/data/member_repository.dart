@@ -86,7 +86,35 @@ class MemberRepository {
 
   Future<List<MemberModel>> search(String query) => _api.search(query);
 
-  Future<List<MinistryModel>> listMinistries() => _api.listMinistries();
+  Future<List<MinistryModel>> listMinistries({bool ensureDefaults = false}) async {
+    if (ensureDefaults) {
+      await _ensureDefaultMinistry(
+        name: 'Louvor',
+        nameHints: const ['louvor', 'worship', 'música', 'musica'],
+        description: 'Escala e músicos do ministério de louvor',
+      );
+      await _ensureDefaultMinistry(
+        name: 'Diáconos',
+        nameHints: const ['diácono', 'diacon'],
+        description: 'Escala e funções do diaconato',
+      );
+    }
+    return _api.listMinistries();
+  }
+
+  Future<MinistryModel> _ensureDefaultMinistry({
+    required String name,
+    required List<String> nameHints,
+    String? description,
+  }) async {
+    final ministries = await _api.listMinistries();
+    final existing = ministries.where((m) {
+      final lower = m.name.toLowerCase();
+      return nameHints.any(lower.contains);
+    }).toList();
+    if (existing.isNotEmpty) return existing.first;
+    return _api.createMinistry(name: name, description: description);
+  }
 
   Future<MinistryModel> createMinistry({
     required String name,

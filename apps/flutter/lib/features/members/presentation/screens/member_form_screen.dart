@@ -230,6 +230,71 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     }
   }
 
+  Future<void> _createMinistry(Color t1, Color t2, Color card, Color border) async {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Novo ministério'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nome *',
+                hintText: 'Ex: Louvor, Diáconos, Jovens',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Descrição',
+                hintText: 'Opcional',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008CFF)),
+            child: const Text('Criar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    final name = nameCtrl.text.trim();
+    nameCtrl.dispose();
+    final description = descCtrl.text.trim();
+    descCtrl.dispose();
+
+    if (created != true || name.isEmpty || !mounted) return;
+
+    try {
+      final ministry = await ref.read(memberRepositoryProvider).createMinistry(
+            name: name,
+            description: description.isEmpty ? null : description,
+          );
+      ref.invalidate(ministryListProvider);
+      if (!mounted) return;
+      setState(() => _ministryId = ministry.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ministério "$name" criado')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao criar ministério: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -317,12 +382,32 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
                     (v) => setState(() => _admissionType = v),
                     t1, t2, card, border,
                   ),
-                  _dropdown<String>(
-                    'Ministério',
-                    ministries.any((m) => m.id == _ministryId) ? _ministryId : null,
-                    ministries.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
-                    (v) => setState(() => _ministryId = v),
-                    t1, t2, card, border,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: _dropdown<String>(
+                          'Ministério',
+                          ministries.any((m) => m.id == _ministryId) ? _ministryId : null,
+                          ministries.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
+                          (v) => setState(() => _ministryId = v),
+                          t1, t2, card, border,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: IconButton(
+                          tooltip: 'Novo ministério',
+                          onPressed: () => _createMinistry(t1, t2, card, border),
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFF008CFF).withValues(alpha: 0.1),
+                            foregroundColor: const Color(0xFF008CFF),
+                          ),
+                          icon: const Icon(Icons.add_rounded),
+                        ),
+                      ),
+                    ],
                   ),
                   _text('Observações', _notesCtrl, t1, t2, card, border, maxLines: 3),
                   const SizedBox(height: 20),
