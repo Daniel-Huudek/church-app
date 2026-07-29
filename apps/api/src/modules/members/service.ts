@@ -317,7 +317,8 @@ export class MemberService {
   }
 
   async create(body: any, changedBy?: string) {
-    const { address, documents, familyMembers, ministerialHistory, forceDuplicate, ministryIds: _ignored, ...memberData } = body;
+    const { address, documents, familyMembers, ministerialHistory, forceDuplicate, ...memberData } = body;
+    delete memberData.ministryIds;
     const email = normalizeEmail(memberData.email);
     const phone = memberData.phone?.trim() || undefined;
     const ministryIds = this.resolveMinistryIds(body);
@@ -412,7 +413,7 @@ export class MemberService {
     const hasMinistryUpdate = bodyMinistryIds !== undefined || memberData.ministryId !== undefined;
     const ministryIds = hasMinistryUpdate ? this.resolveMinistryIds(body) : null;
 
-    const data = await this.prisma.member.update({
+    await this.prisma.member.update({
       where: { id },
       data: {
         ...memberData,
