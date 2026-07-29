@@ -129,14 +129,26 @@ class _ScalePageState extends ConsumerState<ScalePage> {
               Expanded(
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
-                    : filtered.isEmpty
-                        ? Center(
-                            child: Text(
-                              scaleTab == 0 ? 'Nenhuma escala futura' : 'Nenhuma escala passada',
-                              style: TextStyle(fontSize: 14, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
-                            ),
-                          )
-                        : ListView.separated(
+                    : RefreshIndicator(
+                        color: const Color(0xFF008CFF),
+                        onRefresh: _load,
+                        child: filtered.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.35,
+                                    child: Center(
+                                      child: Text(
+                                        scaleTab == 0 ? 'Nenhuma escala futura' : 'Nenhuma escala passada',
+                                        style: TextStyle(fontSize: 14, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
                             itemCount: filtered.length,
                             separatorBuilder: (_, __) => const SizedBox(height: 14),
                             itemBuilder: (_, i) {
@@ -154,7 +166,10 @@ class _ScalePageState extends ConsumerState<ScalePage> {
                               final month = months[date.month - 1];
 
                               return GestureDetector(
-                                onTap: () => context.push('/worship/scale/${we.id}'),
+                                onTap: () async {
+                                  await context.push('/worship/scale/${we.id}');
+                                  if (mounted) _load();
+                                },
                                 child: Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
@@ -234,6 +249,7 @@ class _ScalePageState extends ConsumerState<ScalePage> {
                               );
                             },
                           ),
+                      ),
               ),
             ],
           ),
@@ -248,7 +264,7 @@ class _ScalePageState extends ConsumerState<ScalePage> {
                 child: GestureDetector(
                   onTap: guardOnlineAction(context, ref, () async {
                     await context.push('/worship/scale/create');
-                    _load();
+                    if (mounted) _load();
                   }),
                   child: Container(
                     width: 56, height: 56,

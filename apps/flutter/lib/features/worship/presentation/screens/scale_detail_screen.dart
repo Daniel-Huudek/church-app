@@ -214,7 +214,10 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
               ),
               child: IconButton(
                 icon: const Icon(Icons.edit_rounded, color: Color(0xFF008CFF), size: 22),
-                onPressed: () async { await context.push('/worship/scale/${widget.id}/edit'); _load(); },
+                onPressed: () async {
+                  await context.push('/worship/scale/${widget.id}/edit');
+                  if (mounted) _load();
+                },
               ),
             ),
         ],

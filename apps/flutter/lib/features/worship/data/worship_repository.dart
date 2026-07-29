@@ -55,6 +55,14 @@ class WorshipRepository {
     }
   }
 
+  /// Clears list/detail caches so the next load fetches fresh data from the API.
+  Future<void> invalidateWorshipEventCaches({String? id}) async {
+    await _cache.remove(CacheKeys.worshipEventsList);
+    if (id != null) {
+      await _cache.remove(CacheKeys.worshipEventDetail(id));
+    }
+  }
+
   Future<CachedResult<List<Song>>> listSongs({String? search}) async {
     try {
       final response = await _api.listSongs(search: search, limit: 100);
