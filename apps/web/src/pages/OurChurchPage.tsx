@@ -68,15 +68,10 @@ export function OurChurchPage() {
       <section className="page-our-church__map" aria-labelledby="map-title">
         <div className="container">
           <div className="page-our-church__map-head">
-            <div>
-              <h2 className="page-our-church__section-heading" id="map-title">
-                Onde estamos
-              </h2>
-              <p className="page-our-church__section-lead">{address.line}</p>
-            </div>
-            <a className="btn btn-outline" href={address.mapUrl} target="_blank" rel="noreferrer">
-              Abrir no Maps
-            </a>
+            <h2 className="page-our-church__section-heading" id="map-title">
+              Onde estamos
+            </h2>
+            <p className="page-our-church__section-lead">{address.line}</p>
           </div>
           <iframe
             className="page-our-church__map-frame"
