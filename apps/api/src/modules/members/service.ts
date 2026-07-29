@@ -205,17 +205,25 @@ export class MemberService {
         dateOfBirth: { not: null },
         status: { not: 'EXCLUIDO' },
       },
-      include: { ministry: true, memberMinistries: { include: { ministry: true } } },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        dateOfBirth: true,
+      },
       orderBy: { name: 'asc' },
     });
 
+    // Public summary for all authenticated users (no phone/email/address/notes).
     const items = members
       .map((member) => {
         const birth = member.dateOfBirth!;
         const occurrence = birthdayOccurrenceInRange(birth, start, end);
         if (!occurrence) return null;
         return {
-          ...this.serializeMember(member),
+          id: member.id,
+          name: member.name,
+          avatar: member.avatar ? `/members/${member.id}/avatar` : null,
           birthdayThisYear: toDateOnlyIso(occurrence),
           turningAge: turningAge(birth, occurrence),
           isToday: isSameDay(occurrence, now),

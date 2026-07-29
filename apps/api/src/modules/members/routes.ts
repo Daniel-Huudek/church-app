@@ -117,7 +117,9 @@ export async function memberRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true, data });
   });
 
-  fastify.get('/birthdays', { preHandler: [canRead] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  // Visible to any authenticated user (hook above). Returns a public summary only.
+  // Member detail remains gated by members_read.
+  fastify.get('/birthdays', async (request: FastifyRequest, reply: FastifyReply) => {
     const { period } = request.query as { period?: string };
     const allowed = ['today', 'week', 'month'] as const;
     const selected = allowed.includes(period as typeof allowed[number])

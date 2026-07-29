@@ -6,6 +6,7 @@ import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/app_chip.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/providers/auth_provider.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/router/app_routes.dart';
@@ -51,6 +52,8 @@ class _BirthdaysScreenState extends ConsumerState<BirthdaysScreen> {
     final result = state.data;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final secondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final canOpenMemberDetail =
+        ref.watch(authProvider).user?.hasPermission('members_read') == true;
 
     return Scaffold(
       appBar: AppBar(
@@ -112,7 +115,9 @@ class _BirthdaysScreenState extends ConsumerState<BirthdaysScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                                   child: AppCard(
-                                    onTap: () => context.push(AppRoutes.memberDetail(member.id)),
+                                    onTap: canOpenMemberDetail
+                                        ? () => context.push(AppRoutes.memberDetail(member.id))
+                                        : null,
                                     child: Row(
                                       children: [
                                         AppAvatar(name: member.name, size: 44),

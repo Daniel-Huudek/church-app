@@ -14,8 +14,19 @@ class BirthdayMember {
   });
 
   factory BirthdayMember.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = json['createdAt'] as String?;
     return BirthdayMember(
-      member: MemberModel.fromJson(json),
+      // API returns a public summary (id/name/avatar + birthday fields).
+      member: MemberModel(
+        id: json['id'] as String,
+        name: (json['name'] as String?)?.trim().isNotEmpty == true
+            ? json['name'] as String
+            : 'Membro',
+        avatar: json['avatar'] as String?,
+        createdAt: createdAtRaw != null
+            ? DateTime.parse(createdAtRaw)
+            : DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      ),
       birthdayThisYear: DateTime.parse(json['birthdayThisYear'] as String),
       turningAge: (json['turningAge'] as num?)?.toInt() ?? 0,
       isToday: json['isToday'] as bool? ?? false,

@@ -62,6 +62,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(authProvider).user;
+    final canOpenMemberDetail = user?.hasPermission('members_read') == true;
     final verseAsync = ref.watch(verseOfTheDayProvider);
     final birthdays = ref.watch(weeklyBirthdaysProvider);
     final eventsState = ref.watch(eventListProvider);
@@ -247,8 +248,9 @@ class DashboardScreen extends ConsumerWidget {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
                         child: AppCard(
-                          onTap: () =>
-                              context.push(AppRoutes.memberDetail(member.id)),
+                          onTap: canOpenMemberDetail
+                              ? () => context.push(AppRoutes.memberDetail(member.id))
+                              : null,
                           child: Row(
                             children: [
                               AppAvatar(name: member.name, size: 44),
