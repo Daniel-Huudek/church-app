@@ -41,13 +41,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                     isDark: isDark,
                     onClose: () => setState(() => _drawerVisible = false),
                   ),
+                // Side shortcuts (Louvor / Diáconos / Dashboard) only on home.
                 if (user != null &&
-                    !currentRoute.startsWith(AppRoutes.worship) &&
-                    !currentRoute.startsWith(AppRoutes.deacons) &&
-                    !currentRoute.startsWith(AppRoutes.finance) &&
-                    !currentRoute.startsWith(AppRoutes.bible) &&
-                    !currentRoute.startsWith(AppRoutes.calendar) &&
-                    currentRoute != AppRoutes.dashboard &&
+                    currentRoute == AppRoutes.home &&
                     user.hasAnyRole([
                       'ADMINISTRADOR',
                       'PASTOR',
