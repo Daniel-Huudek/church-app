@@ -5,7 +5,7 @@ Imagens do site (banner da série, foto da liderança, etc.) sobem para um bucke
 ## Fluxo
 
 1. No app: **Painel → Site → Enviar imagem (S3)**
-2. API: `POST /website/uploads?kind=logo|leadership|series|news|streams|events|general` (multipart)
+2. API: `POST /website/uploads?kind=logo|leadership|series|news|streams|events|church|general` (multipart)
 3. Objeto salvo em `website/{kind}/{uuid}.{ext}`
 4. URL pública gravada no CMS (`PUT /website`)
 5. Site consome a URL no `GET /website`

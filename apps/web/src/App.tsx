@@ -7,6 +7,7 @@ import { Layout } from './pages/Layout';
 import { HomePage } from './pages/HomePage';
 import { FaithPage } from './pages/FaithPage';
 import { LeadershipPage } from './pages/LeadershipPage';
+import { OurChurchPage } from './pages/OurChurchPage';
 
 export default function App() {
   const [content, setContent] = useState<ChurchContent>(defaultChurchContent);
@@ -30,6 +31,7 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
+            <Route path="nossa-igreja" element={<OurChurchPage />} />
             <Route path="afirmacao-de-fe" element={<FaithPage />} />
             <Route path="lideranca" element={<LeadershipPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

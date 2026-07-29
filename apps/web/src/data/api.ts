@@ -33,7 +33,14 @@ export async function fetchChurchContent(): Promise<ChurchContent> {
     };
     const content = json.data?.content;
     if (isChurchContent(content)) {
-      return { ...defaultChurchContent, ...content };
+      const data = content as ChurchContent;
+      return {
+        ...defaultChurchContent,
+        ...data,
+        ourChurch: data.ourChurch ?? defaultChurchContent.ourChurch,
+        faith: data.faith ?? defaultChurchContent.faith,
+        leadership: data.leadership ?? defaultChurchContent.leadership,
+      };
     }
     return defaultChurchContent;
   } catch {

@@ -21,8 +21,9 @@
 }
 
 .site-header__brand img {
-  width: 3rem;
-  height: 3rem;
+  width: auto;
+  height: 2.75rem;
+  max-width: min(11.5rem, 42vw);
   object-fit: contain;
 }
 

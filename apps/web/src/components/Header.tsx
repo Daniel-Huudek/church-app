@@ -60,7 +60,7 @@ export function Header() {
     <header className="site-header">
       <div className="container site-header__inner">
         <Link className="site-header__brand" to="/" aria-label={church.brand}>
-          <BrandLogo src={church.logoUrl} alt={church.logoLabel || church.brand} width={48} height={48} />
+          <BrandLogo src={church.logoUrl} alt={church.logoLabel || church.brand} width={168} height={64} />
         </Link>
 
         <nav className="site-header__nav" aria-label="Principal" ref={navRef}>
