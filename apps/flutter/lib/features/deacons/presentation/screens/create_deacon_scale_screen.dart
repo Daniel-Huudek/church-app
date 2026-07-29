@@ -89,10 +89,11 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
       final scheduleApi = ScheduleApi(ref.read(apiClientProvider));
 
       final ministry = await DeaconMinistryHelper.ensureMinistry(memberApi);
-      var members = await memberApi.list(role: 'DIACONO', limit: 100, status: 'ATIVO');
-      if (members.isEmpty) {
-        members = await memberApi.list(limit: 100, status: 'ATIVO');
-      }
+      final members = await memberApi.list(
+        ministryId: ministry.id,
+        limit: 100,
+        status: 'ATIVO',
+      );
 
       List<EventModel> events = [];
       Set<String> usedEventIds = {};
