@@ -74,17 +74,8 @@ class EventListNotifier extends StateNotifier<AsyncState<List<EventModel>>> {
   }
 
   Future<void> update(String id, Map<String, dynamic> data) async {
-    try {
-      await _repository.update(id, data);
-      await load();
-    } catch (e) {
-      state = AsyncState(
-        data: state.data,
-        loading: false,
-        error: formatError(e),
-        fromCache: state.fromCache,
-      );
-    }
+    await _repository.update(id, data);
+    await load();
   }
 
   Future<void> delete(String id) async {
