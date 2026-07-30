@@ -173,8 +173,8 @@ class CustomBottomBar extends ConsumerWidget {
     final tabs = [
       TabData(key: '', label: 'Início', icon: Icons.home_outlined, activeIcon: Icons.home),
       TabData(key: 'bible', label: 'Bíblia', icon: Icons.menu_book_outlined, activeIcon: Icons.menu_book),
+      TabData(key: 'hinario', label: 'Hinário', icon: Icons.library_music_outlined, activeIcon: Icons.library_music),
       TabData(key: 'prayers', label: 'Oração', icon: Icons.whatshot_outlined, activeIcon: Icons.whatshot),
-      TabData(key: 'calendar', label: 'Eventos', icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month),
     ];
 
     return SafeArea(
@@ -213,6 +213,8 @@ class CustomBottomBar extends ConsumerWidget {
                         context.go('/prayers');
                       } else if (tab.key == 'bible') {
                         context.go('/bible');
+                      } else if (tab.key == 'hinario') {
+                        context.go('/hinario');
                       } else if (!(tab.key == currentTab)) {
                         context.go('/${tab.key}');
                       }
