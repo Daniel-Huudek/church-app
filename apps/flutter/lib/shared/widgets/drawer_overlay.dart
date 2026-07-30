@@ -95,6 +95,11 @@ class _DrawerOverlayState extends ConsumerState<DrawerOverlay>
                     onTap: () => _go(AppRoutes.bible),
                   ),
                   _drawerItem(
+                    icon: Icons.library_music_rounded,
+                    label: 'Hinário',
+                    onTap: () => _go(AppRoutes.hinario),
+                  ),
+                  _drawerItem(
                     icon: Icons.music_note_rounded,
                     label: 'Louvor',
                     onTap: () => _go(AppRoutes.worship),

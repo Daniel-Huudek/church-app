@@ -51,6 +51,8 @@ import '../../features/bible/presentation/screens/bible_home_screen.dart';
 import '../../features/bible/presentation/screens/bible_chapter_screen.dart';
 import '../../features/bible/presentation/screens/bible_verse_screen.dart';
 import '../../features/bible/presentation/screens/bible_verse_reader_screen.dart';
+import '../../features/hinario/presentation/screens/hinario_home_screen.dart';
+import '../../features/hinario/presentation/screens/hinario_reader_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -340,6 +342,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ],
                   ),
                 ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.hinario,
+            builder: (context, state) => const HinarioHomeScreen(),
+            routes: [
+              GoRoute(
+                path: ':number',
+                builder: (context, state) {
+                  final raw = state.pathParameters['number'] ?? '';
+                  return HinarioReaderScreen(
+                    number: Uri.decodeComponent(raw),
+                  );
+                },
               ),
             ],
           ),

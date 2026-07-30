@@ -51,4 +51,7 @@ class AppRoutes {
   static String bibleChapter(String bookId) => '/bible/$bookId';
   static String bibleVerse(String bookId, int chapter) => '/bible/$bookId/$chapter';
   static String bibleVerseReader(String bookId, int chapter, int verse) => '/bible/$bookId/$chapter/$verse';
+  static const String hinario = '/hinario';
+  static String hinarioHymn(String number) =>
+      '/hinario/${Uri.encodeComponent(number)}';
 }
