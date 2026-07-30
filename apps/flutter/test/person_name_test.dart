@@ -2,6 +2,22 @@ import 'package:church_app_mobile/shared/utils/person_name.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('preferredPersonName', () {
+    test('prefers nickname when present', () {
+      expect(
+        preferredPersonName(name: 'João Silva Santos', nickname: 'Jão'),
+        'Jão',
+      );
+    });
+
+    test('falls back to full name without nickname', () {
+      expect(
+        preferredPersonName(name: 'João Silva Santos', nickname: null),
+        'João Silva Santos',
+      );
+    });
+  });
+
   group('abbreviatePersonName', () {
     test('keeps single name', () {
       expect(abbreviatePersonName('Ana'), 'Ana');
