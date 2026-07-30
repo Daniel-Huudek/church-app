@@ -7,6 +7,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../../../shared/widgets/scale_month_picker.dart';
 import '../../../events/data/event_api.dart';
 import '../../../members/data/member_api.dart';
@@ -158,7 +159,7 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
               }
             }
             name ??= 'Membro';
-            buffer.writeln('• $name — ${position.position}');
+            buffer.writeln('• ${abbreviatePersonName(name)} — ${position.position}');
           }
         }
         buffer.writeln();
