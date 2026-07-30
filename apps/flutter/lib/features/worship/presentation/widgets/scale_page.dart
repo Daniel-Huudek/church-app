@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../../core/network/api_client.dart';
 import '../../../../../core/offline/offline_guard.dart';
 import '../../../../../shared/providers/auth_provider.dart';
+import '../../../../../shared/utils/person_name.dart';
 import '../../../../../shared/widgets/scale_month_picker.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
@@ -119,20 +120,23 @@ class _ScalePageState extends ConsumerState<ScalePage> {
           buffer.writeln('• (sem pessoas escaladas)');
         } else {
           for (final musician in musicians) {
-            var name = nameCache[musician.memberId];
-            if (name == null) {
+            var label = nameCache[musician.memberId];
+            if (label == null) {
               try {
                 final member = await memberApi.getById(musician.memberId);
-                name = member.name;
+                label = scaleCopyDisplayName(
+                  name: member.name,
+                  nickname: member.nickname,
+                );
               } catch (_) {
-                name = 'Músico';
+                label = 'Músico';
               }
-              nameCache[musician.memberId] = name!;
+              nameCache[musician.memberId] = label!;
             }
             final role = musician.instrument?.trim().isNotEmpty == true
                 ? musician.instrument!
                 : (musician.role?.trim().isNotEmpty == true ? musician.role! : 'Louvor');
-            buffer.writeln('• $name — $role');
+            buffer.writeln('• $label — $role');
           }
         }
         buffer.writeln();

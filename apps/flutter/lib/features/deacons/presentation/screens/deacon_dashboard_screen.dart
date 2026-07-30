@@ -7,6 +7,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../../../shared/widgets/scale_month_picker.dart';
 import '../../../events/data/event_api.dart';
 import '../../../members/data/member_api.dart';
@@ -142,23 +143,30 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
         } else {
           for (final position in schedule.positionDetails) {
             final memberId = position.memberId;
-            var name = position.memberName?.trim();
-            if ((name == null || name.isEmpty) && memberId != null) {
-              if (nameCache.containsKey(memberId)) {
-                name = nameCache[memberId];
-              } else {
-                try {
-                  final member = await memberApi.getById(memberId);
-                  name = member.name;
-                  nameCache[memberId] = member.name;
-                } catch (_) {
-                  name = 'Membro';
-                  nameCache[memberId] = name!;
-                }
+            var label = memberId != null ? nameCache[memberId] : null;
+            if (label == null && memberId != null) {
+              try {
+                final member = await memberApi.getById(memberId);
+                label = scaleCopyDisplayName(
+                  name: member.name,
+                  nickname: member.nickname,
+                );
+                nameCache[memberId] = label;
+              } catch (_) {
+                final fallback = position.memberName?.trim();
+                label = (fallback != null && fallback.isNotEmpty)
+                    ? abbreviatePersonName(fallback)
+                    : 'Membro';
+                nameCache[memberId] = label;
               }
             }
-            name ??= 'Membro';
-            buffer.writeln('• $name — ${position.position}');
+            if (label == null) {
+              final fallback = position.memberName?.trim();
+              label = (fallback != null && fallback.isNotEmpty)
+                  ? abbreviatePersonName(fallback)
+                  : 'Membro';
+            }
+            buffer.writeln('• $label — ${position.position}');
           }
         }
         buffer.writeln();

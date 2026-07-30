@@ -25,6 +25,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _nameCtrl = TextEditingController();
+  final _nicknameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _occupationCtrl = TextEditingController();
@@ -84,7 +85,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   @override
   void dispose() {
     for (final c in [
-      _nameCtrl, _phoneCtrl, _emailCtrl, _occupationCtrl, _notesCtrl, _baptismChurchCtrl,
+      _nameCtrl, _nicknameCtrl, _phoneCtrl, _emailCtrl, _occupationCtrl, _notesCtrl, _baptismChurchCtrl,
       _zipCtrl, _streetCtrl, _numberCtrl, _complementCtrl, _neighborhoodCtrl, _cityCtrl, _stateCtrl,
     ]) {
       c.dispose();
@@ -121,6 +122,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
 
   void _fill(MemberModel member) {
     _nameCtrl.text = member.name;
+    _nicknameCtrl.text = member.nickname ?? '';
     _phoneCtrl.text = member.phone ?? '';
     _emailCtrl.text = member.email ?? '';
     _occupationCtrl.text = member.occupation ?? '';
@@ -237,6 +239,12 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
       'role': _role,
       'isBaptized': _isBaptized,
     };
+    final nickname = _nicknameCtrl.text.trim();
+    if (nickname.isNotEmpty) {
+      data['nickname'] = nickname;
+    } else if (widget.isEditing) {
+      data['nickname'] = null;
+    }
     if (_phoneCtrl.text.trim().isNotEmpty) data['phone'] = _phoneCtrl.text.trim();
     if (_emailCtrl.text.trim().isNotEmpty) data['email'] = _emailCtrl.text.trim();
     if (_occupationCtrl.text.trim().isNotEmpty) data['occupation'] = _occupationCtrl.text.trim();
@@ -427,6 +435,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
                 children: [
                   _section('Dados básicos', t1),
                   _text('Nome completo *', _nameCtrl, t1, t2, card, border, requiredField: true),
+                  _text('Apelido', _nicknameCtrl, t1, t2, card, border),
                   _text('Telefone', _phoneCtrl, t1, t2, card, border, keyboard: TextInputType.phone),
                   _text('E-mail', _emailCtrl, t1, t2, card, border, keyboard: TextInputType.emailAddress),
                   if (_usersLoaded && _appUsers.isNotEmpty)
