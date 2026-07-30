@@ -180,6 +180,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _iconButton(
+                        icon: Icons.backup_rounded,
+                        color: const Color(0xFF0F766E),
+                        label: 'Backup',
+                        onTap: () => context.go(AppRoutes.backup),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(child: SizedBox()),
+                  ],
+                ),
               ],
             ],
           ),
