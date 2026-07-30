@@ -1,0 +1,19 @@
+# Context for docker/Dockerfile.app only (BuildKit). Keeps Flutter web build lean.
+*
+!apps/
+apps/*
+!apps/flutter/
+apps/flutter/android/
+apps/flutter/ios/
+apps/flutter/linux/
+apps/flutter/macos/
+apps/flutter/windows/
+apps/flutter/build/
+apps/flutter/.dart_tool/
+apps/flutter/.idea/
+apps/flutter/**/*.iml
+apps/flutter/test/
+apps/flutter/**/.git/
+**/.DS_Store
+**/Thumbs.db
+**/*.log

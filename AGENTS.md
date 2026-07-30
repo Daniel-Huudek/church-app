@@ -29,12 +29,13 @@ church-app/
 ├── docker/
 │   ├── Dockerfile.service         # Imagem multi-stage da API
 │   ├── Dockerfile.web             # Site Vite → nginx (estático)
+│   ├── Dockerfile.app             # Flutter web (membros / iOS) → serve :8080
 │   ├── nginx-web.conf             # SPA + /healthz
 │   ├── start-web.sh               # Injeta WEB_API_URL em /config.js
 │   ├── start-service.sh           # Entrypoint de produção (API)
 │   └── postgres/init.sql          # Init do Postgres
 ├── docker-bake.hcl                # Build (buildx bake)
-├── docker-compose.yml             # api + web + postgres
+├── docker-compose.yml             # api + web + app + postgres
 └── .github/workflows/ci.yml       # CI: lint, test, build, security-audit, docker-build
 ```
 
@@ -70,14 +71,15 @@ Imagem Docker: `docker/Dockerfile.service` (args `SERVICE=api` / `PORT=3030` / `
 
 ### Container
 - **Dokploy / VPS 4GB:** nunca buildar na VPS — ver `docs/deploy-dokploy.md`
-- Imagens: `ghcr.io/daniel-huudek/church-app/api` e `.../web` via `.github/workflows/docker-publish.yml`
+- Imagens: `ghcr.io/daniel-huudek/church-app/api`, `.../web` e `.../app` via `.github/workflows/docker-publish.yml`
 - `docker-compose.yml` **sem** `build:` (só `image:` + `pull_policy: always`)
 - Build opcional no PC: `docker-compose.build.yml` + `./scripts/docker-build-push-pc.sh`
 - API: `docker/Dockerfile.service` — bundle esbuild + `node dist/index.js`; migrations via `prisma migrate deploy`
 - Web: `docker/Dockerfile.web` — Vite build + nginx; runtime `WEB_API_URL` → `/config.js`
-- Heap ~192MB; `mem_limit: 320m` (API), `64m` (web)
-- Compose anexa `dokploy-network` (external) em `api`/`web`/`postgres-db`
-- Domínio do site/API: aba **Domains** do Dokploy (`web`→80, `api`→3030); URL da API no site via env `WEB_API_URL`
+- App: `docker/Dockerfile.app` — Flutter web + `serve` (:8080); `API_URL` via `--dart-define` na build
+- Heap ~192MB; `mem_limit: 320m` (API), `64m` (web), `96m` (app)
+- Compose anexa `dokploy-network` (external) em `api`/`web`/`app`/`postgres-db`
+- Domínio do site/API/app: aba **Domains** do Dokploy (`web`→80, `api`→3030, `app`→8080); URL da API no site via env `WEB_API_URL`
 
 ### Banco de Dados
 - Um PostgreSQL (`church_db`) com schema Prisma unificado

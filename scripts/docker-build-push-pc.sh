@@ -11,7 +11,7 @@ unset COMPOSE_BAKE || true
 
 PREFIX="ghcr.io/daniel-huudek/church-app"
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.build.yml"
-ALL="api web"
+ALL="api web app"
 SERVICES="${*:-$ALL}"
 
 if [ -r /proc/meminfo ]; then

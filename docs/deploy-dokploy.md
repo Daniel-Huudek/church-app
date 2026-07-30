@@ -4,23 +4,25 @@
 
 A VPS **nunca builda**. GitHub publica imagens no GHCR → Dokploy só **puxa e sobe**.
 
-Serviços: **`api`** + **`web`** (site) + **`postgres-db`**.
+Serviços: **`api`** + **`web`** (site) + **`app`** (Flutter membros / iOS) + **`postgres-db`**.
 
 - **Domínio:** só na aba **Domains** do Dokploy (não no compose)
 - **URL da API no site:** variável de ambiente **`WEB_API_URL`**
+- **App Flutter web:** `API_URL` entra na **build** da imagem (`--dart-define`); o compose usa o mesmo valor de `WEB_API_URL` no `docker-compose.build.yml`
 
 ```
 Browser → domínio do site (Dokploy) → container `web` (nginx)
+Browser → domínio do app (Dokploy) → container `app` (serve :8080)
                 │
-                └─ config.js usa WEB_API_URL → chama a API pública
+                └─ site: config.js / app: dart-define → API pública
 ```
 
 ---
 
 ## Passo 1 — Imagens no GHCR
 
-1. `main` com Docker Publish verde (`api` + `web`)
-2. Packages **Public**: `church-app/api` e `church-app/web`
+1. `main` com Docker Publish verde (`api` + `web` + `app`)
+2. Packages **Public**: `church-app/api`, `church-app/web`, `church-app/app`
 
 ## Passo 2 — Compose no Dokploy
 
@@ -38,14 +40,15 @@ POSTGRES_USER=...
 POSTGRES_PASSWORD=...
 JWT_SECRET=...
 
-# Origem(ns) do site (domínio que você vai criar na aba Domains)
-CORS_ORIGIN=https://seu-dominio.com.br,https://www.seu-dominio.com.br
+# Origem(ns) do site e do app (domínios na aba Domains)
+CORS_ORIGIN=https://seu-dominio.com.br,https://www.seu-dominio.com.br,https://app.seu-dominio.com.br
 
 # URL pública da API (o browser do visitante chama isso)
 WEB_API_URL=https://api.seu-dominio.com.br
 ```
 
-No start do container `web`, `WEB_API_URL` vira `/config.js` → `window.__ENV__.API_URL`.
+No start do container `web`, `WEB_API_URL` vira `/config.js` → `window.__ENV__.API_URL`.  
+A imagem `app` já sai com `API_URL` compilado (rebuild/publish para mudar).
 
 ## Passo 4 — Domains (Dokploy)
 
@@ -56,6 +59,7 @@ Na aba **Domains**, adicione:
 | `api.seu-dominio...` | `api`   | 3030  |
 | `seu-dominio...`     | `web`   | 80    |
 | `www.seu-dominio...` | `web`   | 80    |
+| `app.seu-dominio...` | `app`   | 8080  |
 
 O Dokploy injeta Traefik + TLS. **Não** é preciso label `Host(...)` no `docker-compose.yml`.
 
@@ -69,6 +73,7 @@ Depois: **Deploy** de novo se o domínio foi adicionado após o primeiro up.
 |---------------|--------------------------------|--------------------|
 | `api`         | `.../church-app/api`           | 3030               |
 | `web`         | `.../church-app/web`           | 80                 |
+| `app`         | `.../church-app/app`           | 8080               |
 | `postgres-db` | `postgres:16-alpine`           | 5432               |
 
 Logs do site devem mostrar: `web config: API_URL=https://...`

@@ -11,7 +11,7 @@ variable "WEB_API_URL" {
 }
 
 group "default" {
-  targets = ["api", "web"]
+  targets = ["api", "web", "app"]
 }
 
 target "service-base" {
@@ -39,4 +39,14 @@ target "web" {
     VITE_API_URL = "${WEB_API_URL}"
   }
   tags = ["church-app-web:${TAG}"]
+}
+
+target "app" {
+  context    = "."
+  dockerfile = "docker/Dockerfile.app"
+  platforms  = ["linux/amd64"]
+  args = {
+    API_URL = "${WEB_API_URL}"
+  }
+  tags = ["church-app-app:${TAG}"]
 }
