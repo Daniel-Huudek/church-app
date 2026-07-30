@@ -18,8 +18,19 @@ export async function worshipRoutes(fastify: FastifyInstance) {
   const playlistCreate = z.object({ name: z.string().min(1), description: z.string().optional(), isPublic: z.boolean().optional(), songIds: z.array(z.string()).optional() });
   const playlistUpdate = z.object({ name: z.string().optional(), description: z.string().optional(), isPublic: z.boolean().optional() });
   const reorder = z.object({ songIds: z.array(z.string()) });
-  const weCreate = z.object({ eventId: z.string().min(1), playlistId: z.string().optional(), notes: z.string().optional(), estimatedTime: z.number().int().optional() });
-  const weUpdate = z.object({ notes: z.string().optional(), estimatedTime: z.number().int().optional(), playlistId: z.string().optional() });
+  const weCreate = z.object({
+    eventId: z.string().min(1),
+    playlistId: z.string().optional(),
+    ministerMemberId: z.string().min(1).nullable().optional(),
+    notes: z.string().optional(),
+    estimatedTime: z.number().int().optional(),
+  });
+  const weUpdate = z.object({
+    notes: z.string().optional(),
+    estimatedTime: z.number().int().optional(),
+    playlistId: z.string().optional(),
+    ministerMemberId: z.string().min(1).nullable().optional(),
+  });
   const musiciansSchema = z.object({ musicians: z.array(z.object({ memberId: z.string().min(1), instrument: z.string().optional(), role: z.string().optional() })) });
 
   // Song search stays public (former gateway behavior)

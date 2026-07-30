@@ -779,17 +779,20 @@ model PlaylistSong {
 }
 
 model WorshipEvent {
-  id            String   @id @default(uuid())
-  eventId       String   @unique
-  playlistId    String? @unique
-  notes         String?
-  estimatedTime Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(uuid())
+  eventId          String   @unique
+  playlistId       String?  @unique
+  ministerMemberId String?
+  notes            String?
+  estimatedTime    Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   playlist  Playlist?              @relation(fields: [playlistId], references: [id])
   songs     WorshipEventSong[]
   musicians WorshipEventMusician[]
+
+  @@index([ministerMemberId])
 }
 
 model WorshipEventSong {

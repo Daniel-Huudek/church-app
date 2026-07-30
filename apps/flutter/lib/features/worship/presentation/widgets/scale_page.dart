@@ -115,6 +115,24 @@ class _ScalePageState extends ConsumerState<ScalePage> {
         buffer.writeln('*$dayLabel — $startTime*');
         buffer.writeln(title);
 
+        final ministerId = we.ministerMemberId;
+        if (ministerId != null && ministerId.isNotEmpty) {
+          var ministerLabel = nameCache[ministerId];
+          if (ministerLabel == null) {
+            try {
+              final member = await memberApi.getById(ministerId);
+              ministerLabel = scaleCopyDisplayName(
+                name: member.name,
+                nickname: member.nickname,
+              );
+            } catch (_) {
+              ministerLabel = 'Ministro';
+            }
+            nameCache[ministerId] = ministerLabel!;
+          }
+          buffer.writeln('Ministro: $ministerLabel');
+        }
+
         final musicians = we.musicians ?? [];
         if (musicians.isEmpty) {
           buffer.writeln('• (sem pessoas escaladas)');

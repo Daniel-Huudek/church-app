@@ -29,16 +29,45 @@ class PlaylistSong {
   factory PlaylistSong.fromJson(Map<String, dynamic> j) => PlaylistSong(id: j['id'], song: Song.fromJson(j['song']), order: j['order'], notes: j['notes'], transpose: j['transpose'] ?? 0);
 }
 class WorshipEvent {
-  final String id; final String eventId; final String? playlistId; final String? notes; final int? estimatedTime;
-  final DateTime createdAt; final DateTime updatedAt; final List<WorshipEventSong>? songs; final List<WorshipEventMusician>? musicians; final Playlist? playlist;
-  WorshipEvent({required this.id, required this.eventId, this.playlistId, this.notes, this.estimatedTime, required this.createdAt, required this.updatedAt, this.songs, this.musicians, this.playlist});
+  final String id;
+  final String eventId;
+  final String? playlistId;
+  final String? ministerMemberId;
+  final String? notes;
+  final int? estimatedTime;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final List<WorshipEventSong>? songs;
+  final List<WorshipEventMusician>? musicians;
+  final Playlist? playlist;
+
+  WorshipEvent({
+    required this.id,
+    required this.eventId,
+    this.playlistId,
+    this.ministerMemberId,
+    this.notes,
+    this.estimatedTime,
+    required this.createdAt,
+    required this.updatedAt,
+    this.songs,
+    this.musicians,
+    this.playlist,
+  });
+
   factory WorshipEvent.fromJson(Map<String, dynamic> j) => WorshipEvent(
-    id: j['id'], eventId: j['eventId'], playlistId: j['playlistId'], notes: j['notes'], estimatedTime: j['estimatedTime'],
-    createdAt: DateTime.parse(j['createdAt']), updatedAt: DateTime.parse(j['updatedAt']),
-    songs: (j['songs'] as List?)?.map((s) => WorshipEventSong.fromJson(s)).toList(),
-    musicians: (j['musicians'] as List?)?.map((m) => WorshipEventMusician.fromJson(m)).toList(),
-    playlist: j['playlist'] != null ? Playlist.fromJson(j['playlist']) : null,
-  );
+        id: j['id'],
+        eventId: j['eventId'],
+        playlistId: j['playlistId'],
+        ministerMemberId: j['ministerMemberId'] as String?,
+        notes: j['notes'],
+        estimatedTime: j['estimatedTime'],
+        createdAt: DateTime.parse(j['createdAt']),
+        updatedAt: DateTime.parse(j['updatedAt']),
+        songs: (j['songs'] as List?)?.map((s) => WorshipEventSong.fromJson(s)).toList(),
+        musicians: (j['musicians'] as List?)?.map((m) => WorshipEventMusician.fromJson(m)).toList(),
+        playlist: j['playlist'] != null ? Playlist.fromJson(j['playlist']) : null,
+      );
 }
 class WorshipEventSong {
   final String id; final Song song; final int order; final int transpose; final String? notes;

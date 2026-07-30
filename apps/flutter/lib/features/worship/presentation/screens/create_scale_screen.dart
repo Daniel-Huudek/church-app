@@ -7,6 +7,7 @@ import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../data/worship_api.dart';
 import '../../data/worship_ministry_helper.dart';
 import '../../domain/worship_models.dart';
@@ -32,6 +33,7 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
   List<Song> _selectedSongs = [];
   List<MemberModel> _allMembers = [];
   List<MemberModel> _selectedMusicians = [];
+  MemberModel? _selectedMinister;
   final Map<String, String> _musicianInstruments = {};
   bool _loading = true;
 
@@ -134,6 +136,23 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
           if (we.songs != null) {
             _selectedSongs = we.songs!.map((s) => s.song).toList();
           }
+
+          final ministerId = we.ministerMemberId;
+          if (ministerId != null && ministerId.isNotEmpty) {
+            final byId = members.where((mem) => mem.id == ministerId).toList();
+            if (byId.isNotEmpty) {
+              _selectedMinister = byId.first;
+            } else {
+              try {
+                _selectedMinister = await memberApi.getById(ministerId);
+              } catch (_) {
+                _selectedMinister = null;
+              }
+            }
+          } else {
+            _selectedMinister = null;
+          }
+
           if (we.musicians != null) {
             for (final m in we.musicians!) {
               MemberModel? member;
@@ -218,6 +237,7 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
 
         await _worshipApi.updateWorshipEvent(widget.scaleId!, {
           'notes': _notesCtrl.text.trim(),
+          'ministerMemberId': _selectedMinister?.id,
         });
 
         // Always sync songs/musicians so removals are persisted.
@@ -241,6 +261,7 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         final weRes = await _worshipApi.createWorshipEvent({
           'eventId': linkedEventId,
           if (notes.isNotEmpty) 'notes': notes,
+          if (_selectedMinister != null) 'ministerMemberId': _selectedMinister!.id,
         });
 
         final weData = weRes['data'] as Map<String, dynamic>? ?? weRes;
@@ -635,7 +656,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
       final selected = _selectedMusicians.any((s) => s.id == m.id);
       if (selected) return false;
       if (query.isEmpty) return true;
-      return m.name.toLowerCase().contains(query) ||
+      return preferredPersonName(name: m.name, nickname: m.nickname).toLowerCase().contains(query) ||
+          m.name.toLowerCase().contains(query) ||
           (m.email?.toLowerCase().contains(query) ?? false);
     }).toList();
 
@@ -645,8 +667,66 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
     final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB);
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
 
+    final ministerOptions = <MemberModel>[
+      ..._allMembers,
+      if (_selectedMinister != null &&
+          !_allMembers.any((m) => m.id == _selectedMinister!.id))
+        _selectedMinister!,
+    ];
+    final ministerValue = _selectedMinister != null &&
+            ministerOptions.any((m) => m.id == _selectedMinister!.id)
+        ? _selectedMinister!.id
+        : null;
+
     return ListView(
       children: [
+        Text(
+          'Ministro',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t1),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: ministerValue,
+              isExpanded: true,
+              hint: Text('Selecionar ministro do louvor', style: TextStyle(fontSize: 13, color: t2)),
+              items: [
+                DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('Nenhum', style: TextStyle(fontSize: 13, color: t2)),
+                ),
+                ...ministerOptions.map(
+                  (m) => DropdownMenuItem<String?>(
+                    value: m.id,
+                    child: Text(
+                      preferredPersonName(name: m.name, nickname: m.nickname),
+                      style: TextStyle(fontSize: 13, color: t1),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: (id) {
+                setState(() {
+                  if (id == null) {
+                    _selectedMinister = null;
+                  } else {
+                    final match = ministerOptions.where((m) => m.id == id);
+                    _selectedMinister = match.isNotEmpty ? match.first : null;
+                  }
+                });
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         Text(
           'Músicos escalados',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t1),
@@ -672,7 +752,10 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(member.name, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+                        Text(
+                          preferredPersonName(name: member.name, nickname: member.nickname),
+                          style: TextStyle(color: t1, fontWeight: FontWeight.w600),
+                        ),
                         if (member.email != null) ...[
                           const SizedBox(height: 2),
                           Text(member.email!, style: TextStyle(color: t2, fontSize: 12)),
@@ -757,7 +840,10 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         else
           ...available.take(20).map((member) => ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(member.name, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+                title: Text(
+                  preferredPersonName(name: member.name, nickname: member.nickname),
+                  style: TextStyle(color: t1, fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(
                   [
                     if (member.ministryName != null && member.ministryName!.isNotEmpty) member.ministryName!,
