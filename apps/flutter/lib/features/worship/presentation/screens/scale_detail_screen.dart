@@ -7,6 +7,7 @@ import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/models/user_model.dart';
 import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/data/member_api.dart';
@@ -67,6 +68,12 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           // Legacy rows may store userId in memberId — ignore lookup miss.
         }
       }
+      final ministerId = we.ministerMemberId;
+      if (ministerId != null && ministerId.isNotEmpty && !members.containsKey(ministerId)) {
+        try {
+          members[ministerId] = await memberApi.getById(ministerId);
+        } catch (_) {}
+      }
 
       if (mounted) {
         setState(() {
@@ -105,6 +112,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           setState(() {
             _worshipEvent = WorshipEvent(
               id: we.id, eventId: we.eventId, playlistId: we.playlistId,
+              ministerMemberId: we.ministerMemberId,
               notes: we.notes, estimatedTime: we.estimatedTime,
               createdAt: we.createdAt, updatedAt: we.updatedAt,
               songs: we.songs, musicians: updated, playlist: we.playlist,
@@ -160,6 +168,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           setState(() {
             _worshipEvent = WorshipEvent(
               id: we.id, eventId: we.eventId, playlistId: we.playlistId,
+              ministerMemberId: we.ministerMemberId,
               notes: we.notes, estimatedTime: we.estimatedTime,
               createdAt: we.createdAt, updatedAt: we.updatedAt,
               songs: we.songs, musicians: updated, playlist: we.playlist,
@@ -325,6 +334,12 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
               _buildSectionTitle(isDark, 'Músicas', Icons.music_note_rounded),
               const SizedBox(height: 12),
               Text('Nenhuma música na escala.', style: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF))),
+            ],
+            if (we.ministerMemberId != null && we.ministerMemberId!.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              _buildSectionTitle(isDark, 'Ministro', Icons.mic_rounded),
+              const SizedBox(height: 12),
+              _buildMinisterCard(isDark, we.ministerMemberId!),
             ],
             const SizedBox(height: 24),
             _buildSectionTitle(isDark, 'Músicos (${musicians.length})', Icons.people_rounded),
@@ -517,6 +532,72 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     );
   }
 
+  Widget _buildMinisterCard(bool isDark, String ministerMemberId) {
+    final member = _membersById[ministerMemberId];
+    final name = member != null
+        ? preferredPersonName(name: member.name, nickname: member.nickname)
+        : 'Ministro';
+    final email = member?.email ?? '';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'M';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161622) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF008CFF).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Color(0xFF008CFF),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: isDark ? Colors.white : const Color(0xFF111827),
+                  ),
+                ),
+                if (email.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMusicianCard(bool isDark, WorshipEventMusician musician, UserModel? currentUser) {
     final member = _membersById[musician.memberId];
     final currentUserId = currentUser?.id;
@@ -531,7 +612,9 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
             memberEmail == currentEmail));
     final canManage = isMine ||
         (currentUser?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR']) ?? false);
-    final name = member?.name ?? musician.memberId;
+    final name = member != null
+        ? preferredPersonName(name: member.name, nickname: member.nickname)
+        : musician.memberId;
     final email = member?.email ?? '';
     final avatarUrl = member?.avatar;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';

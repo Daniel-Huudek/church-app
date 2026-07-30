@@ -35,16 +35,47 @@ export class WorshipEventService {
     return this.prisma.worshipEvent.findUnique({ where: { eventId }, include: { songs: { include: { song: true }, orderBy: { order: 'asc' } }, musicians: true, playlist: { include: { songs: { include: { song: true }, orderBy: { order: 'asc' } } } } } });
   }
 
-  async create(data: { eventId: string; playlistId?: string; notes?: string; estimatedTime?: number }) {
+  async create(data: {
+    eventId: string;
+    playlistId?: string;
+    ministerMemberId?: string | null;
+    notes?: string;
+    estimatedTime?: number;
+  }) {
     return this.prisma.worshipEvent.create({
-      data: { eventId: data.eventId, playlistId: data.playlistId, notes: data.notes, estimatedTime: data.estimatedTime,
-        songs: data.playlistId ? { create: (await this.prisma.playlistSong.findMany({ where: { playlistId: data.playlistId }, orderBy: { order: 'asc' } })).map(s => ({ songId: s.songId, order: s.order, transpose: s.transpose })) } : undefined,
-      }, include: { songs: { include: { song: true }, orderBy: { order: 'asc' } }, musicians: true },
+      data: {
+        eventId: data.eventId,
+        playlistId: data.playlistId,
+        ministerMemberId: data.ministerMemberId ?? null,
+        notes: data.notes,
+        estimatedTime: data.estimatedTime,
+        songs: data.playlistId
+          ? {
+              create: (
+                await this.prisma.playlistSong.findMany({
+                  where: { playlistId: data.playlistId },
+                  orderBy: { order: 'asc' },
+                })
+              ).map((s) => ({ songId: s.songId, order: s.order, transpose: s.transpose })),
+            }
+          : undefined,
+      },
+      include: { songs: { include: { song: true }, orderBy: { order: 'asc' } }, musicians: true },
     });
   }
 
-  async update(id: string, data: { notes?: string; estimatedTime?: number; playlistId?: string }) {
-    if (!await this.prisma.worshipEvent.findUnique({ where: { id } })) throw new NotFoundError('Worship event not found');
+  async update(
+    id: string,
+    data: {
+      notes?: string;
+      estimatedTime?: number;
+      playlistId?: string;
+      ministerMemberId?: string | null;
+    },
+  ) {
+    if (!(await this.prisma.worshipEvent.findUnique({ where: { id } }))) {
+      throw new NotFoundError('Worship event not found');
+    }
     return this.prisma.worshipEvent.update({ where: { id }, data });
   }
 
