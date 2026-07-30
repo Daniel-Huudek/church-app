@@ -15,7 +15,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Official SDK tarball (avoids discontinued/missing cirruslabs image tags).
-ARG FLUTTER_VERSION=3.29.3
+# 3.32+ ships flutter_localizations → intl 0.20.x (matches pubspec intl ^0.20.2).
+ARG FLUTTER_VERSION=3.32.8
 ENV FLUTTER_HOME=/opt/flutter \
     PUB_CACHE=/opt/pub-cache \
     PATH=/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH
