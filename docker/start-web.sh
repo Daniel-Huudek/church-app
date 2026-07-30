@@ -7,7 +7,7 @@ API_URL=$(printf '%s' "$API_URL" | sed 's:/*$::')
 
 if [ -z "$API_URL" ]; then
   echo "ERROR: WEB_API_URL is required (set it in Dokploy Environment)."
-  echo "Example: WEB_API_URL=https://api.ipiavare.com.br"
+  echo "Example: WEB_API_URL=https://church.inspeare.com.br"
   exit 1
 fi
 

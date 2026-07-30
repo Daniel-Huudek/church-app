@@ -25,7 +25,7 @@ COPY packages/tsconfig/ ./packages/tsconfig/
 COPY apps/web/ ./apps/web/
 
 # Runtime config.js overrides this; still useful for local image smoke tests.
-ARG VITE_API_URL=https://api.ipiavare.com.br
+ARG VITE_API_URL=https://church.inspeare.com.br
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN pnpm --filter @church-app/web build

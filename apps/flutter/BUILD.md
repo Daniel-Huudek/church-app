@@ -10,7 +10,7 @@ cd apps/flutter
 
 ```bash
 flutter build apk --release ^
-  --dart-define=API_URL=https://api.ipiavare.com.br ^
+  --dart-define=API_URL=https://church.inspeare.com.br ^
   --dart-define=GOOGLE_WEB_CLIENT_ID=520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com
 ```
 

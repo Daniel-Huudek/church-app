@@ -7,7 +7,7 @@ variable "TAG" {
 }
 
 variable "WEB_API_URL" {
-  default = "https://api.ipiavare.com.br"
+  default = "https://church.inspeare.com.br"
 }
 
 group "default" {

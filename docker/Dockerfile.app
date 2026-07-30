@@ -3,17 +3,39 @@
 # Runtime: Node `serve` (SPA) on port 8080.
 # API URL is baked at build via --dart-define=API_URL (Flutter fromEnvironment).
 
-FROM ghcr.io/cirruslabs/flutter:3.27.4 AS build
+FROM debian:bookworm-slim AS build
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    unzip \
+    xz-utils \
+  && rm -rf /var/lib/apt/lists/*
+
+# Official SDK tarball (avoids discontinued/missing cirruslabs image tags).
+ARG FLUTTER_VERSION=3.29.3
+ENV FLUTTER_HOME=/opt/flutter \
+    PUB_CACHE=/opt/pub-cache \
+    PATH=/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH
+
+RUN curl -fsSL \
+    "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" \
+    | tar -xJ -C /opt \
+  && git config --global --add safe.directory /opt/flutter \
+  && flutter config --no-analytics --enable-web \
+  && flutter precache --web
+
 WORKDIR /app
 
 COPY apps/flutter/pubspec.yaml ./
 RUN flutter pub get
 
 COPY apps/flutter/ ./
-# Refresh deps after full copy (assets / path deps may change the graph)
 RUN flutter pub get
 
-ARG API_URL=https://api.ipiavare.com.br
+ARG API_URL=https://church.inspeare.com.br
 ARG GOOGLE_WEB_CLIENT_ID=520104571386-kj462ur3tstcoprsftlnut4qm3nssc1l.apps.googleusercontent.com
 
 RUN flutter build web --release \
