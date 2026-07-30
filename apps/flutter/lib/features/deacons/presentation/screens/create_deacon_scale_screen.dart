@@ -7,6 +7,7 @@ import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../../schedules/data/schedule_api.dart';
 import '../../data/deacon_ministry_helper.dart';
 
@@ -212,6 +213,10 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
     });
   }
 
+  String _memberLabel(MemberModel member) {
+    return preferredPersonName(name: member.name, nickname: member.nickname);
+  }
+
   Future<void> _save() async {
     if (_titleCtrl.text.trim().isEmpty || _ministryId == null || _assignments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -327,7 +332,8 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
       final selected = _assignments.any((a) => a.member.id == m.id);
       if (selected) return false;
       if (query.isEmpty) return true;
-      return m.name.toLowerCase().contains(query);
+      return _memberLabel(m).toLowerCase().contains(query) ||
+          m.name.toLowerCase().contains(query);
     }).toList();
 
     return Scaffold(
@@ -422,7 +428,7 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(assignment.member.name, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+                              Text(_memberLabel(assignment.member), style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
                                 value: assignment.function,
@@ -468,7 +474,7 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
                 else
                   ...available.take(20).map((member) => ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(member.name, style: TextStyle(color: t1)),
+                        title: Text(_memberLabel(member), style: TextStyle(color: t1)),
                         subtitle: Text(
                           [
                             if (member.ministryName != null && member.ministryName!.isNotEmpty) member.ministryName!,

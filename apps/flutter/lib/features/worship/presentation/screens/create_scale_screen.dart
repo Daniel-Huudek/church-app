@@ -7,6 +7,7 @@ import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../data/worship_api.dart';
 import '../../data/worship_ministry_helper.dart';
 import '../../domain/worship_models.dart';
@@ -635,7 +636,8 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
       final selected = _selectedMusicians.any((s) => s.id == m.id);
       if (selected) return false;
       if (query.isEmpty) return true;
-      return m.name.toLowerCase().contains(query) ||
+      return preferredPersonName(name: m.name, nickname: m.nickname).toLowerCase().contains(query) ||
+          m.name.toLowerCase().contains(query) ||
           (m.email?.toLowerCase().contains(query) ?? false);
     }).toList();
 
@@ -672,7 +674,10 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(member.name, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+                        Text(
+                          preferredPersonName(name: member.name, nickname: member.nickname),
+                          style: TextStyle(color: t1, fontWeight: FontWeight.w600),
+                        ),
                         if (member.email != null) ...[
                           const SizedBox(height: 2),
                           Text(member.email!, style: TextStyle(color: t2, fontSize: 12)),
@@ -757,7 +762,10 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         else
           ...available.take(20).map((member) => ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(member.name, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
+                title: Text(
+                  preferredPersonName(name: member.name, nickname: member.nickname),
+                  style: TextStyle(color: t1, fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(
                   [
                     if (member.ministryName != null && member.ministryName!.isNotEmpty) member.ministryName!,
