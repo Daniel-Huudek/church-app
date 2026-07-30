@@ -1,3 +1,10 @@
+/// Nome preferencial do membro: apelido, se houver; senão nome completo.
+String preferredPersonName({required String name, String? nickname}) {
+  final nick = nickname?.trim();
+  if (nick != null && nick.isNotEmpty) return nick;
+  return name.trim();
+}
+
 /// Nome para copiar na escala: apelido, se houver; senão nome abreviado.
 String scaleCopyDisplayName({required String name, String? nickname}) {
   final nick = nickname?.trim();

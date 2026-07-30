@@ -5,6 +5,7 @@ import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/domain/member_model.dart';
 import '../../../members/presentation/providers/member_provider.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../providers/schedule_provider.dart';
 
 class CreateScheduleScreen extends ConsumerStatefulWidget {
@@ -57,6 +58,17 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
     final position = _positionCtrl.text.trim();
     if (memberId.isEmpty || position.isEmpty) return null;
     return _SchedulePositionInput(memberId: memberId, position: position);
+  }
+
+  String _memberLabel(MemberModel member) {
+    return preferredPersonName(name: member.name, nickname: member.nickname);
+  }
+
+  String _memberLabelById(List<MemberModel> members, String memberId) {
+    for (final member in members) {
+      if (member.id == memberId) return _memberLabel(member);
+    }
+    return memberId;
   }
 
   void _addPosition() {
@@ -180,7 +192,7 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
             value: _selectedMemberId,
             items: memberState.data,
             getValue: (member) => member.id,
-            getLabel: (member) => member.name,
+            getLabel: (member) => _memberLabel(member),
             hint: memberState.loading ? 'Carregando membros...' : 'Selecione um membro',
             t1: t1,
             t2: t2,
@@ -221,7 +233,7 @@ class _CreateScheduleScreenState extends ConsumerState<CreateScheduleScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        '${position.position} - ${position.memberId}',
+                        '${position.position} - ${_memberLabelById(memberState.data, position.memberId)}',
                         style: TextStyle(color: t1),
                         overflow: TextOverflow.ellipsis,
                       ),
