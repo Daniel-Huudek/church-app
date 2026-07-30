@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/network/api_client.dart';
-import '../../../shared/providers/async_state.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../shared/providers/async_state.dart';
 import '../../data/website_api.dart';
 
 final websiteApiProvider = Provider<WebsiteApi>((ref) {
