@@ -19,7 +19,14 @@ coverage
 *.tgz
 
 # Monorepo — exclude everything not needed for Docker build
-apps/flutter/
+apps/flutter/android/
+apps/flutter/ios/
+apps/flutter/linux/
+apps/flutter/macos/
+apps/flutter/windows/
+apps/flutter/build/
+apps/flutter/.dart_tool/
+apps/flutter/test/
 apps/mobile/
 apps/mobile2/
 packages/eslint-config/
