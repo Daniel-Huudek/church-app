@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/bible_models.dart';
@@ -21,15 +20,16 @@ const _abbrevToId = <String, String>{
   'Jd': 'JUD', 'Ap': 'REV',
 };
 
+/// Asset key as declared in pubspec (same on mobile and web).
+const _bibleAssetPath = 'assets/bible/naa/naa.json';
+
 class BibleRepository {
   Map<String, Map<String, List<String>>>? _cache;
 
   Future<Map<String, Map<String, List<String>>>> _loadJson() async {
     if (_cache != null) return _cache!;
 
-    final jsonStr = await rootBundle.loadString(
-      kIsWeb ? 'bible/naa/naa.json' : 'assets/bible/naa/naa.json',
-    );
+    final jsonStr = await rootBundle.loadString(_bibleAssetPath);
     final data = json.decode(jsonStr) as List<dynamic>;
     final result = <String, Map<String, List<String>>>{};
 
