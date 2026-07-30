@@ -18,6 +18,7 @@ import { financeRoutes } from './modules/finance/routes.js';
 import { worshipRoutes } from './modules/worship/routes.js';
 import { chatRoutes } from './modules/chat/routes.js';
 import { websiteRoutes } from './modules/website/routes.js';
+import { backupRoutes } from './modules/backup/routes.js';
 import { userRoutes } from './routes/users.js';
 
 const prisma = new PrismaClient();
@@ -68,7 +69,7 @@ async function bootstrap() {
     timeWindow: '1 minute',
   });
 
-  await fastify.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+  await fastify.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
 
   await fastify.register(jwt, {
     secret: process.env.JWT_SECRET,
@@ -103,6 +104,7 @@ async function bootstrap() {
   await fastify.register(worshipRoutes, { prefix: '/worship' });
   await fastify.register(chatRoutes, { prefix: '/chats' });
   await fastify.register(websiteRoutes, { prefix: '/website' });
+  await fastify.register(backupRoutes, { prefix: '/backup' });
 
   fastify.setErrorHandler((error, request, reply) => {
     logger.error('Error occurred', error, { path: request.url, method: request.method });

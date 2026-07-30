@@ -73,4 +73,8 @@ class ApiConfig {
 
   // Website CMS
   static const String website = '/website';
+
+  // Backup
+  static const String backup = '/backup';
+  static const String backupRestore = '/backup/restore';
 }
