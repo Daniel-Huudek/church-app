@@ -1,16 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { Prisma } from '@prisma/client';
-import { BACKUP_VERSION, jsonSafe } from './service.js';
+import { BACKUP_VERSION, jsonSafe } from './json-safe.js';
+
+class Decimal {
+  constructor(private readonly raw: string | number) {}
+  toFixed(): string {
+    return String(this.raw);
+  }
+  toString(): string {
+    return String(this.raw);
+  }
+}
 
 describe('backup jsonSafe', () => {
-  it('serializes Decimal and Date', () => {
+  it('serializes Decimal-like values and Date', () => {
     const result = jsonSafe({
-      amount: new Prisma.Decimal('12.50'),
+      amount: new Decimal('12.50'),
       when: new Date('2026-07-30T12:00:00.000Z'),
-      nested: [{ n: new Prisma.Decimal(1) }],
+      nested: [{ n: new Decimal(1) }],
     }) as Record<string, unknown>;
 
-    expect(result.amount).toBe('12.5');
+    expect(result.amount).toBe('12.50');
     expect(result.when).toBe('2026-07-30T12:00:00.000Z');
     expect((result.nested as Array<Record<string, unknown>>)[0].n).toBe('1');
   });

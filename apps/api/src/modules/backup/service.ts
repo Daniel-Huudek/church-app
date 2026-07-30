@@ -1,7 +1,6 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { AppError, BadRequestError } from '@church-app/shared';
-
-export const BACKUP_VERSION = 1;
+import { BACKUP_VERSION, jsonSafe } from './json-safe.js';
 
 export type BackupPayload = {
   version: number;
@@ -10,22 +9,7 @@ export type BackupPayload = {
   data: Record<string, unknown[]>;
 };
 
-/** Converte Decimal/Date/BigInt para JSON seguro. */
-export function jsonSafe(value: unknown): unknown {
-  if (value === null || value === undefined) return value;
-  if (typeof value === 'bigint') return value.toString();
-  if (value instanceof Date) return value.toISOString();
-  if (value instanceof Prisma.Decimal) return value.toString();
-  if (Array.isArray(value)) return value.map(jsonSafe);
-  if (typeof value === 'object') {
-    const out: Record<string, unknown> = {};
-    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      out[key] = jsonSafe(nested);
-    }
-    return out;
-  }
-  return value;
-}
+export { BACKUP_VERSION, jsonSafe } from './json-safe.js';
 
 function asRows(value: unknown): Record<string, unknown>[] {
   if (!Array.isArray(value)) return [];
