@@ -24,4 +24,24 @@ void main() {
       expect(abbreviatePersonName('   '), '');
     });
   });
+
+  group('scaleCopyDisplayName', () {
+    test('prefers nickname when present', () {
+      expect(
+        scaleCopyDisplayName(name: 'João Silva Santos', nickname: 'Jão'),
+        'Jão',
+      );
+    });
+
+    test('falls back to abbreviated name without nickname', () {
+      expect(
+        scaleCopyDisplayName(name: 'João Silva Santos', nickname: null),
+        'João S. S.',
+      );
+      expect(
+        scaleCopyDisplayName(name: 'João Silva Santos', nickname: '  '),
+        'João S. S.',
+      );
+    });
+  });
 }

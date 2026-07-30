@@ -120,20 +120,23 @@ class _ScalePageState extends ConsumerState<ScalePage> {
           buffer.writeln('• (sem pessoas escaladas)');
         } else {
           for (final musician in musicians) {
-            var name = nameCache[musician.memberId];
-            if (name == null) {
+            var label = nameCache[musician.memberId];
+            if (label == null) {
               try {
                 final member = await memberApi.getById(musician.memberId);
-                name = member.name;
+                label = scaleCopyDisplayName(
+                  name: member.name,
+                  nickname: member.nickname,
+                );
               } catch (_) {
-                name = 'Músico';
+                label = 'Músico';
               }
-              nameCache[musician.memberId] = name!;
+              nameCache[musician.memberId] = label!;
             }
             final role = musician.instrument?.trim().isNotEmpty == true
                 ? musician.instrument!
                 : (musician.role?.trim().isNotEmpty == true ? musician.role! : 'Louvor');
-            buffer.writeln('• ${abbreviatePersonName(name)} — $role');
+            buffer.writeln('• $label — $role');
           }
         }
         buffer.writeln();

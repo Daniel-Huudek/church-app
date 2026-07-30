@@ -50,6 +50,7 @@ class MemberModel {
   final String id;
   final String? userId;
   final String name;
+  final String? nickname;
   final String? email;
   final String? phone;
   final String? avatar;
@@ -77,6 +78,7 @@ class MemberModel {
     required this.id,
     this.userId,
     required this.name,
+    this.nickname,
     this.email,
     this.phone,
     this.avatar,
@@ -150,6 +152,7 @@ class MemberModel {
       id: json['id'] as String,
       userId: json['userId'] as String?,
       name: json['name'] as String,
+      nickname: json['nickname'] as String?,
       email: json['email'] as String?,
       phone: json['phone'] as String?,
       avatar: json['avatar'] as String?,
@@ -181,6 +184,7 @@ class MemberModel {
         'id': id,
         'userId': userId,
         'name': name,
+        'nickname': nickname,
         'email': email,
         'phone': phone,
         'avatar': avatar,

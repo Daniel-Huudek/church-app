@@ -132,6 +132,7 @@ class MemberRepository {
       'id': member.id,
       'userId': member.userId,
       'name': member.name,
+      'nickname': member.nickname,
       'email': member.email,
       'phone': member.phone,
       'avatar': member.avatar,

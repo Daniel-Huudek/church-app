@@ -69,4 +69,14 @@ describe('memberSchema', () => {
     const parsed = memberSchema.parse({ name: 'Maria' });
     expect(parsed.address).toBeUndefined();
   });
+
+  it('accepts null nickname', () => {
+    const parsed = memberSchema.parse({ name: 'João Silva', nickname: null });
+    expect(parsed.nickname).toBeNull();
+  });
+
+  it('accepts nickname string', () => {
+    const parsed = memberSchema.parse({ name: 'João Silva', nickname: 'Jão' });
+    expect(parsed.nickname).toBe('Jão');
+  });
 });

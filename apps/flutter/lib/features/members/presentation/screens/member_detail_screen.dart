@@ -215,6 +215,10 @@ class MemberDetailScreen extends ConsumerWidget {
                 child: AppCard(
                   child: Column(
                     children: [
+                      if (member.nickname != null && member.nickname!.trim().isNotEmpty) ...[
+                        _InfoItem(label: 'Apelido', value: member.nickname!.trim()),
+                        const Divider(),
+                      ],
                       if (member.birthDate != null)
                         _InfoItem(label: 'Nascimento', value: Formatters.formatDate(member.birthDate!)),
                       if (member.birthDate != null && member.age.isNotEmpty) const Divider(),
@@ -231,7 +235,8 @@ class MemberDetailScreen extends ConsumerWidget {
                         const Divider(),
                         _InfoItem(label: 'Profissão', value: member.occupation!),
                       ],
-                      if (member.birthDate != null ||
+                      if ((member.nickname != null && member.nickname!.trim().isNotEmpty) ||
+                          member.birthDate != null ||
                           member.age.isNotEmpty ||
                           member.gender != null ||
                           member.maritalStatus != null ||
