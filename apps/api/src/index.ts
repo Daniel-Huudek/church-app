@@ -49,8 +49,13 @@ async function bootstrap() {
 
   await fastify.register(helmet, { contentSecurityPolicy: false });
 
-  const corsOrigin = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+  const isProd = process.env.NODE_ENV === 'production';
+  if (isProd && !process.env.CORS_ORIGIN?.trim()) {
+    throw new Error('CORS_ORIGIN environment variable is required in production');
+  }
+
+  const corsOrigin = process.env.CORS_ORIGIN?.trim()
+    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim()).filter(Boolean)
     : true;
 
   await fastify.register(cors, {

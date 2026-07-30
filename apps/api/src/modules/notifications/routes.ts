@@ -20,15 +20,18 @@ const bulkSchema = z.object({
 });
 
 const notifyRoles = authorize('ADMINISTRADOR', 'PASTOR', 'LIDER', 'FINANCEIRO');
+const ELEVATED = new Set(['ADMINISTRADOR', 'PASTOR']);
 
 export async function notificationRoutes(fastify: FastifyInstance) {
   const service = new NotificationService(fastify.prisma);
 
   fastify.addHook('preHandler', authenticate());
 
+  // Own notifications only (JWT identity) — never dump all phones/messages
   fastify.get('/', async (request: FastifyRequest, _reply) => {
     const { page, limit } = parsePagination(request.query);
-    return service.findAll({ page, limit });
+    const { userId } = requireAuthUser(request);
+    return service.findAll({ page, limit, recipientId: userId, includePhone: false });
   });
 
   fastify.post('/', { preHandler: [notifyRoles] }, async (request: FastifyRequest, _reply) => {
@@ -42,18 +45,21 @@ export async function notificationRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/unread-count', async (request: FastifyRequest, _reply) => {
-    const { recipientId } = request.query as { recipientId?: string };
-    const target = recipientId || requireAuthUser(request).userId;
-    return service.getUnreadCount(target);
+    const { userId } = requireAuthUser(request);
+    return service.getUnreadCount(userId);
   });
 
   fastify.post('/read-all', async (request: FastifyRequest, _reply) => {
-    const body = request.body as { recipientId?: string } | undefined;
-    const target = body?.recipientId || requireAuthUser(request).userId;
-    return service.markAllAsRead(target);
+    const { userId } = requireAuthUser(request);
+    return service.markAllAsRead(userId);
   });
 
   fastify.get('/history/:recipientId', async (request, _reply) => {
-    return service.getHistory((request.params as any).recipientId);
+    const actor = requireAuthUser(request);
+    return service.getHistory(
+      (request.params as any).recipientId,
+      actor.userId,
+      ELEVATED.has(actor.role),
+    );
   });
 }

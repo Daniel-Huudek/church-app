@@ -147,6 +147,22 @@ export class AuthService {
     return { success: true, data: { accessToken, refreshToken: refreshTokenValue, user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar, permissions, createdAt: user.createdAt, updatedAt: user.updatedAt } } };
   }
 
+  private static readonly safeUserSelect = {
+    id: true,
+    email: true,
+    name: true,
+    role: true,
+    permissions: true,
+    avatar: true,
+    createdAt: true,
+  } as const;
+
+  private static readonly publicProfileSelect = {
+    id: true,
+    name: true,
+    avatar: true,
+  } as const;
+
   async setUserPermissions(userId: string, permissions: string[]) {
     const validPermissions = permissions.filter(p => 
       ['users_read','users_write','users_delete','members_read','members_write','members_delete',
@@ -160,12 +176,16 @@ export class AuthService {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: { permissions: validPermissions },
+      select: AuthService.safeUserSelect,
     });
     return user;
   }
 
   async getUserPermissions(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { permissions: true },
+    });
     if (!user) throw new AppError('User not found', 404);
     return user.permissions;
   }
@@ -173,31 +193,25 @@ export class AuthService {
   async getAllUsers() {
     const users = await this.prisma.user.findMany({
       where: { deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        permissions: true,
-        avatar: true,
-        createdAt: true,
-      },
+      select: AuthService.safeUserSelect,
     });
     return users;
+  }
+
+  /** Public profile for any authenticated user (no email/role/permissions). */
+  async getPublicProfile(userId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: AuthService.publicProfileSelect,
+    });
+    if (!user) throw new AppError('User not found', 404);
+    return user;
   }
 
   async getUserById(userId: string) {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        permissions: true,
-        avatar: true,
-        createdAt: true,
-      },
+      select: AuthService.safeUserSelect,
     });
     if (!user) throw new AppError('User not found', 404);
     return user;
@@ -220,15 +234,7 @@ export class AuthService {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        permissions: true,
-        avatar: true,
-        createdAt: true,
-      },
+      select: AuthService.safeUserSelect,
     });
     return user;
   }

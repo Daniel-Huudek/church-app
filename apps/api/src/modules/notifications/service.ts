@@ -1,5 +1,13 @@
 import { PrismaClient } from '@prisma/client';
-import { logger } from '@church-app/shared';
+import { ForbiddenError, logger } from '@church-app/shared';
+
+/** Strip phone from notification payloads for non-admin consumers. */
+function sanitizeNotification<T extends Record<string, unknown>>(notification: T, includePhone: boolean): T {
+  if (includePhone) return notification;
+  const { phone: _, ...rest } = notification as T & { phone?: unknown };
+  void _;
+  return rest as T;
+}
 
 export class NotificationService {
   private evolutionApiUrl: string;
@@ -10,13 +18,33 @@ export class NotificationService {
     this.evolutionApiKey = process.env.EVOLUTION_API_KEY || '';
   }
 
-  async findAll({ page = 1, limit = 20 }: { page?: number; limit?: number }) {
+  async findAll({
+    page = 1,
+    limit = 20,
+    recipientId,
+    includePhone = false,
+  }: {
+    page?: number;
+    limit?: number;
+    recipientId: string;
+    includePhone?: boolean;
+  }) {
     const skip = (page - 1) * limit;
+    const where = { recipientId };
     const [data, total] = await Promise.all([
-      this.prisma.notification.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.prisma.notification.count(),
+      this.prisma.notification.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.notification.count({ where }),
     ]);
-    return { success: true, data: { data, total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      success: true,
+      data: {
+        data: data.map((n) => sanitizeNotification(n, includePhone)),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async send(body: { type: string; recipientId: string; phone: string; message: string }) {
@@ -27,8 +55,8 @@ export class NotificationService {
     try {
       await this.sendWhatsAppMessage(body.phone, body.message);
       await this.prisma.notification.update({ where: { id: notification.id }, data: { status: 'SENT', sentAt: new Date() } });
-      logger.info('WhatsApp message sent', { notificationId: notification.id, phone: body.phone });
-      return { success: true, data: notification };
+      logger.info('WhatsApp message sent', { notificationId: notification.id });
+      return { success: true, data: sanitizeNotification(notification, false) };
     } catch (error) {
       logger.error('Failed to send WhatsApp message', error as Error);
       await this.prisma.notification.update({ where: { id: notification.id }, data: { status: 'FAILED' } });
@@ -43,9 +71,15 @@ export class NotificationService {
     return { success: true, data: { sent: results.filter(r => r.success).length, failed: results.filter(r => !r.success).length } };
   }
 
-  async getHistory(recipientId: string) {
-    const data = await this.prisma.notification.findMany({ where: { recipientId }, orderBy: { createdAt: 'desc' } });
-    return { success: true, data };
+  async getHistory(recipientId: string, actorUserId: string, isElevated: boolean) {
+    if (!isElevated && recipientId !== actorUserId) {
+      throw new ForbiddenError('Cannot view another user\'s notification history');
+    }
+    const data = await this.prisma.notification.findMany({
+      where: { recipientId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return { success: true, data: data.map((n) => sanitizeNotification(n, isElevated)) };
   }
 
   async getUnreadCount(recipientId: string) {

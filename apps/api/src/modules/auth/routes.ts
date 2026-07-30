@@ -111,9 +111,9 @@ export async function authRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true, data: result });
   });
 
-  // Any authenticated user can fetch basic profile (prayer enrichment, etc.)
+  // Public display profile only (id/name/avatar) — email/role via admin /users/:id
   fastify.get('/:id', { preHandler: [requireAuth] }, async (request, _reply: FastifyReply) => {
-    const result = await authService.getUserById((request.params as any).id);
+    const result = await authService.getPublicProfile((request.params as any).id);
     return _reply.send({ success: true, data: result });
   });
 
