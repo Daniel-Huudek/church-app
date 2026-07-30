@@ -15,13 +15,10 @@ void main() {
         preferredPersonName(name: 'João Silva Santos', nickname: null),
         'João Silva Santos',
       );
-<<<<<<< HEAD
-=======
       expect(
         preferredPersonName(name: 'João Silva Santos', nickname: '  '),
         'João Silva Santos',
       );
->>>>>>> origin/main
     });
   });
 
