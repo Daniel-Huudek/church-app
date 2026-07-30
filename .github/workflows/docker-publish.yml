@@ -32,11 +32,11 @@ jobs:
           - service: web
             dockerfile: docker/Dockerfile.web
             build_args: |
-              VITE_API_URL=https://api.ipiavare.com.br
+              VITE_API_URL=https://church.inspeare.com.br
           - service: app
             dockerfile: docker/Dockerfile.app
             build_args: |
-              API_URL=https://api.ipiavare.com.br
+              API_URL=https://church.inspeare.com.br
     steps:
       - uses: actions/checkout@v4
 

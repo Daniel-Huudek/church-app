@@ -18,11 +18,11 @@ services:
       context: .
       dockerfile: docker/Dockerfile.web
       args:
-        VITE_API_URL: ${WEB_API_URL:-https://api.ipiavare.com.br}
+        VITE_API_URL: ${WEB_API_URL:-https://church.inspeare.com.br}
 
   app:
     build:
       context: .
       dockerfile: docker/Dockerfile.app
       args:
-        API_URL: ${WEB_API_URL:-https://api.ipiavare.com.br}
+        API_URL: ${WEB_API_URL:-https://church.inspeare.com.br}

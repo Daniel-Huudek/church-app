@@ -89,5 +89,5 @@ jobs:
             --build-arg HAS_PRISMA=true \
             -t church-app-api:ci .
           docker build -f docker/Dockerfile.web \
-            --build-arg VITE_API_URL=https://api.ipiavare.com.br \
+            --build-arg VITE_API_URL=https://church.inspeare.com.br \
             -t church-app-web:ci .
