@@ -33,6 +33,10 @@ jobs:
             dockerfile: docker/Dockerfile.web
             build_args: |
               VITE_API_URL=https://api.ipiavare.com.br
+          - service: app
+            dockerfile: docker/Dockerfile.app
+            build_args: |
+              API_URL=https://api.ipiavare.com.br
     steps:
       - uses: actions/checkout@v4
 

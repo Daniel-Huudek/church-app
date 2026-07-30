@@ -9,7 +9,8 @@
 #   - Domains tab (NOT Traefik labels here):
 #       api  → service `api`  → port 3030
 #       site → service `web`  → port 80
-#   - Environment: set WEB_API_URL (public API URL for the browser)
+#       app  → service `app`  → port 8080  (Flutter member app web / iOS)
+#   - Environment: set WEB_API_URL (public API URL for the browser / site)
 #   - Disable "build on deploy"
 #
 # Guide: docs/deploy-dokploy.md
@@ -83,6 +84,28 @@ services:
     mem_limit: 64m
     mem_reservation: 32m
     cpus: 0.20
+
+  # Flutter member app (web). Domain in Dokploy → Domains → service `app` → port 8080.
+  # API_URL is baked into the image at build (--dart-define); rebuild to change it.
+  app:
+    image: ghcr.io/daniel-huudek/church-app/app:${IMAGE_TAG:-latest}
+    pull_policy: always
+    container_name: church-app-app
+    restart: unless-stopped
+    expose:
+      - "8080"
+    networks:
+      - church-app-network
+      - dokploy-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 96m
+    mem_reservation: 32m
+    cpus: 0.25
 
   postgres-db:
     image: postgres:16-alpine
