@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
 
-/// Player de apresentação da escala: letra + cifra com auto-scroll.
+/// Player de apresentação da escala: cifra com auto-scroll.
 class ScalePresentationScreen extends ConsumerStatefulWidget {
   final String scaleId;
   final int initialIndex;
@@ -412,7 +412,7 @@ class _SongPresentationBody extends StatelessWidget {
   }
 }
 
-/// Cifra com acordes em destaque (maior/azul) e restante no tom da letra.
+/// Cifra com acordes em destaque (azul) e restante do texto em tom neutro.
 class _ChordPresentationText extends StatelessWidget {
   final String text;
   final double fontSize;
