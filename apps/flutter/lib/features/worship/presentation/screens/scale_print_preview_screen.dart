@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'scale_print_card.dart';
+import '../widgets/scale_print_card.dart';
 
 /// Tela fullscreen limpa com o card da escala — ideal para print ou compartilhar imagem.
 class ScalePrintPreviewScreen extends StatefulWidget {
