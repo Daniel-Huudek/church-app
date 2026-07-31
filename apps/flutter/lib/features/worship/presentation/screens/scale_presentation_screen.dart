@@ -382,7 +382,7 @@ class _SongPresentationBody extends StatelessWidget {
     final lyrics = song.lyrics?.trim();
     final chords = song.chords?.trim();
     final lyricColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151);
-    final chordColor = const Color(0xFF008CFF);
+    const chordColor = Color(0xFF008CFF);
 
     if ((lyrics == null || lyrics.isEmpty) &&
         (chords == null || chords.isEmpty)) {

@@ -397,32 +397,28 @@ class _ScalePageState extends ConsumerState<ScalePage> {
                                           if (songs.isNotEmpty) ...[
                                             const SizedBox(height: 14),
                                             Center(
-                                              child: Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  customBorder: const CircleBorder(),
-                                                  onTap: () {
-                                                    context.push('/worship/scale/${we.id}/play');
-                                                  },
-                                                  child: Container(
-                                                    width: 64,
-                                                    height: 64,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      shape: BoxShape.circle,
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.black.withValues(alpha: 0.18),
-                                                          blurRadius: 12,
-                                                          offset: const Offset(0, 4),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.play_arrow_rounded,
-                                                      color: Color(0xFF008CFF),
-                                                      size: 36,
-                                                    ),
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  context.push('/worship/scale/${we.id}/play');
+                                                },
+                                                child: Container(
+                                                  width: 64,
+                                                  height: 64,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    shape: BoxShape.circle,
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withValues(alpha: 0.18),
+                                                        blurRadius: 12,
+                                                        offset: const Offset(0, 4),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.play_arrow_rounded,
+                                                    color: Color(0xFF008CFF),
+                                                    size: 36,
                                                   ),
                                                 ),
                                               ),
