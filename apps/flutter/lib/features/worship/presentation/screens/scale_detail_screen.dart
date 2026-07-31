@@ -586,7 +586,36 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           const SizedBox(height: 20),
           Text(title,
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5)),
-          const SizedBox(height: 8),
+          if (songs.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Center(
+              child: GestureDetector(
+                onTap: () => context.push('/worship/scale/${we.id}/play'),
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Color(0xFF008CFF),
+                    size: 40,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ] else
+            const SizedBox(height: 8),
           Row(
             children: [
               const Icon(Icons.music_note_rounded, size: 16, color: Colors.white70),
