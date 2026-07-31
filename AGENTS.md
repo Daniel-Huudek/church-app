@@ -5,7 +5,7 @@
 - **Runtime:** Node.js 22
 - **Package manager:** pnpm 10.12 (workspaces)
 - **Backend:** Fastify v4 + TypeScript (monólito modular)
-- **ORM:** Prisma (PostgreSQL — banco único `church_db`)
+- **ORM:** Prisma (PostgreSQL — banco único, default `church_db` via `POSTGRES_DB`)
 - **Validação:** Zod
 - **Auth:** JWT (jsonwebtoken + @fastify/jwt) + bcryptjs + Google OAuth
 - **Mobile:** Flutter 3.5+ (Riverpod + GoRouter + Dio)
