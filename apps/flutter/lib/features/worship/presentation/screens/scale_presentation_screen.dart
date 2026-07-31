@@ -379,17 +379,15 @@ class _SongPresentationBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lyrics = song.lyrics?.trim();
     final chords = song.chords?.trim();
-    final lyricColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151);
+    final baseColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151);
     const chordColor = Color(0xFF008CFF);
 
-    if ((lyrics == null || lyrics.isEmpty) &&
-        (chords == null || chords.isEmpty)) {
+    if (chords == null || chords.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: 40),
         child: Text(
-          'Esta música não tem letra nem cifra cadastradas.',
+          'Esta música não tem cifra cadastrada.',
           style: TextStyle(
             fontSize: 15,
             color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
@@ -401,49 +399,15 @@ class _SongPresentationBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (lyrics != null && lyrics.isNotEmpty) ...[
-          _label('LETRA', isDark),
-          const SizedBox(height: 8),
-          SelectableText(
-            lyrics,
-            style: TextStyle(
-              fontSize: fontSize,
-              height: 1.55,
-              fontWeight: FontWeight.w500,
-              color: lyricColor,
-            ),
-          ),
-        ],
-        if (lyrics != null &&
-            lyrics.isNotEmpty &&
-            chords != null &&
-            chords.isNotEmpty)
-          const SizedBox(height: 28),
-        if (chords != null && chords.isNotEmpty) ...[
-          _label('CIFRA', isDark),
-          const SizedBox(height: 8),
-          _ChordPresentationText(
-            text: chords,
-            fontSize: fontSize + 3,
-            chordColor: chordColor,
-            baseColor: lyricColor,
-          ),
-        ],
+        _ChordPresentationText(
+          text: chords,
+          fontSize: fontSize + 3,
+          chordColor: chordColor,
+          baseColor: baseColor,
+        ),
         // Espaço extra para o auto-scroll chegar ao fim com folga.
         const SizedBox(height: 120),
       ],
-    );
-  }
-
-  Widget _label(String text, bool isDark) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.4,
-        color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-      ),
     );
   }
 }
