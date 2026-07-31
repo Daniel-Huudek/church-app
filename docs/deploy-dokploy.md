@@ -42,7 +42,9 @@ Para nomes legíveis e sem colisão, defina em **cada** app um `COMPOSE_PROJECT_
 | Igreja A        | `ipi-avare`            |
 | Igreja B        | `igreja-b`             |
 
-Também use env distinto por igreja (`POSTGRES_*`, `JWT_SECRET`, `WEB_API_URL`, `CORS_ORIGIN`, domínios na aba Domains). Volume e rede interna ficam isolados por projeto; `dokploy-network` continua compartilhada (Traefik).
+Também use env distinto por igreja (`POSTGRES_*`, `JWT_SECRET`, `WEB_API_URL`, `CORS_ORIGIN`, domínios na aba Domains). Volume e rede interna (`church-app-network`) ficam isolados por projeto.
+
+`dokploy-network` é **compartilhada** em toda a VPS (Traefik). Por isso só `api` / `web` / `app` entram nela — **não** o `postgres-db`. Se o Postgres também entrasse, o alias DNS `postgres-db` colidiria entre App1 e App2 (mesmo em projetos Dokploy diferentes) e a API veria dois bancos.
 
 ## Passo 3 — Environment (Dokploy)
 
@@ -114,3 +116,4 @@ Logs do site devem mostrar: `web config: API_URL=https://...`
 - Não aponte o domínio do site para o serviço `api`
 - Não fixe `container_name` no compose (quebra 2+ deploys do mesmo código na mesma VPS)
 - Não reutilize o mesmo `COMPOSE_PROJECT_NAME` em dois apps Dokploy
+- Não coloque `postgres-db` na `dokploy-network` (alias DNS compartilhado)

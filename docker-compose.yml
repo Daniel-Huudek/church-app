@@ -128,9 +128,11 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # Only on the stack-private network. Do NOT join dokploy-network:
+    # that network is shared by every Dokploy app on the VPS, and Compose
+    # would register the alias `postgres-db` twice → API DNS sees 2 DBs.
     networks:
       - church-app-network
-      - dokploy-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
       interval: 10s
