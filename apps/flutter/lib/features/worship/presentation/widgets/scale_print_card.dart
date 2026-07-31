@@ -11,7 +11,7 @@ class ScalePrintInstrumentRow {
   });
 }
 
-/// Dados do card visual (estilo planilha) para tirar print e compartilhar.
+/// Dados do card visual moderno para tirar print e compartilhar.
 class ScalePrintCardData {
   final DateTime date;
   final String? ministerName;
@@ -38,20 +38,25 @@ class ScalePrintCardData {
     'Outro',
   ];
 
-  static const rowColors = [
-    Color(0xFFB8D4F0), // azul claro
-    Color(0xFFE8D5B0), // bege
-    Color(0xFFA8DEE8), // ciano
-    Color(0xFFE0C8E8), // lavanda
-    Color(0xFFF5CBA7), // pêssego
-    Color(0xFFD4E8C8), // verde suave
-    Color(0xFFF0D0D8), // rosa
-    Color(0xFFD0D8F0), // azul lavanda
+  /// Faixas de accent pastel (mockup B).
+  static const accentColors = [
+    Color(0xFF8EC8E8), // azul céu
+    Color(0xFFDCC9A8), // areia
+    Color(0xFF8FCFC4), // menta/teal
+    Color(0xFFC9B8E0), // lavanda
+    Color(0xFFE8A898), // coral/pêssego
+    Color(0xFFB8D4A8), // verde suave
+    Color(0xFFE0B8C8), // rosa
+    Color(0xFFA8B8E0), // azul lavanda
   ];
 
-  static const vocalsColor = Color(0xFFC5E8B8);
-  static const headerYellow = Color(0xFFFFEB3B);
-  static const borderColor = Color(0xFF111111);
+  static const bg = Color(0xFFF7F6F2);
+  static const navy = Color(0xFF1A2B48);
+  static const labelGray = Color(0xFF7A7F8A);
+  static const divider = Color(0xFFE2E0DA);
+  static const vocalsBg = Color(0xFFE8EEE4);
+  static const vocalsText = Color(0xFF2D4236);
+  static const border = Color(0xFF2A3344);
 
   /// Monta o card a partir de músicos brutos (instrumento + nome).
   factory ScalePrintCardData.fromAssignments({
@@ -97,7 +102,7 @@ class ScalePrintCardData {
   }
 }
 
-/// Card estilo planilha colorida — pensado para screenshot / compartilhar.
+/// Card moderno da escala — pensado para screenshot.
 class ScalePrintCard extends StatelessWidget {
   final ScalePrintCardData data;
   final double maxWidth;
@@ -113,158 +118,122 @@ class ScalePrintCard extends StatelessWidget {
     'jul', 'ago', 'set', 'out', 'nov', 'dez',
   ];
 
-  String get _dateLabel {
-    final d = data.date.day.toString().padLeft(2, '0');
-    final m = _monthsShort[data.date.month - 1];
-    return '$d/$m';
-  }
+  String get _dayLabel => data.date.day.toString().padLeft(2, '0');
+  String get _monthLabel => _monthsShort[data.date.month - 1];
 
   @override
   Widget build(BuildContext context) {
     final rows = data.instruments;
     final vocals = data.vocals;
-    // Garante espaço para todos os vocais mesmo se houver mais vocalistas que instrumentos.
-    final rowCount = [
-      rows.isEmpty ? 1 : rows.length,
-      vocals.isEmpty ? 1 : vocals.length,
-    ].reduce((a, b) => a > b ? a : b);
+    final minister = data.ministerName?.trim();
 
     return Container(
       constraints: BoxConstraints(maxWidth: maxWidth),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: ScalePrintCardData.borderColor, width: 1.5),
+        color: ScalePrintCardData.bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: ScalePrintCardData.border, width: 1.4),
       ),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Data (amarelo)
-          Container(
-            color: ScalePrintCardData.headerYellow,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            alignment: Alignment.center,
-            child: Text(
-              _dateLabel,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.black,
-                letterSpacing: 0.5,
-              ),
+          const Text(
+            'ESCALA DE LOUVOR',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.6,
+              color: ScalePrintCardData.labelGray,
             ),
           ),
-          // Ministro
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                top: BorderSide(color: ScalePrintCardData.borderColor, width: 1.5),
-                bottom: BorderSide(color: ScalePrintCardData.borderColor, width: 1.5),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-            alignment: Alignment.center,
-            child: Text(
-              data.ministerName != null && data.ministerName!.isNotEmpty
-                  ? 'Ministro(a): ${data.ministerName}'
-                  : 'Ministro(a): —',
-              textAlign: TextAlign.center,
+          const SizedBox(height: 6),
+          Text.rich(
+            TextSpan(
               style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
+                fontSize: 36,
+                fontWeight: FontWeight.w700,
+                height: 1.05,
+                color: ScalePrintCardData.navy,
+                letterSpacing: -0.5,
               ),
+              children: [
+                TextSpan(text: _dayLabel),
+                const TextSpan(
+                  text: ' / ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontStyle: FontStyle.italic,
+                    color: ScalePrintCardData.labelGray,
+                  ),
+                ),
+                TextSpan(text: _monthLabel),
+              ],
             ),
           ),
-          // Cabeçalhos + corpo
+          const SizedBox(height: 14),
+          const Divider(height: 1, thickness: 1, color: ScalePrintCardData.divider),
+          const SizedBox(height: 14),
+          Text.rich(
+            TextSpan(
+              style: const TextStyle(fontSize: 14, height: 1.3),
+              children: [
+                const TextSpan(
+                  text: 'Ministro',
+                  style: TextStyle(
+                    color: ScalePrintCardData.labelGray,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const TextSpan(
+                  text: '  ·  ',
+                  style: TextStyle(color: ScalePrintCardData.labelGray),
+                ),
+                TextSpan(
+                  text: (minister != null && minister.isNotEmpty) ? minister : '—',
+                  style: const TextStyle(
+                    color: ScalePrintCardData.navy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Colunas Instrum + Musico
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _headerPair(),
-                      ...List.generate(rowCount, (i) {
-                        final hasRow = i < rows.length;
-                        return _instrumentRow(
-                          instrument: hasRow ? rows[i].instrument : '',
-                          musician: hasRow ? rows[i].musician : '',
-                          color: ScalePrintCardData.rowColors[
-                              i % ScalePrintCardData.rowColors.length],
-                          isLast: i == rowCount - 1,
-                        );
-                      }),
+                      if (rows.isEmpty)
+                        _instrumentTile(
+                          instrument: '—',
+                          musician: 'Sem músicos',
+                          accent: ScalePrintCardData.accentColors[0],
+                          showDivider: false,
+                        )
+                      else
+                        ...List.generate(rows.length, (i) {
+                          return _instrumentTile(
+                            instrument: rows[i].instrument,
+                            musician: rows[i].musician,
+                            accent: ScalePrintCardData.accentColors[
+                                i % ScalePrintCardData.accentColors.length],
+                            showDivider: i < rows.length - 1,
+                          );
+                        }),
                     ],
                   ),
                 ),
-                // Coluna Vocais (bloco verde contínuo)
+                const SizedBox(width: 14),
                 Expanded(
-                  flex: 1,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: ScalePrintCardData.borderColor,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          alignment: Alignment.center,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            border: Border(
-                              bottom: BorderSide(
-                                color: ScalePrintCardData.borderColor,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                          child: const Text(
-                            'Vocais',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: ColoredBox(
-                            color: ScalePrintCardData.vocalsColor,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: List.generate(rowCount, (i) {
-                                final name =
-                                    i < vocals.length ? vocals[i] : '';
-                                return Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      name,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  flex: 2,
+                  child: _vocalsPanel(vocals),
                 ),
               ],
             ),
@@ -274,115 +243,116 @@ class ScalePrintCard extends StatelessWidget {
     );
   }
 
-  Widget _headerPair() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: ScalePrintCardData.borderColor, width: 1.5),
+  Widget _instrumentTile({
+    required String instrument,
+    required String musician,
+    required Color accent,
+    required bool showDivider,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 5,
+                height: 36,
+                margin: const EdgeInsets.only(top: 2, right: 12),
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      instrument.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.1,
+                        color: ScalePrintCardData.labelGray,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      musician,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                        color: ScalePrintCardData.navy,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: const Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 6),
-              child: Text(
-                'Instrum',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: ScalePrintCardData.borderColor,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  'Musico',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        if (showDivider)
+          const Divider(height: 1, thickness: 1, color: ScalePrintCardData.divider),
+      ],
     );
   }
 
-  Widget _instrumentRow({
-    required String instrument,
-    required String musician,
-    required Color color,
-    required bool isLast,
-  }) {
+  Widget _vocalsPanel(List<String> vocals) {
     return Container(
       decoration: BoxDecoration(
-        color: color,
-        border: Border(
-          bottom: isLast
-              ? BorderSide.none
-              : const BorderSide(
-                  color: ScalePrintCardData.borderColor,
-                  width: 1.5,
-                ),
-        ),
+        color: ScalePrintCardData.vocalsBg,
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-              child: Text(
-                instrument,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
+          const Text(
+            'Vocais',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: ScalePrintCardData.vocalsText,
             ),
           ),
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: ScalePrintCardData.borderColor,
-                    width: 1.5,
+          const SizedBox(height: 6),
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            color: ScalePrintCardData.vocalsText.withValues(alpha: 0.2),
+          ),
+          const SizedBox(height: 14),
+          if (vocals.isEmpty)
+            const Text(
+              '—',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: ScalePrintCardData.vocalsText,
+              ),
+            )
+          else
+            ...List.generate(vocals.length, (i) {
+              return Padding(
+                padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
+                child: Text(
+                  vocals[i],
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                    color: ScalePrintCardData.vocalsText,
                   ),
                 ),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-              child: Text(
-                musician,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ),
+              );
+            }),
         ],
       ),
     );
