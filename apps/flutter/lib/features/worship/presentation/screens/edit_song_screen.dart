@@ -62,19 +62,24 @@ class _EditSongScreenState extends ConsumerState<EditSongScreen> {
     }
     setState(() => _saving = true);
     try {
-      await _worshipApi.updateSong(widget.songId, {
+      final payload = <String, dynamic>{
         'title': _titleCtrl.text.trim(),
-        if (_artistCtrl.text.trim().isNotEmpty) 'artist': _artistCtrl.text.trim(),
-        if (_keyCtrl.text.trim().isNotEmpty) 'key': _keyCtrl.text.trim(),
-        if (_bpmCtrl.text.trim().isNotEmpty) 'bpm': int.tryParse(_bpmCtrl.text.trim()),
-        if (_durationCtrl.text.trim().isNotEmpty) 'duration': int.tryParse(_durationCtrl.text.trim()),
-        if (_capoCtrl.text.trim().isNotEmpty) 'capo': int.tryParse(_capoCtrl.text.trim()),
-        if (_youtubeCtrl.text.trim().isNotEmpty) 'youtubeUrl': _youtubeCtrl.text.trim(),
-        if (_lyricsCtrl.text.trim().isNotEmpty) 'lyrics': _lyricsCtrl.text.trim(),
-        if (_chordsCtrl.text.trim().isNotEmpty) 'chords': _chordsCtrl.text.trim(),
-        if (_notesCtrl.text.trim().isNotEmpty) 'notes': _notesCtrl.text.trim(),
-      });
-      if (mounted) context.pop();
+        'artist': _artistCtrl.text.trim(),
+        'key': _keyCtrl.text.trim(),
+        'youtubeUrl': _youtubeCtrl.text.trim(),
+        'lyrics': _lyricsCtrl.text,
+        'chords': _chordsCtrl.text,
+        'notes': _notesCtrl.text.trim(),
+      };
+      final bpm = int.tryParse(_bpmCtrl.text.trim());
+      final duration = int.tryParse(_durationCtrl.text.trim());
+      final capo = int.tryParse(_capoCtrl.text.trim());
+      if (bpm != null) payload['bpm'] = bpm;
+      if (duration != null) payload['duration'] = duration;
+      if (capo != null) payload['capo'] = capo;
+
+      await _worshipApi.updateSong(widget.songId, payload);
+      if (mounted) context.pop(true);
     } catch (e) {
       _showError('Erro ao salvar: $e');
     } finally {
