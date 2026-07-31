@@ -14,6 +14,8 @@ import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
+import '../widgets/scale_print_card.dart';
+import 'scale_print_preview_screen.dart';
 
 class ScaleDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -125,6 +127,39 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
         }
       }
     } catch (_) {}
+  }
+
+  ScalePrintCardData _buildPrintData(WorshipEvent we, EventModel? ev) {
+    final date = ev?.date ?? we.createdAt;
+    String? ministerName;
+    final ministerId = we.ministerMemberId;
+    if (ministerId != null && ministerId.isNotEmpty) {
+      final m = _membersById[ministerId];
+      if (m != null) {
+        ministerName = scaleCopyDisplayName(name: m.name, nickname: m.nickname);
+      }
+    }
+
+    final musicians = (we.musicians ?? []).map((musician) {
+      final member = _membersById[musician.memberId];
+      final name = member != null
+          ? scaleCopyDisplayName(name: member.name, nickname: member.nickname)
+          : 'Músico';
+      return (instrument: musician.instrument, name: name);
+    }).toList();
+
+    return ScalePrintCardData.fromAssignments(
+      date: date,
+      ministerName: ministerName,
+      musicians: musicians,
+    );
+  }
+
+  Future<void> _openPrintCard(WorshipEvent we, EventModel? ev) async {
+    await openScalePrintPreview(
+      context: context,
+      data: _buildPrintData(we, ev),
+    );
   }
 
   Future<void> _declinePresence(WorshipEventMusician musician) async {
@@ -262,6 +297,19 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF111827)),
         ),
         actions: [
+          if (we != null)
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF008CFF).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                tooltip: 'Card para print',
+                icon: const Icon(Icons.grid_on_rounded, color: Color(0xFF008CFF), size: 22),
+                onPressed: () => _openPrintCard(we, ev),
+              ),
+            ),
           if (canManage) ...[
             Container(
               margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
@@ -323,6 +371,8 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           children: [
             _buildHeader(isDark, title, day, month, year, we),
             const SizedBox(height: 24),
+            _buildPrintCardSection(isDark, we, ev),
+            const SizedBox(height: 24),
             if (songs.isNotEmpty) ...[
               _buildSectionTitle(isDark, 'Músicas (${songs.length})', Icons.music_note_rounded),
               const SizedBox(height: 12),
@@ -371,6 +421,33 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPrintCardSection(bool isDark, WorshipEvent we, EventModel? ev) {
+    final printData = _buildPrintData(we, ev);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(isDark, 'Card para print', Icons.grid_on_rounded),
+        const SizedBox(height: 8),
+        Text(
+          'Toque para ampliar, tirar print ou compartilhar no WhatsApp.',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+          ),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () => _openPrintCard(we, ev),
+          child: Center(
+            child: AbsorbPointer(
+              child: ScalePrintCard(data: printData, maxWidth: 320),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
