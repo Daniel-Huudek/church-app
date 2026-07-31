@@ -47,6 +47,7 @@ import '../../features/users/presentation/screens/user_edit_screen.dart';
 import '../../features/users/presentation/screens/role_manager_screen.dart';
 import '../../features/website/presentation/screens/website_content_screen.dart';
 import '../../features/backup/presentation/screens/backup_screen.dart';
+import '../../features/activity_logs/presentation/screens/activity_logs_screen.dart';
 import '../../features/bible/presentation/screens/bible_home_screen.dart';
 import '../../features/bible/presentation/screens/bible_chapter_screen.dart';
 import '../../features/bible/presentation/screens/bible_verse_screen.dart';
@@ -80,6 +81,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AppRoutes.home;
         }
         if (location.startsWith(AppRoutes.backup) &&
+            !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR'])) {
+          return AppRoutes.home;
+        }
+        if (location.startsWith(AppRoutes.activityLogs) &&
             !user.hasAnyRole(['ADMINISTRADOR', 'PASTOR'])) {
           return AppRoutes.home;
         }
@@ -397,6 +402,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.backup,
             builder: (context, state) => const BackupScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.activityLogs,
+            builder: (context, state) => const ActivityLogsScreen(),
           ),
         ],
       ),

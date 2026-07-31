@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { NotFoundError, ForbiddenError } from '@church-app/shared';
+import { prayerActivityLabel, recordActivityLog } from '../activity-logs/writer.js';
 
 export class PrayerService {
   constructor(private prisma: PrismaClient) {}
@@ -85,6 +86,15 @@ export class PrayerService {
       },
       include: { category: true },
     });
+    await recordActivityLog(this.prisma, {
+      domain: 'PRAYERS',
+      action: 'CREATED',
+      entityId: data.id,
+      entityLabel: prayerActivityLabel(data),
+      changedById: body.authorId,
+      oldValue: null,
+      newValue: { id: data.id, title: data.title, isPublic: data.isPublic, isUrgent: data.isUrgent },
+    });
     return { success: true, data };
   }
 
@@ -94,6 +104,16 @@ export class PrayerService {
     if (existing.authorId !== userId && role !== 'ADMINISTRADOR') throw new ForbiddenError('Not authorized');
 
     const data = await this.prisma.prayerRequest.update({ where: { id }, data: body, include: { category: true } });
+    await recordActivityLog(this.prisma, {
+      domain: 'PRAYERS',
+      action: 'UPDATED',
+      entityId: data.id,
+      entityLabel: prayerActivityLabel(data),
+      changedById: userId,
+      changedByRole: role,
+      oldValue: { id: existing.id, title: existing.title, isPublic: existing.isPublic, isUrgent: existing.isUrgent },
+      newValue: { id: data.id, title: data.title, isPublic: data.isPublic, isUrgent: data.isUrgent },
+    });
     return { success: true, data };
   }
 
@@ -102,6 +122,16 @@ export class PrayerService {
     if (!existing) throw new NotFoundError('Prayer request not found');
     if (existing.authorId !== userId && role !== 'ADMINISTRADOR') throw new ForbiddenError('Not authorized');
     await this.prisma.prayerRequest.update({ where: { id }, data: { deletedAt: new Date() } });
+    await recordActivityLog(this.prisma, {
+      domain: 'PRAYERS',
+      action: 'DELETED',
+      entityId: existing.id,
+      entityLabel: prayerActivityLabel(existing),
+      changedById: userId,
+      changedByRole: role,
+      oldValue: { id: existing.id, title: existing.title, isPublic: existing.isPublic, isUrgent: existing.isUrgent },
+      newValue: null,
+    });
     return { success: true };
   }
 
@@ -112,6 +142,15 @@ export class PrayerService {
     const data = await this.prisma.prayerRequest.update({
       where: { id },
       data: { isAnswered: true, answeredAt: new Date(), answeredBy: userId },
+    });
+    await recordActivityLog(this.prisma, {
+      domain: 'PRAYERS',
+      action: 'ANSWERED',
+      entityId: data.id,
+      entityLabel: prayerActivityLabel(data),
+      changedById: userId,
+      oldValue: { id: existing.id, title: existing.title, isAnswered: existing.isAnswered },
+      newValue: { id: data.id, title: data.title, isAnswered: data.isAnswered },
     });
     return { success: true, data };
   }

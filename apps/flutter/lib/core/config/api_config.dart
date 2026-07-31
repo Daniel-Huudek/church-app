@@ -77,4 +77,7 @@ class ApiConfig {
   // Backup
   static const String backup = '/backup';
   static const String backupRestore = '/backup/restore';
+
+  // Activity logs (admin)
+  static const String activityLogs = '/activity-logs';
 }

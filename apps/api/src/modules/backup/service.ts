@@ -39,6 +39,7 @@ export class BackupService {
       familyMembers,
       ministerialHistories,
       auditLogs,
+      activityLogs,
       events,
       schedules,
       schedulePositions,
@@ -80,6 +81,7 @@ export class BackupService {
       this.prisma.familyMember.findMany(),
       this.prisma.ministerialHistory.findMany(),
       this.prisma.auditLog.findMany(),
+      this.prisma.activityLog.findMany(),
       this.prisma.event.findMany(),
       this.prisma.schedule.findMany(),
       this.prisma.schedulePosition.findMany(),
@@ -123,6 +125,7 @@ export class BackupService {
       familyMembers,
       ministerialHistories,
       auditLogs,
+      activityLogs,
       events,
       schedules,
       schedulePositions,
@@ -235,6 +238,7 @@ export class BackupService {
         await this.createMany(tx.familyMember, asRows(data.familyMembers));
         await this.createMany(tx.ministerialHistory, asRows(data.ministerialHistories));
         await this.createMany(tx.auditLog, asRows(data.auditLogs));
+        await this.createMany(tx.activityLog, asRows(data.activityLogs));
         await this.createMany(tx.event, asRows(data.events));
         await this.createMany(tx.schedule, asRows(data.schedules));
         await this.createMany(tx.schedulePosition, asRows(data.schedulePositions));
@@ -311,6 +315,7 @@ export class BackupService {
     await tx.schedulePosition.deleteMany();
     await tx.schedule.deleteMany();
     await tx.event.deleteMany();
+    await tx.activityLog.deleteMany();
     await tx.auditLog.deleteMany();
     await tx.ministerialHistory.deleteMany();
     await tx.familyMember.deleteMany();
