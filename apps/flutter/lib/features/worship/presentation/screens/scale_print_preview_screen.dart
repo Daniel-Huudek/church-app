@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/scale_print_card.dart';
+import '../widgets/scale_print_songs_card.dart';
 
 /// Tela fullscreen limpa com o card da escala — ideal para tirar print.
 class ScalePrintPreviewScreen extends StatelessWidget {
   final ScalePrintCardData data;
+  final List<ScalePrintSongItem> songs;
   final bool popToRootOnDone;
 
   const ScalePrintPreviewScreen({
     super.key,
     required this.data,
+    this.songs = const [],
     this.popToRootOnDone = false,
   });
 
@@ -56,7 +59,14 @@ class ScalePrintPreviewScreen extends StatelessWidget {
                     horizontal: 20,
                     vertical: 12,
                   ),
-                  child: ScalePrintCard(data: data),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ScalePrintCard(data: data),
+                      const SizedBox(height: 16),
+                      ScalePrintSongsCard(songs: songs),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -99,6 +109,7 @@ class ScalePrintPreviewScreen extends StatelessWidget {
 Future<T?> openScalePrintPreview<T>({
   required BuildContext context,
   required ScalePrintCardData data,
+  List<ScalePrintSongItem> songs = const [],
   bool popToRootOnDone = false,
 }) {
   return Navigator.of(context).push<T>(
@@ -106,6 +117,7 @@ Future<T?> openScalePrintPreview<T>({
       fullscreenDialog: true,
       builder: (_) => ScalePrintPreviewScreen(
         data: data,
+        songs: songs,
         popToRootOnDone: popToRootOnDone,
       ),
     ),
