@@ -36,7 +36,7 @@ class _ScalePresentationScreenState
   double _fontSize = 18;
   double _speed = 1.0;
 
-  static const _speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+  static const _speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0];
 
   @override
   void initState() {
