@@ -3,6 +3,7 @@ import { NotFoundError, BadRequestError } from '@church-app/shared';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { financeActivityLabel, recordActivityLog } from '../activity-logs/writer.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
@@ -343,6 +344,17 @@ export class FinanceService {
   private async createAuditLog(transactionId: string, action: string, oldValue: any, newValue: any, changedById: string, changedByRole?: string) {
     await this.prisma.financialAuditLog.create({
       data: { transactionId, action, changedById, changedByRole, oldValue, newValue },
+    });
+    const labelSource = newValue ?? oldValue;
+    await recordActivityLog(this.prisma, {
+      domain: 'FINANCE',
+      action,
+      entityId: transactionId,
+      entityLabel: labelSource ? financeActivityLabel(labelSource) : transactionId,
+      changedById,
+      changedByRole,
+      oldValue,
+      newValue,
     });
   }
 

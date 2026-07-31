@@ -16,6 +16,20 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
+class _AdminTile {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+
+  const _AdminTile({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
+}
+
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   @override
   void initState() {
@@ -51,6 +65,55 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final t1 = isDark ? AppColors.darkText : AppColors.lightText;
     final t2 = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+    final tiles = <_AdminTile>[
+      if (user != null && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO']))
+        _AdminTile(
+          icon: Icons.account_balance_rounded,
+          color: AppColors.success,
+          label: 'Financeiro',
+          onTap: () => context.go(AppRoutes.finance),
+        ),
+      if (user != null && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER']))
+        _AdminTile(
+          icon: Icons.people_rounded,
+          color: AppColors.warning,
+          label: 'Membros',
+          onTap: () => context.go(AppRoutes.members),
+        ),
+      if (user != null && user.hasAnyRole(['ADMINISTRADOR', 'PASTOR'])) ...[
+        _AdminTile(
+          icon: Icons.supervised_user_circle_rounded,
+          color: AppColors.primary,
+          label: 'Usuários',
+          onTap: () => context.go(AppRoutes.users),
+        ),
+        _AdminTile(
+          icon: Icons.admin_panel_settings_rounded,
+          color: AppColors.primaryDark,
+          label: 'Cargos',
+          onTap: () => context.go(AppRoutes.usersRoles),
+        ),
+        _AdminTile(
+          icon: Icons.language_rounded,
+          color: const Color(0xFF008CFF),
+          label: 'Site',
+          onTap: () => context.go(AppRoutes.website),
+        ),
+        _AdminTile(
+          icon: Icons.backup_rounded,
+          color: const Color(0xFF0F766E),
+          label: 'Backup',
+          onTap: () => context.go(AppRoutes.backup),
+        ),
+        _AdminTile(
+          icon: Icons.history_rounded,
+          color: const Color(0xFF475569),
+          label: 'Logs',
+          onTap: () => context.go(AppRoutes.activityLogs),
+        ),
+      ],
+    ];
 
     return Container(
       color: bg,
@@ -118,84 +181,26 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   ],
                 ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  if (user != null &&
-                      user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'FINANCEIRO']))
-                    Expanded(
-                      child: _iconButton(
-                        icon: Icons.account_balance_rounded,
-                        color: AppColors.success,
-                        label: 'Financeiro',
-                        onTap: () => context.go(AppRoutes.finance),
-                      ),
-                    ),
-                  if (user != null &&
-                      user.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER'])) ...[
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: _iconButton(
-                        icon: Icons.people_rounded,
-                        color: AppColors.warning,
-                        label: 'Membros',
-                        onTap: () => context.go(AppRoutes.members),
-                      ),
-                    ),
-                  ],
-                  if (user != null &&
-                      user.hasAnyRole(['ADMINISTRADOR', 'PASTOR'])) ...[
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: _iconButton(
-                        icon: Icons.supervised_user_circle_rounded,
-                        color: AppColors.primary,
-                        label: 'Usuários',
-                        onTap: () => context.go(AppRoutes.users),
-                      ),
-                    ),
-                  ],
-                ],
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: tiles.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 1.35,
+                ),
+                itemBuilder: (context, index) {
+                  final tile = tiles[index];
+                  return _iconButton(
+                    icon: tile.icon,
+                    color: tile.color,
+                    label: tile.label,
+                    onTap: tile.onTap,
+                  );
+                },
               ),
-              if (user != null &&
-                  user.hasAnyRole(['ADMINISTRADOR', 'PASTOR'])) ...[
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _iconButton(
-                        icon: Icons.admin_panel_settings_rounded,
-                        color: AppColors.primaryDark,
-                        label: 'Cargos',
-                        onTap: () => context.go(AppRoutes.usersRoles),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: _iconButton(
-                        icon: Icons.language_rounded,
-                        color: const Color(0xFF008CFF),
-                        label: 'Site',
-                        onTap: () => context.go(AppRoutes.website),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _iconButton(
-                        icon: Icons.backup_rounded,
-                        color: const Color(0xFF0F766E),
-                        label: 'Backup',
-                        onTap: () => context.go(AppRoutes.backup),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    const Expanded(child: SizedBox()),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
@@ -235,20 +240,28 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: color)),
-          ],
+    return Material(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: AppSpacing.iconXl),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.w600, color: color),
+              ),
+            ],
+          ),
         ),
       ),
     );

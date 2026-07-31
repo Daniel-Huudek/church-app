@@ -47,6 +47,7 @@ class AppRoutes {
   static String userEdit(String id) => '/users/$id/edit';
   static const String website = '/website';
   static const String backup = '/dashboard/backup';
+  static const String activityLogs = '/dashboard/logs';
   static const String bible = '/bible';
   static String bibleChapter(String bookId) => '/bible/$bookId';
   static String bibleVerse(String bookId, int chapter) => '/bible/$bookId/$chapter';

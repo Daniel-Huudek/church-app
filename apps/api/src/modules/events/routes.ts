@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { validate, parsePagination, authenticate, authorizePermissions } from '@church-app/shared';
+import { validate, parsePagination, authenticate, authorizePermissions, requireAuthUser } from '@church-app/shared';
 import { z } from 'zod';
 import { EventService } from './service';
 
@@ -33,14 +33,19 @@ export async function eventRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', { preHandler: [canRead] }, async (request, _reply) => service.findById((request.params as any).id));
 
   fastify.post('/', { preHandler: [canWrite] }, async (request: FastifyRequest, _reply) => {
+    const { userId, role } = requireAuthUser(request);
     const body = validate(eventSchema, request.body);
-    return service.create(body);
+    return service.create(body, { userId, role });
   });
 
   fastify.put('/:id', { preHandler: [canWrite] }, async (request, _reply) => {
+    const { userId, role } = requireAuthUser(request);
     const body = validate(eventSchema.partial(), request.body);
-    return service.update((request.params as any).id, body);
+    return service.update((request.params as any).id, body, { userId, role });
   });
 
-  fastify.delete('/:id', { preHandler: [canDelete] }, async (request, _reply) => service.delete((request.params as any).id));
+  fastify.delete('/:id', { preHandler: [canDelete] }, async (request, _reply) => {
+    const { userId, role } = requireAuthUser(request);
+    return service.delete((request.params as any).id, { userId, role });
+  });
 }

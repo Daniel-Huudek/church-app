@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { NotFoundError } from '@church-app/shared';
+import { recordActivityLog, scheduleActivityLabel } from '../activity-logs/writer.js';
+
+type Actor = { userId?: string; role?: string };
 
 export class ScheduleService {
   constructor(private prisma: PrismaClient) {}
@@ -21,14 +24,28 @@ export class ScheduleService {
     return { success: true, data };
   }
 
-  async create(body: { eventId: string; ministryId: string; date: string; startTime: string; endTime: string; positions: { memberId: string; position: string }[] }) {
+  async create(
+    body: { eventId: string; ministryId: string; date: string; startTime: string; endTime: string; positions: { memberId: string; position: string }[] },
+    actor?: Actor,
+  ) {
     const data = await this.prisma.schedule.create({
       data: { eventId: body.eventId, ministryId: body.ministryId, date: new Date(body.date), startTime: body.startTime, endTime: body.endTime },
     });
     await this.prisma.schedulePosition.createMany({
       data: body.positions.map(p => ({ scheduleId: data.id, memberId: p.memberId, position: p.position })),
     });
-    return this.findById(data.id);
+    const created = await this.findById(data.id);
+    await recordActivityLog(this.prisma, {
+      domain: 'SCHEDULES',
+      action: 'CREATED',
+      entityId: data.id,
+      entityLabel: scheduleActivityLabel(data),
+      changedById: actor?.userId,
+      changedByRole: actor?.role,
+      oldValue: null,
+      newValue: created.data,
+    });
+    return created;
   }
 
   async update(
@@ -41,8 +58,12 @@ export class ScheduleService {
       endTime: string;
       positions: { memberId: string; position: string }[];
     }>,
+    actor?: Actor,
   ) {
-    const existing = await this.prisma.schedule.findFirst({ where: { id, deletedAt: null } });
+    const existing = await this.prisma.schedule.findFirst({
+      where: { id, deletedAt: null },
+      include: { positions: true },
+    });
     if (!existing) throw new NotFoundError('Schedule not found');
 
     const { positions, date, ...rest } = body;
@@ -67,11 +88,37 @@ export class ScheduleService {
       }
     }
 
-    return this.findById(id);
+    const updated = await this.findById(id);
+    await recordActivityLog(this.prisma, {
+      domain: 'SCHEDULES',
+      action: 'UPDATED',
+      entityId: id,
+      entityLabel: scheduleActivityLabel(updated.data),
+      changedById: actor?.userId,
+      changedByRole: actor?.role,
+      oldValue: existing,
+      newValue: updated.data,
+    });
+    return updated;
   }
 
-  async delete(id: string) {
+  async delete(id: string, actor?: Actor) {
+    const existing = await this.prisma.schedule.findFirst({
+      where: { id, deletedAt: null },
+      include: { positions: true },
+    });
+    if (!existing) throw new NotFoundError('Schedule not found');
     await this.prisma.schedule.update({ where: { id }, data: { deletedAt: new Date() } });
+    await recordActivityLog(this.prisma, {
+      domain: 'SCHEDULES',
+      action: 'DELETED',
+      entityId: existing.id,
+      entityLabel: scheduleActivityLabel(existing),
+      changedById: actor?.userId,
+      changedByRole: actor?.role,
+      oldValue: existing,
+      newValue: null,
+    });
     return { success: true };
   }
 

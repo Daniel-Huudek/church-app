@@ -860,3 +860,23 @@ model WebsiteContent {
   @@map("website_contents")
 }
 
+/// Feed unificado de auditoria do painel administrativo
+model ActivityLog {
+  id            String   @id @default(uuid())
+  domain        String
+  action        String
+  entityId      String
+  entityLabel   String?
+  changedById   String?
+  changedByRole String?
+  oldValue      Json?
+  newValue      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([domain])
+  @@index([entityId])
+  @@index([changedById])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { NotFoundError } from '@church-app/shared';
+import { eventActivityLabel, recordActivityLog } from '../activity-logs/writer.js';
 
 export class EventService {
   constructor(private prisma: PrismaClient) {}
@@ -19,18 +20,55 @@ export class EventService {
     return { success: true, data };
   }
 
-  async create(body: any) {
+  async create(body: any, actor?: { userId?: string; role?: string }) {
     const data = await this.prisma.event.create({ data: { ...body, date: new Date(body.date) } });
+    await recordActivityLog(this.prisma, {
+      domain: 'EVENTS',
+      action: 'CREATED',
+      entityId: data.id,
+      entityLabel: eventActivityLabel(data),
+      changedById: actor?.userId,
+      changedByRole: actor?.role,
+      oldValue: null,
+      newValue: data,
+    });
     return { success: true, data };
   }
 
-  async update(id: string, body: any) {
-    const data = await this.prisma.event.update({ where: { id }, data: { ...body, date: body.date ? new Date(body.date) : undefined } });
+  async update(id: string, body: any, actor?: { userId?: string; role?: string }) {
+    const existing = await this.prisma.event.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw new NotFoundError('Event not found');
+    const data = await this.prisma.event.update({
+      where: { id },
+      data: { ...body, date: body.date ? new Date(body.date) : undefined },
+    });
+    await recordActivityLog(this.prisma, {
+      domain: 'EVENTS',
+      action: 'UPDATED',
+      entityId: data.id,
+      entityLabel: eventActivityLabel(data),
+      changedById: actor?.userId,
+      changedByRole: actor?.role,
+      oldValue: existing,
+      newValue: data,
+    });
     return { success: true, data };
   }
 
-  async delete(id: string) {
+  async delete(id: string, actor?: { userId?: string; role?: string }) {
+    const existing = await this.prisma.event.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw new NotFoundError('Event not found');
     await this.prisma.event.update({ where: { id }, data: { deletedAt: new Date() } });
+    await recordActivityLog(this.prisma, {
+      domain: 'EVENTS',
+      action: 'DELETED',
+      entityId: existing.id,
+      entityLabel: eventActivityLabel(existing),
+      changedById: actor?.userId,
+      changedByRole: actor?.role,
+      oldValue: existing,
+      newValue: null,
+    });
     return { success: true };
   }
 

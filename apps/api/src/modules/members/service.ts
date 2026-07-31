@@ -10,6 +10,7 @@ import {
   toDateOnlyIso,
   turningAge,
 } from './utils/birthday.js';
+import { memberActivityLabel, recordActivityLog } from '../activity-logs/writer.js';
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
 
@@ -638,6 +639,16 @@ export class MemberService {
   private async createAuditLog(memberId: string, action: string, oldValue: any, newValue: any, changedBy?: string) {
     await this.prisma.auditLog.create({
       data: { memberId, action, changedBy: changedBy || null, oldValue, newValue },
+    });
+    const labelSource = newValue ?? oldValue;
+    await recordActivityLog(this.prisma, {
+      domain: 'MEMBERS',
+      action,
+      entityId: memberId,
+      entityLabel: labelSource ? memberActivityLabel(labelSource) : memberId,
+      changedById: changedBy || null,
+      oldValue,
+      newValue,
     });
   }
 

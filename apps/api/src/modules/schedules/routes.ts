@@ -106,16 +106,19 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/', { preHandler: [canWrite] }, async (request: FastifyRequest, _reply) => {
+    const { userId, role } = requireAuthUser(request);
     const body = validate(scheduleSchema, request.body);
-    return service.create(body);
+    return service.create(body, { userId, role });
   });
 
   fastify.put('/:id', { preHandler: [canWrite] }, async (request, _reply) => {
+    const { userId, role } = requireAuthUser(request);
     const body = validate(scheduleSchema.partial(), request.body);
-    return service.update((request.params as any).id, body);
+    return service.update((request.params as any).id, body, { userId, role });
   });
 
   fastify.delete('/:id', { preHandler: [canDelete] }, async (request, _reply) => {
-    return service.delete((request.params as any).id);
+    const { userId, role } = requireAuthUser(request);
+    return service.delete((request.params as any).id, { userId, role });
   });
 }
