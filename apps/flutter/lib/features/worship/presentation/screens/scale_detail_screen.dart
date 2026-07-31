@@ -12,9 +12,11 @@ import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
+import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
 import '../widgets/scale_print_card.dart';
+import '../widgets/scale_print_songs_card.dart';
 import 'scale_print_preview_screen.dart';
 
 class ScaleDetailScreen extends ConsumerStatefulWidget {
@@ -30,6 +32,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
   EventModel? _event;
   final Map<String, MemberModel> _membersById = {};
   bool _loading = true;
+  bool _reorderingSongs = false;
 
   @override
   void initState() {
@@ -155,11 +158,69 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     );
   }
 
+  List<ScalePrintSongItem> _buildPrintSongs(WorshipEvent we) {
+    return (we.songs ?? [])
+        .map(
+          (s) => ScalePrintSongItem(
+            title: s.song.title,
+            artist: s.song.artist,
+            key: s.song.key,
+          ),
+        )
+        .toList();
+  }
+
   Future<void> _openPrintCard(WorshipEvent we, EventModel? ev) async {
     await openScalePrintPreview(
       context: context,
       data: _buildPrintData(we, ev),
+      songs: _buildPrintSongs(we),
     );
+  }
+
+  Future<void> _reorderSongs(int oldIndex, int newIndex) async {
+    final we = _worshipEvent;
+    if (we == null || _reorderingSongs) return;
+    final songs = List<WorshipEventSong>.from(we.songs ?? []);
+    if (songs.length < 2) return;
+
+    if (newIndex > oldIndex) newIndex -= 1;
+    final item = songs.removeAt(oldIndex);
+    songs.insert(newIndex, item);
+
+    setState(() {
+      _reorderingSongs = true;
+      _worshipEvent = WorshipEvent(
+        id: we.id,
+        eventId: we.eventId,
+        playlistId: we.playlistId,
+        ministerMemberId: we.ministerMemberId,
+        notes: we.notes,
+        estimatedTime: we.estimatedTime,
+        createdAt: we.createdAt,
+        updatedAt: we.updatedAt,
+        songs: songs,
+        musicians: we.musicians,
+        playlist: we.playlist,
+      );
+    });
+
+    try {
+      await WorshipApi(ref.read(apiClientProvider)).reorderWorshipEventSongs(
+        widget.id,
+        songs.map((s) => s.song.id).toList(),
+      );
+      await ref.read(worshipRepositoryProvider).invalidateWorshipEventCaches(id: widget.id);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao reordenar: $e')),
+        );
+        _load();
+      }
+    } finally {
+      if (mounted) setState(() => _reorderingSongs = false);
+    }
   }
 
   Future<void> _declinePresence(WorshipEventMusician musician) async {
@@ -353,6 +414,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     final songs = we.songs ?? [];
     final musicians = we.musicians ?? [];
     final currentUser = ref.read(authProvider).user;
+    final canManage = currentUser?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR']) == true;
     final title = ev?.title ?? 'Evento';
     final date = ev?.date ?? we.createdAt;
     final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -373,11 +435,51 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
             const SizedBox(height: 24),
             if (songs.isNotEmpty) ...[
               _buildSectionTitle(isDark, 'Músicas (${songs.length})', Icons.music_note_rounded),
+              if (canManage) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Arraste para definir a ordem',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
-              ...songs.asMap().entries.map((e) => Padding(
-                padding: EdgeInsets.only(top: e.key > 0 ? 10 : 0),
-                child: _buildSongCard(isDark, e.value.song),
-              )),
+              if (canManage)
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  buildDefaultDragHandles: false,
+                  itemCount: songs.length,
+                  onReorder: _reorderSongs,
+                  proxyDecorator: (child, index, animation) {
+                    return Material(
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(14),
+                      color: Colors.transparent,
+                      child: child,
+                    );
+                  },
+                  itemBuilder: (context, index) {
+                    final entry = songs[index];
+                    return Padding(
+                      key: ValueKey('detail-song-${entry.id}'),
+                      padding: EdgeInsets.only(top: index > 0 ? 10 : 0),
+                      child: _buildSongCard(
+                        isDark,
+                        entry.song,
+                        order: index + 1,
+                        dragIndex: index,
+                      ),
+                    );
+                  },
+                )
+              else
+                ...songs.asMap().entries.map((e) => Padding(
+                  padding: EdgeInsets.only(top: e.key > 0 ? 10 : 0),
+                  child: _buildSongCard(isDark, e.value.song, order: e.key + 1),
+                )),
             ] else ...[
               _buildSectionTitle(isDark, 'Músicas', Icons.music_note_rounded),
               const SizedBox(height: 12),
@@ -508,7 +610,12 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     );
   }
 
-  Widget _buildSongCard(bool isDark, Song song) {
+  Widget _buildSongCard(
+    bool isDark,
+    Song song, {
+    int? order,
+    int? dragIndex,
+  }) {
     return GestureDetector(
       onTap: () => context.push('/worship/songs/${song.id}'),
       child: Container(
@@ -527,13 +634,32 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
         ),
         child: Row(
           children: [
+            if (dragIndex != null) ...[
+              ReorderableDragStartListener(
+                index: dragIndex,
+                child: const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Icon(Icons.drag_handle_rounded, color: Color(0xFF9CA3AF)),
+                ),
+              ),
+            ],
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
                 color: const Color(0xFF008CFF).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.music_note_rounded, color: Color(0xFF008CFF), size: 22),
+              alignment: Alignment.center,
+              child: order != null
+                  ? Text(
+                      '$order',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        color: Color(0xFF008CFF),
+                      ),
+                    )
+                  : const Icon(Icons.music_note_rounded, color: Color(0xFF008CFF), size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(

@@ -12,8 +12,6 @@ import '../../data/worship_api.dart';
 import '../../data/worship_ministry_helper.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
-import '../widgets/scale_print_card.dart';
-import 'scale_print_preview_screen.dart';
 
 class CreateScaleScreen extends ConsumerStatefulWidget {
   final String? scaleId;
@@ -284,35 +282,12 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
 
       if (!mounted) return;
 
-      final printData = ScalePrintCardData.fromAssignments(
-        date: _selectedDate,
-        ministerName: _selectedMinister == null
-            ? null
-            : scaleCopyDisplayName(
-                name: _selectedMinister!.name,
-                nickname: _selectedMinister!.nickname,
-              ),
-        musicians: _selectedMusicians.map((m) {
-          return (
-            instrument: _musicianInstruments[m.id],
-            name: scaleCopyDisplayName(name: m.name, nickname: m.nickname),
-          );
-        }).toList(),
-      );
-
-      await openScalePrintPreview(
-        context: context,
-        data: printData,
-      );
-
-      if (mounted) {
-        if (_isEditing) {
-          context.pop(true);
-        } else if (savedWorshipEventId != null) {
-          context.pushReplacement('/worship/scale/$savedWorshipEventId');
-        } else {
-          context.pop(true);
-        }
+      if (_isEditing) {
+        context.pop(true);
+      } else if (savedWorshipEventId != null) {
+        context.pushReplacement('/worship/scale/$savedWorshipEventId');
+      } else {
+        context.pop(true);
       }
     } catch (e) {
       debugPrint('Erro ao salvar: $e');
@@ -609,6 +584,14 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
     );
   }
 
+  void _onReorderSelectedSongs(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final song = _selectedSongs.removeAt(oldIndex);
+      _selectedSongs.insert(newIndex, song);
+    });
+  }
+
   Widget _buildMusicas(bool isDark) {
     final query = _searchCtrl.text.toLowerCase();
     final filtered = query.isEmpty
@@ -616,38 +599,128 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         : _allSongs.where((s) =>
             s.title.toLowerCase().contains(query) ||
             (s.artist?.toLowerCase().contains(query) ?? false)).toList();
+    final t1 = isDark ? Colors.white : const Color(0xFF111827);
+    final t2 = isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
+    final card = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF9FAFB);
+    final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (_selectedSongs.isNotEmpty) ...[
+          Text(
+            'Ordem na escala',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t1),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Arraste para definir a ordem das músicas',
+            style: TextStyle(fontSize: 12, color: t2),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            constraints: BoxConstraints(
+              maxHeight: (_selectedSongs.length * 64.0).clamp(64, 220),
+            ),
+            decoration: BoxDecoration(
+              color: card,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: border),
+            ),
+            child: ReorderableListView.builder(
+              shrinkWrap: true,
+              buildDefaultDragHandles: false,
+              itemCount: _selectedSongs.length,
+              onReorder: _onReorderSelectedSongs,
+              itemBuilder: (context, index) {
+                final song = _selectedSongs[index];
+                return Material(
+                  key: ValueKey('selected-song-${song.id}'),
+                  color: Colors.transparent,
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.only(left: 8, right: 4),
+                    leading: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ReorderableDragStartListener(
+                          index: index,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4),
+                            child: Icon(Icons.drag_handle_rounded, color: Color(0xFF9CA3AF)),
+                          ),
+                        ),
+                        Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF008CFF).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF008CFF),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    title: Text(
+                      song.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: t1),
+                    ),
+                    subtitle: song.artist != null
+                        ? Text(song.artist!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: t2))
+                        : null,
+                    trailing: IconButton(
+                      tooltip: 'Remover',
+                      icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF9CA3AF)),
+                      onPressed: () => setState(() {
+                        _selectedSongs.removeWhere((s) => s.id == song.id);
+                      }),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         Container(
           height: 52,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF9FAFB),
+            color: card,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB)),
+            border: Border.all(color: border),
           ),
           child: TextField(
             controller: _searchCtrl,
             onChanged: (_) => setState(() {}),
-            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF111827)),
+            style: TextStyle(color: t1),
             decoration: InputDecoration(
               hintText: 'Buscar músicas...',
-              hintStyle: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
-              prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)),
+              hintStyle: TextStyle(color: t2),
+              prefixIcon: Icon(Icons.search_rounded, color: t2),
               border: InputBorder.none,
             ),
           ),
         ),
         const SizedBox(height: 12),
-        Text('${_selectedSongs.length} selecionadas',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF008CFF))),
+        Text(
+          '${_selectedSongs.length} selecionadas',
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF008CFF)),
+        ),
         const SizedBox(height: 8),
         Expanded(
           child: filtered.isEmpty
-              ? Center(child: Text('Nenhuma música encontrada',
-                  style: TextStyle(color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF))))
+              ? Center(child: Text('Nenhuma música encontrada', style: TextStyle(color: t2)))
               : ListView.separated(
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const Divider(height: 1),
@@ -666,14 +739,17 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
                           color: selected ? Colors.white : const Color(0xFF008CFF), size: 20),
                       ),
                       title: Text(song.title,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF111827))),
+                        style: TextStyle(fontWeight: FontWeight.w600, color: t1)),
                       subtitle: song.artist != null
-                          ? Text(song.artist!, style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF)))
+                          ? Text(song.artist!, style: TextStyle(fontSize: 13, color: t2))
                           : null,
                       trailing: selected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF008CFF), size: 22) : null,
                       onTap: () => setState(() {
-                        if (selected) { _selectedSongs.removeWhere((s) => s.id == song.id); }
-                        else { _selectedSongs.add(song); }
+                        if (selected) {
+                          _selectedSongs.removeWhere((s) => s.id == song.id);
+                        } else {
+                          _selectedSongs.add(song);
+                        }
                       }),
                     );
                   },
