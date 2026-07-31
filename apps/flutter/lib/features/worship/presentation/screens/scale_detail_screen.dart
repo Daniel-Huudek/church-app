@@ -371,8 +371,6 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           children: [
             _buildHeader(isDark, title, day, month, year, we),
             const SizedBox(height: 24),
-            _buildPrintCardSection(isDark, we, ev),
-            const SizedBox(height: 24),
             if (songs.isNotEmpty) ...[
               _buildSectionTitle(isDark, 'Músicas (${songs.length})', Icons.music_note_rounded),
               const SizedBox(height: 12),
@@ -421,33 +419,6 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPrintCardSection(bool isDark, WorshipEvent we, EventModel? ev) {
-    final printData = _buildPrintData(we, ev);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(isDark, 'Card para print', Icons.grid_on_rounded),
-        const SizedBox(height: 8),
-        Text(
-          'Toque para ampliar, tirar print ou compartilhar no WhatsApp.',
-          style: TextStyle(
-            fontSize: 13,
-            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-          ),
-        ),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: () => _openPrintCard(we, ev),
-          child: Center(
-            child: AbsorbPointer(
-              child: ScalePrintCard(data: printData, maxWidth: 320),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
