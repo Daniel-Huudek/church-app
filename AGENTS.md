@@ -5,7 +5,7 @@
 - **Runtime:** Node.js 22
 - **Package manager:** pnpm 10.12 (workspaces)
 - **Backend:** Fastify v4 + TypeScript (monólito modular)
-- **ORM:** Prisma (PostgreSQL — banco único `church_db`)
+- **ORM:** Prisma (PostgreSQL — banco único, default `church_db` via `POSTGRES_DB`)
 - **Validação:** Zod
 - **Auth:** JWT (jsonwebtoken + @fastify/jwt) + bcryptjs + Google OAuth
 - **Mobile:** Flutter 3.5+ (Riverpod + GoRouter + Dio)
@@ -78,7 +78,7 @@ Imagem Docker: `docker/Dockerfile.service` (args `SERVICE=api` / `PORT=3030` / `
 - Web: `docker/Dockerfile.web` — Vite build + nginx; runtime `WEB_API_URL` → `/config.js`
 - App: `docker/Dockerfile.app` — Flutter web + `serve` (:8080); `API_URL` via `--dart-define` na build
 - Heap ~192MB; `mem_limit: 320m` (API), `64m` (web), `96m` (app)
-- Compose anexa `dokploy-network` (external) em `api`/`web`/`app`/`postgres-db`
+- Compose anexa `dokploy-network` (external) só em `api`/`web`/`app` (Traefik); `postgres-db` fica só na rede interna do stack
 - Domínio do site/API/app: aba **Domains** do Dokploy (`web`→80, `api`→3030, `app`→8080); URL da API no site via env `WEB_API_URL`
 
 ### Banco de Dados
