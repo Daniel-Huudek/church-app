@@ -31,6 +31,8 @@ class AppRoutes {
   static const String worshipScaleCreate = '/worship/scale/create';
   static String worshipScaleDetail(String id) => '/worship/scale/$id';
   static String worshipScaleEdit(String id) => '/worship/scale/$id/edit';
+  static String worshipScalePlay(String id, {int index = 0}) =>
+      index <= 0 ? '/worship/scale/$id/play' : '/worship/scale/$id/play?i=$index';
   static const String worshipRepertorioCreate = '/worship/repertorio/create';
   static const String worshipRepertorioFetch = '/worship/repertorio/fetch';
   static String worshipSongDetail(String id) => '/worship/songs/$id';

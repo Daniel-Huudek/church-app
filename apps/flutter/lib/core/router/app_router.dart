@@ -25,6 +25,7 @@ import '../../features/members/presentation/screens/birthdays_screen.dart';
 import '../../features/worship/presentation/screens/worship_dashboard_screen.dart';
 import '../../features/worship/presentation/screens/create_scale_screen.dart';
 import '../../features/worship/presentation/screens/scale_detail_screen.dart';
+import '../../features/worship/presentation/screens/scale_presentation_screen.dart';
 import '../../features/worship/presentation/screens/create_repertorio_screen.dart';
 import '../../features/worship/presentation/screens/fetch_song_screen.dart';
 import '../../features/worship/presentation/screens/song_detail_screen.dart';
@@ -270,6 +271,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'scale/:id/edit',
                 builder: (context, state) => CreateScaleScreen(scaleId: state.pathParameters['id']!),
+              ),
+              GoRoute(
+                path: 'scale/:id/play',
+                builder: (context, state) {
+                  final index = int.tryParse(state.uri.queryParameters['i'] ?? '0') ?? 0;
+                  return ScalePresentationScreen(
+                    scaleId: state.pathParameters['id']!,
+                    initialIndex: index < 0 ? 0 : index,
+                  );
+                },
               ),
               GoRoute(
                 path: 'scale/:id',
