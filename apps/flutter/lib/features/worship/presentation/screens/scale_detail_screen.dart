@@ -40,25 +40,30 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool silent = false}) async {
     try {
       final worshipRepo = ref.read(worshipRepositoryProvider);
       final eventRepo = ref.read(eventRepositoryProvider);
       final memberApi = MemberApi(ref.read(apiClientProvider));
 
-      final cached = worshipRepo.peekWorshipEventCache(widget.id);
-      if (cached != null && mounted) {
-        setState(() {
-          _worshipEvent = cached;
-          _event = eventRepo.peekDetailCache(cached.eventId);
-          _loading = false;
-        });
+      if (!silent) {
+        final cached = worshipRepo.peekWorshipEventCache(widget.id);
+        if (cached != null && mounted && _worshipEvent == null) {
+          setState(() {
+            _worshipEvent = cached;
+            _event = eventRepo.peekDetailCache(cached.eventId);
+            _loading = false;
+          });
+        }
       }
 
+      // Sempre busca na API para não ficar com cache antigo após editar.
+      await worshipRepo.invalidateWorshipEventCaches(id: widget.id);
       final result = await worshipRepo.getWorshipEvent(widget.id);
       final we = result.data;
       EventModel? ev;
       try {
+        await eventRepo.invalidateDetail(we.eventId);
         ev = (await eventRepo.getById(we.eventId)).data;
       } catch (_) {
         ev = eventRepo.peekDetailCache(we.eventId);
@@ -211,6 +216,7 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
         songs.map((s) => s.song.id).toList(),
       );
       await ref.read(worshipRepositoryProvider).invalidateWorshipEventCaches(id: widget.id);
+      ref.read(worshipScaleRefreshProvider.notifier).state++;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -330,6 +336,10 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(worshipScaleRefreshProvider, (previous, next) {
+      if (previous != next) _load(silent: true);
+    });
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
     final we = _worshipEvent;
@@ -382,8 +392,12 @@ class _ScaleDetailScreenState extends ConsumerState<ScaleDetailScreen> {
                 tooltip: 'Editar',
                 icon: const Icon(Icons.edit_rounded, color: Color(0xFF008CFF), size: 22),
                 onPressed: () async {
-                  await context.push('/worship/scale/${widget.id}/edit');
-                  if (mounted) _load();
+                  final updated = await context.push<bool>('/worship/scale/${widget.id}/edit');
+                  if (mounted && updated == true) {
+                    await _load(silent: true);
+                  } else if (mounted) {
+                    await _load();
+                  }
                 },
               ),
             ),

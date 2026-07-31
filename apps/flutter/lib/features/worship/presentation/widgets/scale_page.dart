@@ -223,6 +223,10 @@ class _ScalePageState extends ConsumerState<ScalePage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(worshipScaleRefreshProvider, (previous, next) {
+      if (previous != next) _load();
+    });
+
     final isDark = widget.isDark;
     final scaleTab = widget.scaleTab;
     final now = DateTime.now();
@@ -424,10 +428,20 @@ class _ScalePageState extends ConsumerState<ScalePage> {
               child: Opacity(
                 opacity: watchIsOnline(ref) ? 1 : 0.45,
                 child: GestureDetector(
-                  onTap: guardOnlineAction(context, ref, () async {
-                    await context.push('/worship/scale/create');
-                    if (mounted) _load();
-                  }),
+                  onTap: () async {
+                    if (!watchIsOnline(ref)) {
+                      showRequiresInternetSnackBar(context);
+                      return;
+                    }
+                    final createdId = await context.push<String>('/worship/scale/create');
+                    if (!mounted) return;
+                    await _load();
+                    if (!mounted) return;
+                    if (createdId != null && createdId.isNotEmpty) {
+                      await context.push('/worship/scale/$createdId');
+                      if (mounted) await _load();
+                    }
+                  },
                   child: Container(
                     width: 56, height: 56,
                     decoration: BoxDecoration(
