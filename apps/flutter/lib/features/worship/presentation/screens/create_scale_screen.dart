@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../events/data/event_api.dart';
 import '../../../events/domain/event_model.dart';
+import '../../../events/presentation/providers/event_provider.dart';
 import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
@@ -231,9 +232,11 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
         'endTime': _endTimeCtrl.text.trim().isEmpty ? '21:00' : _endTimeCtrl.text.trim(),
       };
 
+      final eventRepo = ref.read(eventRepositoryProvider);
+
       if (_isEditing && widget.scaleId != null) {
         savedWorshipEventId = widget.scaleId;
-        await _eventApi.update(_eventId!, eventPayload);
+        await eventRepo.update(_eventId!, eventPayload);
 
         await _worshipApi.updateWorshipEvent(widget.scaleId!, {
           'notes': _notesCtrl.text.trim(),
@@ -251,9 +254,9 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
             throw Exception('Este evento já possui escala de louvor');
           }
           // Keep shared event details in sync for Louvor + Diáconos.
-          await _eventApi.update(linkedEventId, eventPayload);
+          await eventRepo.update(linkedEventId, eventPayload);
         } else {
-          final event = await _eventApi.create(eventPayload);
+          final event = await eventRepo.create(eventPayload);
           linkedEventId = event.id;
         }
 
@@ -279,15 +282,16 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
       await ref.read(worshipRepositoryProvider).invalidateWorshipEventCaches(
             id: savedWorshipEventId,
           );
+      // Força lista/detalhe a recarregar ao voltar.
+      ref.read(worshipScaleRefreshProvider.notifier).state++;
 
       if (!mounted) return;
 
       if (_isEditing) {
         context.pop(true);
-      } else if (savedWorshipEventId != null) {
-        context.pushReplacement('/worship/scale/$savedWorshipEventId');
       } else {
-        context.pop(true);
+        // Devolve o id para a lista recarregar e abrir o detalhe.
+        context.pop(savedWorshipEventId);
       }
     } catch (e) {
       debugPrint('Erro ao salvar: $e');

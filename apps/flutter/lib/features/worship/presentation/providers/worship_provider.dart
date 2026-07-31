@@ -16,6 +16,9 @@ final worshipRepositoryProvider = Provider<WorshipRepository>((ref) {
   );
 });
 
+/// Incrementado após criar/editar escala para forçar reload nas telas abertas.
+final worshipScaleRefreshProvider = StateProvider<int>((ref) => 0);
+
 final songsProvider = StateNotifierProvider<SongsNotifier, AsyncValue<List<Song>>>(
   (ref) => SongsNotifier(ref.watch(worshipRepositoryProvider)),
 );

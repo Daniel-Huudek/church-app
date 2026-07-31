@@ -137,9 +137,13 @@ class WorshipRepository {
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
       await _cache.setJson(CacheKeys.worshipEventsList, maps);
+      // Não sobrescreve o detalhe se já existir (lista pode vir menos completa
+      // e apagar songs/musicians recém-carregados no detalhe).
       for (final map in maps) {
         final id = map['id'] as String?;
-        if (id != null) {
+        if (id == null) continue;
+        final existing = _cache.getMap(CacheKeys.worshipEventDetail(id));
+        if (existing == null) {
           await _cache.setJson(CacheKeys.worshipEventDetail(id), map);
         }
       }

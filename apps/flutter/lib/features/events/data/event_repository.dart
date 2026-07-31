@@ -70,10 +70,24 @@ class EventRepository {
     }
   }
 
-  Future<EventModel> create(Map<String, dynamic> data) => _api.create(data);
+  Future<EventModel> create(Map<String, dynamic> data) async {
+    final created = await _api.create(data);
+    await _cache.setJson(CacheKeys.eventDetail(created.id), _toCacheJson(created));
+    await _cache.remove(CacheKeys.eventsList);
+    return created;
+  }
 
-  Future<EventModel> update(String id, Map<String, dynamic> data) =>
-      _api.update(id, data);
+  Future<EventModel> update(String id, Map<String, dynamic> data) async {
+    final updated = await _api.update(id, data);
+    await _cache.setJson(CacheKeys.eventDetail(id), _toCacheJson(updated));
+    await _cache.remove(CacheKeys.eventsList);
+    return updated;
+  }
+
+  Future<void> invalidateDetail(String id) async {
+    await _cache.remove(CacheKeys.eventDetail(id));
+    await _cache.remove(CacheKeys.eventsList);
+  }
 
   Future<void> delete(String id) => _api.delete(id);
 
