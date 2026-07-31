@@ -12,6 +12,8 @@ import '../../data/worship_api.dart';
 import '../../data/worship_ministry_helper.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
+import '../widgets/scale_print_card.dart';
+import 'scale_print_preview_screen.dart';
 
 class CreateScaleScreen extends ConsumerStatefulWidget {
   final String? scaleId;
@@ -280,7 +282,38 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
             id: savedWorshipEventId,
           );
 
-      if (mounted) context.pop(true);
+      if (!mounted) return;
+
+      final printData = ScalePrintCardData.fromAssignments(
+        date: _selectedDate,
+        ministerName: _selectedMinister == null
+            ? null
+            : scaleCopyDisplayName(
+                name: _selectedMinister!.name,
+                nickname: _selectedMinister!.nickname,
+              ),
+        musicians: _selectedMusicians.map((m) {
+          return (
+            instrument: _musicianInstruments[m.id],
+            name: scaleCopyDisplayName(name: m.name, nickname: m.nickname),
+          );
+        }).toList(),
+      );
+
+      await openScalePrintPreview(
+        context: context,
+        data: printData,
+      );
+
+      if (mounted) {
+        if (_isEditing) {
+          context.pop(true);
+        } else if (savedWorshipEventId != null) {
+          context.pushReplacement('/worship/scale/$savedWorshipEventId');
+        } else {
+          context.pop(true);
+        }
+      }
     } catch (e) {
       debugPrint('Erro ao salvar: $e');
       if (mounted) {
