@@ -31,11 +31,27 @@ Browser → domínio do app (Dokploy) → container `app` (serve :8080)
 3. Branch `main`, **sem** “Build on deploy”
 4. Redeploy / Deploy
 
+### Dois (ou mais) projetos com o mesmo código
+
+Cada app no Dokploy é um stack separado. O compose **não** fixa `container_name`, então o Docker gera nomes com o prefixo do projeto (ex.: `ipi-avare-api-1`, `outra-igreja-api-1`).
+
+Para nomes legíveis e sem colisão, defina em **cada** app um `COMPOSE_PROJECT_NAME` diferente no Environment:
+
+| App Dokploy     | `COMPOSE_PROJECT_NAME` |
+|-----------------|------------------------|
+| Igreja A        | `ipi-avare`            |
+| Igreja B        | `igreja-b`             |
+
+Também use env distinto por igreja (`POSTGRES_*`, `JWT_SECRET`, `WEB_API_URL`, `CORS_ORIGIN`, domínios na aba Domains). Volume e rede interna ficam isolados por projeto; `dokploy-network` continua compartilhada (Traefik).
+
 ## Passo 3 — Environment (Dokploy)
 
 Defina no painel (grava `.env` do compose):
 
 ```env
+# Opcional, mas recomendado se você sobe 2+ apps do mesmo repo
+COMPOSE_PROJECT_NAME=ipi-avare
+
 POSTGRES_USER=...
 POSTGRES_PASSWORD=...
 JWT_SECRET=...
@@ -95,3 +111,5 @@ Logs do site devem mostrar: `web config: API_URL=https://...`
 - Não ative build no Dokploy
 - Não use `docker-compose.build.yml` na VPS
 - Não aponte o domínio do site para o serviço `api`
+- Não fixe `container_name` no compose (quebra 2+ deploys do mesmo código na mesma VPS)
+- Não reutilize o mesmo `COMPOSE_PROJECT_NAME` em dois apps Dokploy
