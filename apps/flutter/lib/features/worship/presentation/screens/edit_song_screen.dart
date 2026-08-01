@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
+import '../widgets/chord_viewer.dart';
 
 class EditSongScreen extends ConsumerStatefulWidget {
   final String songId;
@@ -27,6 +28,8 @@ class _EditSongScreenState extends ConsumerState<EditSongScreen> {
   final _notesCtrl = TextEditingController();
   bool _loading = true;
   bool _saving = false;
+  int _contentTab = 1;
+  double _editorFontSize = 16;
 
   @override
   void initState() {
@@ -92,7 +95,8 @@ class _EditSongScreenState extends ConsumerState<EditSongScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(children: [
-          const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+          const Icon(Icons.error_outline_rounded,
+              color: Colors.white, size: 20),
           const SizedBox(width: 10),
           Expanded(child: Text(msg, style: const TextStyle(fontSize: 14))),
         ]),
@@ -123,7 +127,7 @@ class _EditSongScreenState extends ConsumerState<EditSongScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
+    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF6F4EF);
 
     return Scaffold(
       backgroundColor: bg,
@@ -131,171 +135,610 @@ class _EditSongScreenState extends ConsumerState<EditSongScreen> {
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF008CFF).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+        leading: IconButton(
+          tooltip: 'Fechar',
+          icon: Icon(
+            Icons.close_rounded,
+            color: isDark ? Colors.white : const Color(0xFF1A2B48),
           ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF008CFF), size: 24),
-            onPressed: () => context.pop(),
-          ),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           'Editar Música',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF111827)),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : const Color(0xFF1A2B48),
+          ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Salvar',
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF008CFF),
+                    size: 28,
+                  ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
-                  const SizedBox(height: 24),
-                  _buildSection('Informações', Icons.music_note_rounded, [
-                    _input(_titleCtrl, 'Nome da Versão', icon: Icons.music_note_outlined),
-                    const SizedBox(height: 14),
-                    _input(_artistCtrl, 'Artista', icon: Icons.person_outline_rounded),
-                  ]),
+                  _buildIdentityFields(isDark),
                   const SizedBox(height: 20),
-                  _buildSection('Detalhes Musicais', Icons.tune_rounded, [
-                    Row(children: [
-                      Expanded(child: _input(_keyCtrl, 'Tom', icon: Icons.music_note_rounded)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _input(_bpmCtrl, 'BPM', icon: Icons.speed_rounded, keyboardType: TextInputType.number)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _input(_capoCtrl, 'Capo', icon: Icons.straighten_rounded, keyboardType: TextInputType.number)),
-                    ]),
-                    const SizedBox(height: 14),
-                    _input(_durationCtrl, 'Duração (seg)', icon: Icons.timer_outlined, keyboardType: TextInputType.number),
-                  ]),
+                  _buildMetadataStrip(isDark),
                   const SizedBox(height: 20),
-                  _buildSection('Links', Icons.link_rounded, [
-                    _input(_youtubeCtrl, 'YouTube', icon: Icons.videocam_outlined),
-                  ]),
+                  _buildContentSwitcher(isDark),
+                  const SizedBox(height: 12),
+                  _buildEditor(isDark),
                   const SizedBox(height: 20),
-                  _buildSection('Conteúdo', Icons.article_outlined, [
-                    _input(_lyricsCtrl, 'Letra', icon: Icons.text_fields_rounded, multiline: true),
-                    const SizedBox(height: 14),
-                    _input(_chordsCtrl, 'Cifra', icon: Icons.piano_rounded, multiline: true),
-                  ]),
-                  const SizedBox(height: 20),
-                  _buildSection('Extras', Icons.more_horiz_rounded, [
-                    _input(_notesCtrl, 'Observações', icon: Icons.edit_note_rounded, multiline: true),
-                  ]),
-                  const SizedBox(height: 32),
-                  _buildSaveButton(),
+                  _buildCollapsibleField(
+                    isDark: isDark,
+                    title: 'YouTube e links',
+                    icon: Icons.link_rounded,
+                    controller: _youtubeCtrl,
+                    hint: 'Cole o link do YouTube',
+                  ),
+                  const SizedBox(height: 10),
+                  _buildCollapsibleField(
+                    isDark: isDark,
+                    title: 'Observações',
+                    icon: Icons.edit_note_rounded,
+                    controller: _notesCtrl,
+                    hint: 'Informações adicionais',
+                    multiline: true,
+                  ),
                 ],
+              ),
+            ),
+      bottomNavigationBar: _loading
+          ? null
+          : SafeArea(
+              top: false,
+              child: Container(
+                color: bg,
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+                child: _buildSaveButton(),
               ),
             ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF008CFF), Color(0xFF0066CC)],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+  Widget _buildIdentityFields(bool isDark) {
+    final primary = isDark ? Colors.white : const Color(0xFF1A2B48);
+    final secondary =
+        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final line = isDark ? const Color(0xFF2D2D44) : const Color(0xFFD9D7D0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _titleCtrl,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            color: primary,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Nome da música',
+            hintStyle: TextStyle(color: secondary),
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: line),
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: line),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Color(0xFF008CFF), width: 2),
+            ),
+          ),
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: const Color(0xFF008CFF).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.edit_rounded, color: Colors.white, size: 24),
+        const SizedBox(height: 4),
+        TextField(
+          controller: _artistCtrl,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: secondary,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Artista',
+            hintStyle: TextStyle(color: secondary),
+            prefixIcon: const Icon(
+              Icons.person_outline_rounded,
+              size: 18,
+              color: Color(0xFF008CFF),
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
         ),
-        const SizedBox(height: 16),
-        const Text('Editar Música', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5)),
-        const SizedBox(height: 6),
-        Text('Altere os dados da música', style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.8), height: 1.4)),
-      ]),
+      ],
     );
   }
 
-  Widget _buildSection(String title, IconData icon, List<Widget> children) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildMetadataStrip(bool isDark) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _metadataChip(
+            isDark: isDark,
+            icon: Icons.music_note_rounded,
+            label: 'Tom',
+            value: _keyCtrl.text.trim().isEmpty ? '—' : _keyCtrl.text.trim(),
+            onTap: () => _editMetadata(
+              title: 'Tom',
+              controller: _keyCtrl,
+              hint: 'Ex.: G, Bb, F#m',
+            ),
+          ),
+          const SizedBox(width: 8),
+          _metadataChip(
+            isDark: isDark,
+            icon: Icons.speed_rounded,
+            label: 'BPM',
+            value: _bpmCtrl.text.trim().isEmpty ? '—' : _bpmCtrl.text.trim(),
+            onTap: () => _editMetadata(
+              title: 'BPM',
+              controller: _bpmCtrl,
+              hint: 'Ex.: 92',
+              numeric: true,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _metadataChip(
+            isDark: isDark,
+            icon: Icons.straighten_rounded,
+            label: 'Capo',
+            value: _capoCtrl.text.trim().isEmpty ? '—' : _capoCtrl.text.trim(),
+            onTap: () => _editMetadata(
+              title: 'Capo',
+              controller: _capoCtrl,
+              hint: 'Ex.: 2',
+              numeric: true,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _metadataChip(
+            isDark: isDark,
+            icon: Icons.timer_outlined,
+            label: 'Duração',
+            value: _durationLabel,
+            onTap: () => _editMetadata(
+              title: 'Duração em segundos',
+              controller: _durationCtrl,
+              hint: 'Ex.: 272',
+              numeric: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String get _durationLabel {
+    final seconds = int.tryParse(_durationCtrl.text.trim());
+    if (seconds == null || seconds <= 0) return '—';
+    final minutes = seconds ~/ 60;
+    final rest = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$rest';
+  }
+
+  Widget _metadataChip({
+    required bool isDark,
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF161622) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFD9D7D0),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: const Color(0xFF008CFF)),
+            const SizedBox(width: 6),
+            Text(
+              '$label ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color:
+                    isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : const Color(0xFF1A2B48),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editMetadata({
+    required String title,
+    required TextEditingController controller,
+    required String hint,
+    bool numeric = false,
+  }) async {
+    final draft = TextEditingController(text: controller.text);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(title),
+        content: TextField(
+          controller: draft,
+          autofocus: true,
+          keyboardType: numeric ? TextInputType.number : TextInputType.text,
+          decoration: InputDecoration(
+            hintText: hint,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onSubmitted: (text) => Navigator.pop(ctx, text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, draft.text),
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
+    );
+    draft.dispose();
+    if (value == null || !mounted) return;
+    setState(() => controller.text = value.trim());
+  }
+
+  Widget _buildContentSwitcher(bool isDark) {
+    final inactive = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161622) : const Color(0xFFEAE8E2),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Row(
+        children: [
+          _contentTabButton(
+            label: 'Letra',
+            icon: Icons.text_fields_rounded,
+            index: 0,
+            inactive: inactive,
+          ),
+          _contentTabButton(
+            label: 'Cifra',
+            icon: Icons.piano_rounded,
+            index: 1,
+            inactive: inactive,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _contentTabButton({
+    required String label,
+    required IconData icon,
+    required int index,
+    required Color inactive,
+  }) {
+    final selected = _contentTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _contentTab = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 17,
+                color: selected ? const Color(0xFF008CFF) : inactive,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? const Color(0xFF008CFF) : inactive,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditor(bool isDark) {
+    final controller = _contentTab == 0 ? _lyricsCtrl : _chordsCtrl;
+    final isChords = _contentTab == 1;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161622) : const Color(0xFFFFFEFB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFD9D7D0),
+        ),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 8, 6),
+            child: Row(
+              children: [
+                Text(
+                  isChords ? 'EDITOR DE CIFRA' : 'EDITOR DE LETRA',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: isDark
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF7A7F8A),
+                  ),
+                ),
+                const Spacer(),
+                _editorIconButton(
+                  tooltip: 'Diminuir fonte',
+                  icon: Icons.text_decrease_rounded,
+                  onPressed: () => setState(
+                    () => _editorFontSize = (_editorFontSize - 1).clamp(12, 26),
+                  ),
+                ),
+                _editorIconButton(
+                  tooltip: 'Aumentar fonte',
+                  icon: Icons.text_increase_rounded,
+                  onPressed: () => setState(
+                    () => _editorFontSize = (_editorFontSize + 1).clamp(12, 26),
+                  ),
+                ),
+                _editorIconButton(
+                  tooltip: 'Visualizar',
+                  icon: Icons.fullscreen_rounded,
+                  onPressed: () => _showPreview(isDark),
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFE8E6E0),
+          ),
+          TextField(
+            key: ValueKey(_contentTab),
+            controller: controller,
+            minLines: 14,
+            maxLines: 22,
+            keyboardType: TextInputType.multiline,
+            style: TextStyle(
+              fontFamily: isChords ? 'monospace' : null,
+              fontSize: _editorFontSize,
+              height: 1.55,
+              fontWeight: isChords ? FontWeight.w600 : FontWeight.w500,
+              color: isDark ? Colors.white : const Color(0xFF1A2B48),
+            ),
+            decoration: InputDecoration(
+              hintText: isChords
+                  ? 'Digite ou cole a cifra aqui...'
+                  : 'Digite ou cole a letra aqui...',
+              hintStyle: TextStyle(
+                color:
+                    isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _editorIconButton({
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      onPressed: onPressed,
+      icon: Icon(icon, size: 20, color: const Color(0xFF008CFF)),
+    );
+  }
+
+  Future<void> _showPreview(bool isDark) {
+    final isChords = _contentTab == 1;
+    final content = isChords ? _chordsCtrl.text : _lyricsCtrl.text;
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog.fullscreen(
+        backgroundColor:
+            isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            leading: IconButton(
+              icon: const Icon(Icons.close_rounded),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+            title: Text(isChords ? 'Prévia da cifra' : 'Prévia da letra'),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: content.trim().isEmpty
+                ? const Center(child: Text('Nenhum conteúdo para visualizar'))
+                : isChords
+                    ? ChordViewer(
+                        chords: content,
+                        textStyle: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: _editorFontSize,
+                          height: 1.6,
+                          color: isDark
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF1A2B48),
+                        ),
+                      )
+                    : SelectableText(
+                        content,
+                        style: TextStyle(
+                          fontSize: _editorFontSize,
+                          height: 1.6,
+                          color: isDark
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF1A2B48),
+                        ),
+                      ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleField({
+    required bool isDark,
+    required String title,
+    required IconData icon,
+    required TextEditingController controller,
+    required String hint,
+    bool multiline = false,
+  }) {
+    return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF161622) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFF3F4F6)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 12, offset: const Offset(0, 2))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: const Color(0xFF008CFF).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, size: 16, color: const Color(0xFF008CFF)),
-          ),
-          const SizedBox(width: 10),
-          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF111827))),
-        ]),
-        const SizedBox(height: 16),
-        ...children,
-      ]),
-    );
-  }
-
-  Widget _input(TextEditingController ctrl, String label, {IconData? icon, bool multiline = false, TextInputType? keyboardType}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14, vertical: multiline ? 4 : 0),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB)),
-      ),
-      child: TextField(
-        controller: ctrl,
-        maxLines: multiline ? 5 : 1,
-        keyboardType: keyboardType,
-        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF111827)),
-        decoration: InputDecoration(
-          prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF008CFF)) : null,
-          labelText: label,
-          floatingLabelBehavior: FloatingLabelBehavior.auto,
-          labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF6B7280) : const Color(0xFF6B7280)),
-          floatingLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF008CFF)),
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.only(top: multiline ? 12 : 16, bottom: multiline ? 12 : 16, left: icon != null ? 4 : 0),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2D2D44) : const Color(0xFFD9D7D0),
         ),
+      ),
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        leading: Icon(icon, color: const Color(0xFF008CFF), size: 20),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : const Color(0xFF1A2B48),
+          ),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        children: [
+          TextField(
+            controller: controller,
+            minLines: multiline ? 3 : 1,
+            maxLines: multiline ? 5 : 1,
+            decoration: InputDecoration(
+              hintText: hint,
+              filled: true,
+              fillColor:
+                  isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSaveButton() {
     return SizedBox(
-      width: double.infinity, height: 52,
+      width: double.infinity,
+      height: 54,
       child: ElevatedButton(
         onPressed: _saving ? null : _save,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF008CFF),
           foregroundColor: Colors.white,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ).copyWith(
-          elevation: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.pressed) ? 0 : 4),
-          shadowColor: WidgetStateProperty.all(const Color(0xFF008CFF).withValues(alpha: 0.3)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         child: _saving
-            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-            : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.check_rounded, size: 20),
-                SizedBox(width: 8),
-                Text('Salvar Alterações', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              ]),
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_rounded, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Salvar alterações',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
