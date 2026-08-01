@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
+import '../services/metronome_player.dart';
+import 'song_bpm_picker_screen.dart';
 
 /// Player de apresentação da escala: cifra com auto-scroll.
 class ScalePresentationScreen extends ConsumerStatefulWidget {
@@ -27,12 +29,16 @@ class ScalePresentationScreen extends ConsumerStatefulWidget {
 class _ScalePresentationScreenState
     extends ConsumerState<ScalePresentationScreen> {
   final _scrollController = ScrollController();
+  final _metronome = MetronomePlayer();
+  final Map<String, int> _bpmOverrides = {};
   Timer? _scrollTimer;
 
   List<Song> _songs = [];
   int _index = 0;
   bool _loading = true;
   bool _playing = false;
+  bool _metronomeEnabled = true;
+  int _activeBeat = -1;
   double _fontSize = 18;
   double _speed = 1.0;
 
@@ -43,6 +49,7 @@ class _ScalePresentationScreenState
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _index = widget.initialIndex;
+    _metronome.prepare();
     _load();
   }
 
@@ -50,14 +57,16 @@ class _ScalePresentationScreenState
   void dispose() {
     _stopScroll();
     _scrollController.dispose();
+    unawaited(_metronome.dispose());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
   Future<void> _load() async {
     try {
-      final result =
-          await ref.read(worshipRepositoryProvider).getWorshipEvent(widget.scaleId);
+      final result = await ref
+          .read(worshipRepositoryProvider)
+          .getWorshipEvent(widget.scaleId);
       final songs = (result.data.songs ?? []).map((e) => e.song).toList();
       if (!mounted) return;
       setState(() {
@@ -70,8 +79,15 @@ class _ScalePresentationScreenState
     }
   }
 
-  Song? get _current =>
-      _songs.isEmpty || _index < 0 || _index >= _songs.length ? null : _songs[_index];
+  Song? get _current => _songs.isEmpty || _index < 0 || _index >= _songs.length
+      ? null
+      : _songs[_index];
+
+  int? get _currentBpm {
+    final song = _current;
+    if (song == null) return null;
+    return _bpmOverrides[song.id] ?? song.bpm;
+  }
 
   bool get _hasNext => _index < _songs.length - 1;
   bool get _hasPrev => _index > 0;
@@ -87,6 +103,7 @@ class _ScalePresentationScreenState
   void _startScroll() {
     _scrollTimer?.cancel();
     setState(() => _playing = true);
+    _startMetronome();
     // ~50ms tick; base pixels ≈ 0.55 at 1.0x
     _scrollTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (!_scrollController.hasClients) return;
@@ -105,7 +122,44 @@ class _ScalePresentationScreenState
   void _stopScroll() {
     _scrollTimer?.cancel();
     _scrollTimer = null;
+    _stopMetronome();
     if (mounted && _playing) setState(() => _playing = false);
+  }
+
+  void _toggleMetronome() {
+    final bpm = _currentBpm;
+    if (bpm == null || bpm <= 0) return;
+    setState(() {
+      _metronomeEnabled = !_metronomeEnabled;
+      if (!_metronomeEnabled) _activeBeat = -1;
+    });
+    if (_playing) {
+      if (_metronomeEnabled) {
+        _startMetronome();
+      } else {
+        _stopMetronome();
+      }
+    }
+  }
+
+  void _startMetronome() {
+    _stopMetronome();
+    final bpm = _currentBpm;
+    if (!_metronomeEnabled || bpm == null || bpm <= 0) return;
+
+    _metronome.start(
+      bpm: bpm,
+      onBeat: (beat) {
+        if (mounted && _playing && _metronomeEnabled) {
+          setState(() => _activeBeat = beat);
+        }
+      },
+    );
+  }
+
+  void _stopMetronome() {
+    _metronome.stop();
+    _activeBeat = -1;
   }
 
   void _changeSpeed(int direction) {
@@ -117,6 +171,40 @@ class _ScalePresentationScreenState
 
   void _changeFont(int direction) {
     setState(() => _fontSize = (_fontSize + direction).clamp(14, 34));
+  }
+
+  Future<void> _openBpmPicker() async {
+    final song = _current;
+    if (song == null) return;
+
+    final wasPlaying = _playing;
+    if (wasPlaying) _stopScroll();
+
+    final selected = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => SongBpmPickerScreen(
+          initialBpm: _currentBpm ?? 72,
+        ),
+      ),
+    );
+    if (!mounted) return;
+
+    if (selected != null) {
+      setState(() {
+        _bpmOverrides[song.id] = selected;
+        _activeBeat = -1;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Batida ajustada para $selected BPM nesta apresentação',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+    if (wasPlaying) _startScroll();
   }
 
   void _goToSong(int index) {
@@ -133,6 +221,7 @@ class _ScalePresentationScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF7F8FA);
     final song = _current;
+    final bpm = _currentBpm;
 
     return Scaffold(
       backgroundColor: bg,
@@ -160,10 +249,13 @@ class _ScalePresentationScreenState
             if (_songs.isNotEmpty)
               Text(
                 '${_index + 1} / ${_songs.length}'
-                '${song?.key != null ? '  ·  Tom ${song!.key}' : ''}',
+                '${song?.key != null ? '  ·  Tom ${song!.key}' : ''}'
+                '${bpm != null ? '  ·  $bpm BPM' : ''}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                  color: isDark
+                      ? const Color(0xFF9CA3AF)
+                      : const Color(0xFF6B7280),
                 ),
               ),
           ],
@@ -176,7 +268,9 @@ class _ScalePresentationScreenState
                   child: Text(
                     'Nenhuma música nesta escala',
                     style: TextStyle(
-                      color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                      color: isDark
+                          ? const Color(0xFF6B7280)
+                          : const Color(0xFF9CA3AF),
                     ),
                   ),
                 )
@@ -203,6 +297,7 @@ class _ScalePresentationScreenState
     final bar = isDark ? const Color(0xFF161622) : Colors.white;
     final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB);
     final muted = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final bpm = _currentBpm;
 
     return SafeArea(
       top: false,
@@ -262,6 +357,13 @@ class _ScalePresentationScreenState
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            _buildMetronomeControl(
+              isDark: isDark,
+              border: border,
+              muted: muted,
+              bpm: bpm,
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -295,7 +397,8 @@ class _ScalePresentationScreenState
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF008CFF).withValues(alpha: 0.35),
+                          color:
+                              const Color(0xFF008CFF).withValues(alpha: 0.35),
                           blurRadius: 14,
                           offset: const Offset(0, 4),
                         ),
@@ -328,6 +431,106 @@ class _ScalePresentationScreenState
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetronomeControl({
+    required bool isDark,
+    required Color border,
+    required Color muted,
+    required int? bpm,
+  }) {
+    final available = bpm != null && bpm > 0;
+    final active = available && _metronomeEnabled;
+
+    return InkWell(
+      onTap: available ? _toggleMetronome : null,
+      borderRadius: BorderRadius.circular(11),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: active
+              ? const Color(0xFF008CFF).withValues(alpha: isDark ? 0.18 : 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: active
+                ? const Color(0xFF008CFF).withValues(alpha: 0.45)
+                : border,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              available
+                  ? active
+                      ? Icons.volume_up_rounded
+                      : Icons.volume_off_rounded
+                  : Icons.av_timer_rounded,
+              size: 20,
+              color: active ? const Color(0xFF008CFF) : muted,
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                available
+                    ? 'Batida · $bpm BPM'
+                    : 'Definir BPM para ouvir a batida',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: active ? const Color(0xFF008CFF) : muted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (available) ...[
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(4, (index) {
+                  final highlighted =
+                      _playing && active && _activeBeat == index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 100),
+                    width: highlighted ? 9 : 6,
+                    height: highlighted ? 9 : 6,
+                    margin: const EdgeInsets.only(left: 4),
+                    decoration: BoxDecoration(
+                      color: highlighted
+                          ? const Color(0xFF008CFF)
+                          : muted.withValues(alpha: 0.35),
+                      shape: BoxShape.circle,
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(width: 9),
+              Text(
+                active ? 'ON' : 'OFF',
+                style: TextStyle(
+                  color: active ? const Color(0xFF008CFF) : muted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+            const SizedBox(width: 4),
+            IconButton(
+              tooltip: 'Ajustar BPM',
+              visualDensity: VisualDensity.compact,
+              onPressed: _openBpmPicker,
+              icon: Icon(
+                Icons.tune_rounded,
+                size: 20,
+                color: active ? const Color(0xFF008CFF) : muted,
+              ),
             ),
           ],
         ),
@@ -380,7 +583,8 @@ class _SongPresentationBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chords = song.chords?.trim();
-    final baseColor = isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151);
+    final baseColor =
+        isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151);
     const chordColor = Color(0xFF008CFF);
 
     if (chords == null || chords.isEmpty) {
