@@ -37,7 +37,7 @@ class _ScalePresentationScreenState
   int _index = 0;
   bool _loading = true;
   bool _playing = false;
-  bool _metronomeEnabled = true;
+  bool _metronomeMuted = false;
   int _activeBeat = -1;
   double _fontSize = 18;
   double _speed = 1.0;
@@ -126,31 +126,23 @@ class _ScalePresentationScreenState
     if (mounted && _playing) setState(() => _playing = false);
   }
 
-  void _toggleMetronome() {
+  void _toggleMetronomeMute() {
     final bpm = _currentBpm;
     if (bpm == null || bpm <= 0) return;
-    setState(() {
-      _metronomeEnabled = !_metronomeEnabled;
-      if (!_metronomeEnabled) _activeBeat = -1;
-    });
-    if (_playing) {
-      if (_metronomeEnabled) {
-        _startMetronome();
-      } else {
-        _stopMetronome();
-      }
-    }
+    setState(() => _metronomeMuted = !_metronomeMuted);
+    _metronome.setMuted(_metronomeMuted);
   }
 
   void _startMetronome() {
     _stopMetronome();
     final bpm = _currentBpm;
-    if (!_metronomeEnabled || bpm == null || bpm <= 0) return;
+    if (bpm == null || bpm <= 0) return;
 
+    _metronome.setMuted(_metronomeMuted);
     _metronome.start(
       bpm: bpm,
       onBeat: (beat) {
-        if (mounted && _playing && _metronomeEnabled) {
+        if (mounted && _playing) {
           setState(() => _activeBeat = beat);
         }
       },
@@ -445,95 +437,134 @@ class _ScalePresentationScreenState
     required int? bpm,
   }) {
     final available = bpm != null && bpm > 0;
-    final active = available && _metronomeEnabled;
+    const accent = Color(0xFF008CFF);
 
-    return InkWell(
-      onTap: available ? _toggleMetronome : null,
-      borderRadius: BorderRadius.circular(11),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        decoration: BoxDecoration(
-          color: active
-              ? const Color(0xFF008CFF).withValues(alpha: isDark ? 0.18 : 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(
-            color: active
-                ? const Color(0xFF008CFF).withValues(alpha: 0.45)
-                : border,
-          ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
+      decoration: BoxDecoration(
+        color: available
+            ? accent.withValues(alpha: isDark ? 0.18 : 0.1)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: available ? accent.withValues(alpha: 0.45) : border,
         ),
-        child: Row(
-          children: [
-            Icon(
-              available
-                  ? active
-                      ? Icons.volume_up_rounded
-                      : Icons.volume_off_rounded
-                  : Icons.av_timer_rounded,
-              size: 20,
-              color: active ? const Color(0xFF008CFF) : muted,
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Text(
-                available
-                    ? 'Batida · $bpm BPM'
-                    : 'Definir BPM para ouvir a batida',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: active ? const Color(0xFF008CFF) : muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            if (available) ...[
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(4, (index) {
-                  final highlighted =
-                      _playing && active && _activeBeat == index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 100),
-                    width: highlighted ? 9 : 6,
-                    height: highlighted ? 9 : 6,
-                    margin: const EdgeInsets.only(left: 4),
-                    decoration: BoxDecoration(
-                      color: highlighted
-                          ? const Color(0xFF008CFF)
-                          : muted.withValues(alpha: 0.35),
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                }),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                available ? Icons.av_timer_rounded : Icons.music_off_rounded,
+                size: 21,
+                color: available ? accent : muted,
               ),
               const SizedBox(width: 9),
-              Text(
-                active ? 'ON' : 'OFF',
-                style: TextStyle(
-                  color: active ? const Color(0xFF008CFF) : muted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
+              Expanded(
+                child: Text(
+                  available
+                      ? 'Batida · $bpm BPM'
+                      : 'Definir BPM para ouvir a batida',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: available ? accent : muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (available)
+                TextButton.icon(
+                  onPressed: _toggleMetronomeMute,
+                  style: TextButton.styleFrom(
+                    foregroundColor: _metronomeMuted ? muted : accent,
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    minimumSize: const Size(0, 36),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: Icon(
+                    _metronomeMuted
+                        ? Icons.volume_off_rounded
+                        : Icons.volume_up_rounded,
+                    size: 19,
+                  ),
+                  label: Text(
+                    _metronomeMuted ? 'Mudo' : 'Mutar',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              IconButton(
+                tooltip: 'Ajustar BPM',
+                visualDensity: VisualDensity.compact,
+                onPressed: _openBpmPicker,
+                icon: Icon(
+                  Icons.tune_rounded,
+                  size: 20,
+                  color: available ? accent : muted,
                 ),
               ),
             ],
-            const SizedBox(width: 4),
-            IconButton(
-              tooltip: 'Ajustar BPM',
-              visualDensity: VisualDensity.compact,
-              onPressed: _openBpmPicker,
-              icon: Icon(
-                Icons.tune_rounded,
-                size: 20,
-                color: active ? const Color(0xFF008CFF) : muted,
-              ),
+          ),
+          if (available) ...[
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                final highlighted = _playing && _activeBeat == index;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 110),
+                  width: highlighted ? 34 : 26,
+                  height: highlighted ? 34 : 26,
+                  margin: const EdgeInsets.symmetric(horizontal: 7),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: highlighted
+                        ? accent
+                        : accent.withValues(alpha: isDark ? 0.12 : 0.07),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color:
+                          highlighted ? accent : accent.withValues(alpha: 0.42),
+                      width: highlighted ? 2 : 1,
+                    ),
+                    boxShadow: highlighted
+                        ? [
+                            BoxShadow(
+                              color: accent.withValues(alpha: 0.3),
+                              blurRadius: 9,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      color: highlighted ? Colors.white : accent,
+                      fontSize: highlighted ? 14 : 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                );
+              }),
             ),
+            if (_metronomeMuted) ...[
+              const SizedBox(height: 7),
+              Text(
+                'Som mudo · marcação visual continua',
+                style: TextStyle(
+                  color: muted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ],
-        ),
+        ],
       ),
     );
   }

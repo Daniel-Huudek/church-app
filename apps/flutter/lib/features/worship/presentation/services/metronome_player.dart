@@ -14,9 +14,14 @@ class MetronomePlayer {
   int _generation = 0;
   bool _disposed = false;
   bool _running = false;
+  bool _muted = false;
 
   Future<void> prepare() {
     return _prepareFuture ??= _prepare();
+  }
+
+  void setMuted(bool muted) {
+    _muted = muted;
   }
 
   Future<void> _prepare() async {
@@ -104,8 +109,9 @@ class MetronomePlayer {
     _beatIndex++;
     onBeat?.call(currentBeat);
 
+    if (_muted) return;
     await prepare();
-    if (_disposed || !_running || generation != _generation) return;
+    if (_disposed || !_running || _muted || generation != _generation) return;
     final pool = currentBeat == 0 ? _accentClickPool : _regularClickPool;
     if (pool == null) return;
 
