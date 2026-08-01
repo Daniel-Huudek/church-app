@@ -10,6 +10,8 @@ import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/presentation/providers/member_provider.dart';
 import '../../../schedules/domain/schedule_model.dart';
 import '../../../schedules/presentation/providers/schedule_provider.dart';
+import '../widgets/deacon_scale_print_card.dart';
+import 'deacon_scale_print_preview_screen.dart';
 
 const _sky = Color(0xFF0EA5E9);
 const _skyDark = Color(0xFF0284C7);
@@ -228,6 +230,32 @@ class _DeaconScaleDetailScreenState
     return null;
   }
 
+  DeaconScalePrintCardData _buildPrintData(ScheduleModel schedule) {
+    return DeaconScalePrintCardData.fromPositions(
+      date: schedule.date,
+      eventTitle: _title,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      positions: schedule.positionDetails
+          .map(
+            (p) => (
+              position: p.position,
+              name: _memberNames[p.memberId] ?? p.memberName ?? 'Membro',
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Future<void> _openPrintCard() async {
+    final schedule = _schedule;
+    if (schedule == null) return;
+    await openDeaconScalePrintPreview(
+      context: context,
+      data: _buildPrintData(schedule),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -289,19 +317,49 @@ class _DeaconScaleDetailScreenState
         ),
         centerTitle: true,
         actions: [
-          if (canManage) ...[
-            IconButton(
-              tooltip: 'Editar escala',
-              onPressed: () async {
-                await context.push(AppRoutes.deaconEdit(widget.id));
-                if (mounted) _load();
-              },
-              icon: const Icon(Icons.edit_outlined, color: _sky),
+          Container(
+            margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
+            decoration: BoxDecoration(
+              color: _sky.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            IconButton(
-              tooltip: 'Excluir escala',
-              onPressed: _deleteScale,
-              icon: const Icon(Icons.delete_outline, color: _sky),
+            child: IconButton(
+              tooltip: 'Card para print',
+              icon: const Icon(Icons.grid_on_rounded, color: _sky, size: 22),
+              onPressed: _openPrintCard,
+            ),
+          ),
+          if (canManage) ...[
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
+              decoration: BoxDecoration(
+                color: _sky.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                tooltip: 'Editar escala',
+                onPressed: () async {
+                  await context.push(AppRoutes.deaconEdit(widget.id));
+                  if (mounted) _load();
+                },
+                icon: const Icon(Icons.edit_outlined, color: _sky, size: 22),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 8, right: 8),
+              decoration: BoxDecoration(
+                color: _errorColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                tooltip: 'Excluir escala',
+                onPressed: _deleteScale,
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: _errorColor,
+                  size: 22,
+                ),
+              ),
             ),
           ],
         ],
