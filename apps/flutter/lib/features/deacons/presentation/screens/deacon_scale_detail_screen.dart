@@ -59,9 +59,6 @@ class _DeaconScaleDetailScreenState
           _schedule = cached;
           _title = cached.eventName ?? _title;
           _loading = false;
-          _selectedPositionId ??= cached.positionDetails.isNotEmpty
-              ? cached.positionDetails.first.id
-              : null;
         });
       }
 
@@ -111,10 +108,7 @@ class _DeaconScaleDetailScreenState
         _memberEmails = emails;
         _loading = false;
         if (!keepSelection) {
-          _selectedPositionId = mine?.id ??
-              (schedule.positionDetails.isNotEmpty
-                  ? schedule.positionDetails.first.id
-                  : null);
+          _selectedPositionId = mine?.id;
         }
       });
     } catch (e) {
@@ -219,13 +213,19 @@ class _DeaconScaleDetailScreenState
     return parts.isEmpty ? '?' : parts;
   }
 
-  SchedulePosition? _findSelected(ScheduleModel schedule) {
+  SchedulePosition? _findById(ScheduleModel schedule, String? id) {
+    if (id == null) return null;
     for (final p in schedule.positionDetails) {
-      if (p.id == _selectedPositionId) return p;
+      if (p.id == id) return p;
     }
-    return schedule.positionDetails.isNotEmpty
-        ? schedule.positionDetails.first
-        : null;
+    return null;
+  }
+
+  SchedulePosition? _findMine(ScheduleModel schedule, UserModel? user) {
+    for (final p in schedule.positionDetails) {
+      if (_isMine(p, user)) return p;
+    }
+    return null;
   }
 
   @override
@@ -264,57 +264,92 @@ class _DeaconScaleDetailScreenState
     }
 
     final schedule = _schedule!;
-    final selected = _findSelected(schedule);
-    final canActOnSelected =
-        selected != null && (_isMine(selected, user) || canManage);
+    final confirmedCount =
+        schedule.positionDetails.where((p) => p.isConfirmed).length;
+    final totalCount = schedule.positionDetails.length;
+    final mine = _findMine(schedule, user);
+    final selected = _findById(schedule, _selectedPositionId) ?? mine;
+    final showActions = selected != null &&
+        (_isMine(selected, user) || canManage);
+    final selectedIsMine = selected != null && _isMine(selected, user);
 
     return Scaffold(
       backgroundColor: bg,
-      body: RefreshIndicator(
-        color: _sky,
-        onRefresh: _load,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: _DateHero(
-                title: _title,
-                date: schedule.date,
-                startTime: schedule.startTime,
-                endTime: schedule.endTime,
-                isDark: isDark,
-                canManage: canManage,
-                onBack: () => context.pop(),
-                onEdit: () async {
-                  await context.push(AppRoutes.deaconEdit(widget.id));
-                  if (mounted) _load();
-                },
-                onDelete: _deleteScale,
-              ),
+      appBar: AppBar(
+        backgroundColor: bg,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: t1, size: 20),
+        ),
+        title: Text(
+          'Escala',
+          style: TextStyle(color: t1, fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        centerTitle: true,
+        actions: [
+          if (canManage) ...[
+            IconButton(
+              tooltip: 'Editar escala',
+              onPressed: () async {
+                await context.push(AppRoutes.deaconEdit(widget.id));
+                if (mounted) _load();
+              },
+              icon: const Icon(Icons.edit_outlined, color: _sky),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
+            IconButton(
+              tooltip: 'Excluir escala',
+              onPressed: _deleteScale,
+              icon: const Icon(Icons.delete_outline, color: _sky),
+            ),
+          ],
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: RefreshIndicator(
+              color: _sky,
+              onRefresh: _load,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  showActions ? 16 : 28,
+                ),
+                children: [
+                  _SummaryBanner(
+                    title: _title,
+                    date: schedule.date,
+                    startTime: schedule.startTime,
+                    endTime: schedule.endTime,
+                    confirmed: confirmedCount,
+                    total: totalCount,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 24),
                   Text(
-                    'Postos',
+                    'Equipe',
                     style: TextStyle(
                       color: t1,
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   if (schedule.positionDetails.isEmpty)
                     Text(
                       'Nenhuma função atribuída.',
                       style: TextStyle(color: t2),
                     )
                   else
-                    _PostosGrid(
+                    _EquipeList(
                       positions: schedule.positionDetails,
                       memberNames: _memberNames,
                       selectedId: selected?.id,
+                      canSelect: canManage || mine != null,
                       card: card,
                       border: border,
                       t1: t1,
@@ -323,154 +358,153 @@ class _DeaconScaleDetailScreenState
                       statusColor: _statusColor,
                       statusLabel: _statusLabel,
                       initials: _initials,
-                      onSelect: (id) => setState(() => _selectedPositionId = id),
+                      onSelect: (id) {
+                        if (!canManage && mine?.id != id) return;
+                        setState(() => _selectedPositionId = id);
+                      },
                     ),
-                  if (selected != null && canActOnSelected) ...[
-                    const SizedBox(height: 22),
-                    _ActionStrip(
-                      position: selected,
-                      memberName: _memberNames[selected.memberId] ??
-                          selected.memberName ??
-                          'Membro',
-                      isMine: _isMine(selected, user),
-                      t1: t1,
-                      t2: t2,
-                      card: card,
-                      border: border,
-                      onConfirm: () => _confirm(selected, true),
-                      onUnavailable: () => _confirm(selected, false),
-                    ),
-                  ],
-                ]),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          if (showActions && selected != null)
+            _BottomActionPanel(
+              positionLabel: selected.position,
+              isMine: selectedIsMine,
+              isDark: isDark,
+              onConfirm: () => _confirm(selected, true),
+              onUnavailable: () => _confirm(selected, false),
+            ),
+        ],
       ),
     );
   }
 }
 
-class _DateHero extends StatelessWidget {
+class _SummaryBanner extends StatelessWidget {
   final String title;
   final DateTime date;
   final String startTime;
   final String endTime;
+  final int confirmed;
+  final int total;
   final bool isDark;
-  final bool canManage;
-  final VoidCallback onBack;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
-  const _DateHero({
+  const _SummaryBanner({
     required this.title,
     required this.date,
     required this.startTime,
     required this.endTime,
+    required this.confirmed,
+    required this.total,
     required this.isDark,
-    required this.canManage,
-    required this.onBack,
-    required this.onEdit,
-    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.paddingOf(context).top;
-    final day = DateFormat('d', 'pt_BR').format(date);
-    final month = DateFormat('MMM', 'pt_BR')
-        .format(date)
-        .toUpperCase()
-        .replaceAll('.', '');
-    final weekday = DateFormat('EEEE', 'pt_BR').format(date);
+    final dateLabel = DateFormat("dd 'de' MMMM 'de' yyyy (EEEE)", 'pt_BR')
+        .format(date);
+    final progress = total == 0 ? 0.0 : confirmed / total;
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(20, topPad + 8, 12, 28),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
               ? const [Color(0xFF0C4A6E), Color(0xFF082F49)]
-              : const [
-                  Color(0xFF38BDF8),
-                  Color(0xFF0EA5E9),
-                  Color(0xFF0284C7),
-                ],
+              : const [Color(0xFF38BDF8), _sky, _skyDark],
         ),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                tooltip: 'Voltar',
-              ),
-              const Spacer(),
-              if (canManage) ...[
-                IconButton(
-                  tooltip: 'Editar escala',
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                ),
-                IconButton(
-                  tooltip: 'Excluir escala',
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, color: Colors.white),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                day,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 72,
-                  fontWeight: FontWeight.w700,
-                  height: 0.9,
-                  letterSpacing: -2,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  month,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.92),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+                    height: 1.2,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '$weekday · $startTime – $endTime',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      size: 15,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        dateLabel,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          fontSize: 13,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$startTime – $endTime',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              height: 1.25,
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 58,
+            height: 58,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 58,
+                  height: 58,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 4,
+                    backgroundColor: Colors.white.withValues(alpha: 0.25),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                Text(
+                  '$confirmed/$total',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -479,10 +513,11 @@ class _DateHero extends StatelessWidget {
   }
 }
 
-class _PostosGrid extends StatelessWidget {
+class _EquipeList extends StatelessWidget {
   final List<SchedulePosition> positions;
   final Map<String, String> memberNames;
   final String? selectedId;
+  final bool canSelect;
   final Color card;
   final Color border;
   final Color t1;
@@ -493,10 +528,11 @@ class _PostosGrid extends StatelessWidget {
   final String Function(String) initials;
   final ValueChanged<String> onSelect;
 
-  const _PostosGrid({
+  const _EquipeList({
     required this.positions,
     required this.memberNames,
     required this.selectedId,
+    required this.canSelect,
     required this.card,
     required this.border,
     required this.t1,
@@ -510,51 +546,48 @@ class _PostosGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const gap = 12.0;
-        final tileWidth = (constraints.maxWidth - gap) / 2;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final position in positions)
-              SizedBox(
-                width: tileWidth,
-                child: _PostoTile(
-                  position: position,
-                  memberName: memberNames[position.memberId] ??
-                      position.memberName ??
-                      'Membro',
-                  selected: position.id == selectedId,
-                  card: card,
-                  border: border,
-                  t1: t1,
-                  t2: t2,
-                  isDark: isDark,
-                  statusColor: statusColor(position),
-                  statusLabel: statusLabel(position),
-                  initials: initials(
-                    memberNames[position.memberId] ??
-                        position.memberName ??
-                        'Membro',
-                  ),
-                  onTap: () => onSelect(position.id),
-                ),
+    return Container(
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < positions.length; i++) ...[
+            if (i > 0)
+              Divider(height: 1, thickness: 1, color: border, indent: 68),
+            _EquipeRow(
+              position: positions[i],
+              memberName: memberNames[positions[i].memberId] ??
+                  positions[i].memberName ??
+                  'Membro',
+              selected: positions[i].id == selectedId,
+              canSelect: canSelect,
+              t1: t1,
+              t2: t2,
+              isDark: isDark,
+              statusColor: statusColor(positions[i]),
+              statusLabel: statusLabel(positions[i]),
+              initials: initials(
+                memberNames[positions[i].memberId] ??
+                    positions[i].memberName ??
+                    'Membro',
               ),
+              onTap: () => onSelect(positions[i].id),
+            ),
           ],
-        );
-      },
+        ],
+      ),
     );
   }
 }
 
-class _PostoTile extends StatelessWidget {
+class _EquipeRow extends StatelessWidget {
   final SchedulePosition position;
   final String memberName;
   final bool selected;
-  final Color card;
-  final Color border;
+  final bool canSelect;
   final Color t1;
   final Color t2;
   final bool isDark;
@@ -563,12 +596,11 @@ class _PostoTile extends StatelessWidget {
   final String initials;
   final VoidCallback onTap;
 
-  const _PostoTile({
+  const _EquipeRow({
     required this.position,
     required this.memberName,
     required this.selected,
-    required this.card,
-    required this.border,
+    required this.canSelect,
     required this.t1,
     required this.t2,
     required this.isDark,
@@ -581,82 +613,75 @@ class _PostoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: selected
+          ? _sky.withValues(alpha: isDark ? 0.12 : 0.06)
+          : Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: card,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: selected ? _sky : border,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        onTap: canSelect ? onTap : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
             children: [
               Container(
-                height: 4,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(13),
+                  shape: BoxShape.circle,
+                  color: _sky.withValues(alpha: isDark ? 0.22 : 0.12),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initials,
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF7DD3FC) : _skyDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _sky.withValues(alpha: isDark ? 0.22 : 0.12),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        initials,
-                        style: TextStyle(
-                          color: isDark ? const Color(0xFF7DD3FC) : _skyDark,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
                     Text(
                       position.position,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: t1,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        height: 1.2,
+                        color: t2,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       memberName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: t2, fontSize: 12),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      statusLabel,
                       style: TextStyle(
-                        color: statusColor,
+                        color: t1,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        fontSize: 11,
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: isDark ? 0.18 : 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -667,102 +692,101 @@ class _PostoTile extends StatelessWidget {
   }
 }
 
-class _ActionStrip extends StatelessWidget {
-  final SchedulePosition position;
-  final String memberName;
+class _BottomActionPanel extends StatelessWidget {
+  final String positionLabel;
   final bool isMine;
-  final Color t1;
-  final Color t2;
-  final Color card;
-  final Color border;
+  final bool isDark;
   final VoidCallback onConfirm;
   final VoidCallback onUnavailable;
 
-  const _ActionStrip({
-    required this.position,
-    required this.memberName,
+  const _BottomActionPanel({
+    required this.positionLabel,
     required this.isMine,
-    required this.t1,
-    required this.t2,
-    required this.card,
-    required this.border,
+    required this.isDark,
     required this.onConfirm,
     required this.onUnavailable,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.paddingOf(context).bottom;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottomPad),
       decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
+        color: isDark
+            ? const Color(0xFF122033)
+            : const Color(0xFFEAF6FE),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0xFF1F2937) : const Color(0xFFD7ECFA),
+          ),
+        ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            isMine ? 'Sua função' : 'Função selecionada',
-            style: TextStyle(
-              color: t2,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            position.position,
-            style: TextStyle(
-              color: t1,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Text(
-            memberName,
-            style: TextStyle(color: t2, fontSize: 13),
-          ),
-          const SizedBox(height: 14),
           Row(
             children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: onConfirm,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _sky,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Confirmar',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
+              Icon(
+                Icons.person_outline_rounded,
+                size: 18,
+                color: isDark ? const Color(0xFF7DD3FC) : _skyDark,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton(
-                  onPressed: onUnavailable,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _errorColor,
-                    side: const BorderSide(color: _errorColor),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: Text.rich(
+                  TextSpan(
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF334155),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                  child: const Text(
-                    'Indisponível',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    children: [
+                      TextSpan(
+                        text: isMine ? 'Sua função: ' : 'Função selecionada: ',
+                      ),
+                      TextSpan(
+                        text: positionLabel,
+                        style: TextStyle(
+                          color: isDark ? const Color(0xFF7DD3FC) : _skyDark,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: onConfirm,
+            style: FilledButton.styleFrom(
+              backgroundColor: _sky,
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              isMine ? 'Confirmar presença' : 'Confirmar',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+            ),
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: onUnavailable,
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? const Color(0xFF7DD3FC) : _skyDark,
+            ),
+            child: Text(
+              isMine ? 'Marcar indisponível' : 'Marcar indisponível',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
           ),
         ],
       ),
