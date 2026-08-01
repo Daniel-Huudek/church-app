@@ -5,18 +5,163 @@ import 'package:intl/intl.dart';
 import '../../../../core/config/theme/app_colors.dart';
 import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/constants/constants.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/widgets/animated/fade_in.dart';
 import '../../../../shared/widgets/animated/slide_up.dart';
 import '../../../../shared/widgets/app_avatar.dart';
-import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_skeleton.dart';
 import '../../../bible/presentation/providers/verse_of_the_day_provider.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/domain/birthday_model.dart';
+import '../../../members/data/member_api.dart';
 import '../../../members/presentation/providers/member_provider.dart';
+import '../../../schedules/data/schedule_api.dart';
+import '../../../worship/presentation/providers/worship_provider.dart';
+
+class _PersonalScale {
+  final String kind;
+  final String title;
+  final String role;
+  final String status;
+  final DateTime date;
+  final String startTime;
+  final String route;
+
+  const _PersonalScale({
+    required this.kind,
+    required this.title,
+    required this.role,
+    required this.status,
+    required this.date,
+    required this.startTime,
+    required this.route,
+  });
+}
+
+DateTime _scaleMoment(DateTime date, String startTime) {
+  final parts = startTime.split(':');
+  final hour = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 0 : 0;
+  final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+  return DateTime(date.year, date.month, date.day, hour, minute);
+}
+
+final _personalScaleProvider =
+    FutureProvider.autoDispose<_PersonalScale?>((ref) async {
+  final user = ref.watch(authProvider).user;
+  if (user == null) return null;
+
+  final apiClient = ref.read(apiClientProvider);
+  final memberApi = MemberApi(apiClient);
+  final member = await memberApi.getMe();
+  if (member == null) return null;
+
+  final candidates = <_PersonalScale>[];
+  final startOfToday = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+  final eventRepo = ref.read(eventRepositoryProvider);
+
+  try {
+    final worshipResult =
+        await ref.read(worshipRepositoryProvider).listWorshipEvents(limit: 50);
+    for (final worshipEvent in worshipResult.data) {
+      final musician = (worshipEvent.musicians ?? [])
+          .where((item) => item.memberId == member.id)
+          .firstOrNull;
+      final isMinister = worshipEvent.ministerMemberId == member.id;
+      if (musician == null && !isMinister) continue;
+
+      try {
+        final event = (await eventRepo.getById(worshipEvent.eventId)).data;
+        if (event.date.isBefore(startOfToday)) continue;
+        final role = isMinister
+            ? 'Ministro'
+            : (musician?.instrument?.trim().isNotEmpty == true
+                ? musician!.instrument!.trim()
+                : musician?.role?.trim().isNotEmpty == true
+                    ? musician!.role!.trim()
+                    : 'Louvor');
+        final status = isMinister
+            ? 'Escalado'
+            : musician!.isSubstituted
+                ? 'Indisponível'
+                : musician.isConfirmed
+                    ? 'Confirmado'
+                    : 'Pendente';
+        candidates.add(
+          _PersonalScale(
+            kind: 'Louvor',
+            title: event.title,
+            role: role,
+            status: status,
+            date: event.date,
+            startTime: event.startTime,
+            route: AppRoutes.worshipScaleDetail(worshipEvent.id),
+          ),
+        );
+      } catch (_) {
+        // Ignora somente o evento que não pôde ser enriquecido.
+      }
+    }
+  } catch (_) {
+    // A home continua funcionando se o módulo Louvor estiver indisponível.
+  }
+
+  try {
+    final ministries = await memberApi.listMinistries();
+    final deaconMinistries = ministries.where((ministry) {
+      final name = ministry.name.toLowerCase();
+      return name.contains('diácono') || name.contains('diacon');
+    });
+    if (deaconMinistries.isNotEmpty) {
+      final schedules = await ScheduleApi(apiClient).list(
+        ministryId: deaconMinistries.first.id,
+      );
+      for (final schedule in schedules) {
+        if (schedule.date.isBefore(startOfToday)) continue;
+        final position = schedule.positionDetails
+            .where((item) => item.memberId == member.id)
+            .firstOrNull;
+        if (position == null) continue;
+
+        var title = schedule.eventName ?? 'Escala de Diáconos';
+        if (schedule.eventId != null) {
+          try {
+            title = (await eventRepo.getById(schedule.eventId!)).data.title;
+          } catch (_) {}
+        }
+        candidates.add(
+          _PersonalScale(
+            kind: 'Diáconos',
+            title: title,
+            role: position.position,
+            status: position.isSubstituted
+                ? 'Indisponível'
+                : position.isConfirmed
+                    ? 'Confirmado'
+                    : 'Pendente',
+            date: schedule.date,
+            startTime: schedule.startTime,
+            route: AppRoutes.deaconDetail(schedule.id),
+          ),
+        );
+      }
+    }
+  } catch (_) {
+    // A home continua funcionando se o módulo Diáconos estiver indisponível.
+  }
+
+  candidates.sort(
+    (a, b) => _scaleMoment(a.date, a.startTime)
+        .compareTo(_scaleMoment(b.date, b.startTime)),
+  );
+  return candidates.firstOrNull;
+});
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -24,7 +169,17 @@ class DashboardScreen extends ConsumerWidget {
   static final _dayMonth = DateFormat('dd/MM');
   static final _eventDay = DateFormat('dd');
   static final _eventMonth = DateFormat('MMM', 'pt_BR');
-  static const _weekdays = ['', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  static final _fullDate = DateFormat("EEEE, d 'de' MMMM", 'pt_BR');
+  static const _weekdays = [
+    '',
+    'Seg',
+    'Ter',
+    'Qua',
+    'Qui',
+    'Sex',
+    'Sáb',
+    'Dom'
+  ];
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -36,6 +191,11 @@ class DashboardScreen extends ConsumerWidget {
   String _firstName(String? fullName) {
     if (fullName == null || fullName.trim().isEmpty) return '';
     return fullName.trim().split(' ').first;
+  }
+
+  String _capitalize(String value) {
+    if (value.isEmpty) return value;
+    return value[0].toUpperCase() + value.substring(1);
   }
 
   String _dayLabel(BirthdayMember item) {
@@ -66,12 +226,14 @@ class DashboardScreen extends ConsumerWidget {
     final verseAsync = ref.watch(verseOfTheDayProvider);
     final birthdays = ref.watch(weeklyBirthdaysProvider);
     final eventsState = ref.watch(eventListProvider);
+    final personalScale = ref.watch(_personalScaleProvider);
     final upcoming = _upcoming(eventsState.data);
 
-    final bgTop = isDark ? AppColors.darkSurface : AppColors.primary50;
+    final bgTop = isDark ? AppColors.darkSurface : const Color(0xFFF4F7FB);
     final bgBottom = isDark ? AppColors.darkBg : AppColors.lightSurface;
     final t1 = isDark ? AppColors.darkText : AppColors.lightText;
-    final t2 = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final t2 =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final card = isDark ? AppColors.darkCard : AppColors.lightCard;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final firstName = _firstName(user?.name);
@@ -90,10 +252,12 @@ class DashboardScreen extends ConsumerWidget {
           onRefresh: () async {
             ref.invalidate(verseOfTheDayProvider);
             ref.invalidate(weeklyBirthdaysProvider);
+            ref.invalidate(_personalScaleProvider);
             await Future.wait([
               ref.read(verseOfTheDayProvider.future),
               ref.read(weeklyBirthdaysProvider.future),
               ref.read(eventListProvider.notifier).load(),
+              ref.read(_personalScaleProvider.future),
             ]);
           },
           color: AppColors.primary,
@@ -107,37 +271,87 @@ class DashboardScreen extends ConsumerWidget {
             ),
             children: [
               FadeIn(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      AppConstants.appName,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: t1,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppConstants.appName.toUpperCase(),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.2,
+                                ),
                           ),
+                          const SizedBox(height: 5),
+                          Text(
+                            firstName.isEmpty
+                                ? _greeting()
+                                : '${_greeting()}, $firstName',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  color: t1,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.4,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _capitalize(_fullDate.format(DateTime.now())),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: t2),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      firstName.isEmpty
-                          ? _greeting()
-                          : '${_greeting()}, $firstName',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: t2,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    GestureDetector(
+                      onTap: () => context.go(AppRoutes.profile),
+                      child: AppAvatar(
+                        name: user?.name ?? 'Usuário',
+                        imageUrl: user?.avatar,
+                        size: 46,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl2),
-              Text(
-                'Palavra do dia',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: t1,
-                      fontWeight: FontWeight.w700,
+              personalScale.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(top: AppSpacing.xl2),
+                  child: AppSkeleton(
+                    height: 156,
+                    borderRadius: AppSpacing.radiusXl,
+                  ),
+                ),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (scale) {
+                  if (scale == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xl2),
+                    child: SlideUp(
+                      child: _PersonalScaleCard(
+                        scale: scale,
+                        onTap: () => context.push(scale.route),
+                      ),
                     ),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.xl2),
+              _SectionHeader(
+                title: 'Palavra do dia',
+                actionLabel: 'Abrir Bíblia',
+                t1: t1,
+                onAction: () => context.go(AppRoutes.bible),
               ),
               const SizedBox(height: AppSpacing.md),
               verseAsync.when(
@@ -173,8 +387,8 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xl3),
               _SectionHeader(
-                title: 'Próximos eventos',
-                actionLabel: 'Ver agenda',
+                title: 'Agenda',
+                actionLabel: 'Ver tudo',
                 t1: t1,
                 onAction: () => context.go(AppRoutes.calendar),
               ),
@@ -194,9 +408,8 @@ class DashboardScreen extends ConsumerWidget {
                   final event = entry.value;
                   return Padding(
                     padding: EdgeInsets.only(
-                      bottom: entry.key == upcoming.length - 1
-                          ? 0
-                          : AppSpacing.md,
+                      bottom:
+                          entry.key == upcoming.length - 1 ? 0 : AppSpacing.md,
                     ),
                     child: SlideUp(
                       child: _EventRow(
@@ -213,7 +426,7 @@ class DashboardScreen extends ConsumerWidget {
                 }),
               const SizedBox(height: AppSpacing.xl3),
               _SectionHeader(
-                title: 'Aniversariantes',
+                title: 'Celebramos juntos',
                 actionLabel: 'Ver todos',
                 t1: t1,
                 onAction: () => context.push(AppRoutes.birthdays),
@@ -242,82 +455,348 @@ class DashboardScreen extends ConsumerWidget {
                     );
                   }
                   final items = result.items.take(4).toList();
-                  return Column(
-                    children: items.map((item) {
-                      final member = item.member;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: AppCard(
-                          onTap: canOpenMemberDetail
-                              ? () => context.push(AppRoutes.memberDetail(member.id))
-                              : null,
-                          child: Row(
-                            children: [
-                              AppAvatar(name: member.name, size: 44),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      member.name,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall
-                                          ?.copyWith(color: t1),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      item.turningAge > 0
-                                          ? 'Completa ${item.turningAge} anos'
-                                          : 'Aniversário',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: t2),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.sm,
-                                  vertical: AppSpacing.xs,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: item.isToday
-                                      ? AppColors.primary.withValues(alpha: 0.12)
-                                      : (isDark
-                                          ? AppColors.darkSurface
-                                          : AppColors.lightSurface),
-                                  borderRadius: BorderRadius.circular(
-                                    AppSpacing.radiusFull,
-                                  ),
-                                ),
-                                child: Text(
-                                  _dayLabel(item),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: item.isToday
-                                            ? AppColors.primary
-                                            : t2,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  return _BirthdayOverviewCard(
+                    items: items,
+                    isDark: isDark,
+                    t1: t1,
+                    t2: t2,
+                    dayLabel: _dayLabel,
+                    onMemberTap: canOpenMemberDetail
+                        ? (memberId) =>
+                            context.push(AppRoutes.memberDetail(memberId))
+                        : null,
                   );
                 },
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PersonalScaleCard extends StatelessWidget {
+  final _PersonalScale scale;
+  final VoidCallback onTap;
+
+  const _PersonalScaleCard({
+    required this.scale,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final day = DashboardScreen._eventDay.format(scale.date);
+    final month = DashboardScreen._eventMonth
+        .format(scale.date)
+        .replaceAll('.', '')
+        .toUpperCase();
+    final statusColor = scale.status == 'Confirmado'
+        ? const Color(0xFF16A34A)
+        : scale.status == 'Indisponível'
+            ? const Color(0xFFEF4444)
+            : const Color(0xFFF59E0B);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF008CFF), Color(0xFF0066CC)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.24),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            scale.kind == 'Louvor'
+                                ? Icons.music_note_rounded
+                                : Icons.volunteer_activism_rounded,
+                            color: Colors.white,
+                            size: 15,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'MINHA ESCALA · ${scale.kind.toUpperCase()}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 52,
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            day,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            month,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  scale.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.schedule_rounded,
+                      color: Colors.white70,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      scale.startTime,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: const BoxDecoration(
+                        color: Colors.white54,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        scale.role,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            scale.status == 'Confirmado'
+                                ? Icons.check_circle_rounded
+                                : scale.status == 'Indisponível'
+                                    ? Icons.cancel_rounded
+                                    : Icons.schedule_rounded,
+                            color: statusColor,
+                            size: 15,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            scale.status,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    const Text(
+                      'Ver escala',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BirthdayOverviewCard extends StatelessWidget {
+  final List<BirthdayMember> items;
+  final bool isDark;
+  final Color t1;
+  final Color t2;
+  final String Function(BirthdayMember) dayLabel;
+  final ValueChanged<String>? onMemberTap;
+
+  const _BirthdayOverviewCard({
+    required this.items,
+    required this.isDark,
+    required this.t1,
+    required this.t2,
+    required this.dayLabel,
+    this.onMemberTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+        ),
+      ),
+      child: Column(
+        children: [
+          for (var index = 0; index < items.length; index++) ...[
+            InkWell(
+              onTap: onMemberTap == null
+                  ? null
+                  : () => onMemberTap!(items[index].member.id),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                child: Row(
+                  children: [
+                    AppAvatar(
+                      name: items[index].member.name,
+                      imageUrl: items[index].member.avatar,
+                      size: 40,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        items[index].member.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: t1,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: items[index].isToday
+                            ? AppColors.primary.withValues(alpha: 0.12)
+                            : (isDark
+                                ? AppColors.darkSurface
+                                : const Color(0xFFF4F7FB)),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusFull,
+                        ),
+                      ),
+                      child: Text(
+                        dayLabel(items[index]),
+                        style: TextStyle(
+                          color: items[index].isToday ? AppColors.primary : t2,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (index < items.length - 1)
+              Divider(
+                height: 1,
+                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+              ),
+          ],
+        ],
       ),
     );
   }
@@ -516,7 +995,8 @@ class _VerseCard extends StatelessWidget {
                       height: 36,
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusMd),
                       ),
                       child: const Icon(
                         Icons.format_quote_rounded,
