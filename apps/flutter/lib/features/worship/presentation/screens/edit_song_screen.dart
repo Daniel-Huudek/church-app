@@ -5,6 +5,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/worship_api.dart';
 import '../../domain/worship_models.dart';
 import '../widgets/chord_viewer.dart';
+import 'song_bpm_picker_screen.dart';
 
 class EditSongScreen extends ConsumerStatefulWidget {
   final String songId;
@@ -293,12 +294,7 @@ class _EditSongScreenState extends ConsumerState<EditSongScreen> {
             icon: Icons.speed_rounded,
             label: 'BPM',
             value: _bpmCtrl.text.trim().isEmpty ? '—' : _bpmCtrl.text.trim(),
-            onTap: () => _editMetadata(
-              title: 'BPM',
-              controller: _bpmCtrl,
-              hint: 'Ex.: 92',
-              numeric: true,
-            ),
+            onTap: _openBpmPicker,
           ),
           const SizedBox(width: 8),
           _metadataChip(
@@ -337,6 +333,18 @@ class _EditSongScreenState extends ConsumerState<EditSongScreen> {
     final minutes = seconds ~/ 60;
     final rest = (seconds % 60).toString().padLeft(2, '0');
     return '$minutes:$rest';
+  }
+
+  Future<void> _openBpmPicker() async {
+    final current = int.tryParse(_bpmCtrl.text.trim()) ?? 72;
+    final selected = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => SongBpmPickerScreen(initialBpm: current),
+      ),
+    );
+    if (selected == null || !mounted) return;
+    setState(() => _bpmCtrl.text = selected.toString());
   }
 
   Widget _metadataChip({

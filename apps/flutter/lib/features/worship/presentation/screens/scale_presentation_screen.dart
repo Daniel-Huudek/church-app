@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'dart:math' as math;
-import 'dart:typed_data';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
+import '../services/metronome_player.dart';
 
 /// Player de apresentação da escala: cifra com auto-scroll.
 class ScalePresentationScreen extends ConsumerStatefulWidget {
@@ -30,17 +28,14 @@ class ScalePresentationScreen extends ConsumerStatefulWidget {
 class _ScalePresentationScreenState
     extends ConsumerState<ScalePresentationScreen> {
   final _scrollController = ScrollController();
+  final _metronome = MetronomePlayer();
   Timer? _scrollTimer;
-  Timer? _beatTimer;
-  AudioPool? _regularClickPool;
-  AudioPool? _accentClickPool;
 
   List<Song> _songs = [];
   int _index = 0;
   bool _loading = true;
   bool _playing = false;
   bool _metronomeEnabled = true;
-  int _beatIndex = 0;
   int _activeBeat = -1;
   double _fontSize = 18;
   double _speed = 1.0;
@@ -52,7 +47,7 @@ class _ScalePresentationScreenState
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _index = widget.initialIndex;
-    _prepareMetronome();
+    _metronome.prepare();
     _load();
   }
 
@@ -60,84 +55,9 @@ class _ScalePresentationScreenState
   void dispose() {
     _stopScroll();
     _scrollController.dispose();
-    unawaited(_regularClickPool?.dispose());
-    unawaited(_accentClickPool?.dispose());
+    unawaited(_metronome.dispose());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
-  }
-
-  Future<void> _prepareMetronome() async {
-    try {
-      final pools = await Future.wait([
-        AudioPool.create(
-          source: BytesSource(
-            _buildClickSound(frequency: 1150),
-            mimeType: 'audio/wav',
-          ),
-          minPlayers: 1,
-          maxPlayers: 2,
-          playerMode: PlayerMode.lowLatency,
-        ),
-        AudioPool.create(
-          source: BytesSource(
-            _buildClickSound(frequency: 1750),
-            mimeType: 'audio/wav',
-          ),
-          minPlayers: 1,
-          maxPlayers: 2,
-          playerMode: PlayerMode.lowLatency,
-        ),
-      ]);
-      if (!mounted) {
-        await Future.wait(pools.map((pool) => pool.dispose()));
-        return;
-      }
-      _regularClickPool = pools[0];
-      _accentClickPool = pools[1];
-    } catch (_) {
-      // O auto-scroll continua funcionando se o dispositivo não suportar áudio.
-    }
-  }
-
-  Uint8List _buildClickSound({
-    required double frequency,
-    int durationMs = 55,
-  }) {
-    const sampleRate = 22050;
-    const bytesPerSample = 2;
-    final sampleCount = sampleRate * durationMs ~/ 1000;
-    final dataSize = sampleCount * bytesPerSample;
-    final wav = ByteData(44 + dataSize);
-
-    void writeText(int offset, String value) {
-      for (var i = 0; i < value.length; i++) {
-        wav.setUint8(offset + i, value.codeUnitAt(i));
-      }
-    }
-
-    writeText(0, 'RIFF');
-    wav.setUint32(4, 36 + dataSize, Endian.little);
-    writeText(8, 'WAVE');
-    writeText(12, 'fmt ');
-    wav.setUint32(16, 16, Endian.little);
-    wav.setUint16(20, 1, Endian.little);
-    wav.setUint16(22, 1, Endian.little);
-    wav.setUint32(24, sampleRate, Endian.little);
-    wav.setUint32(28, sampleRate * bytesPerSample, Endian.little);
-    wav.setUint16(32, bytesPerSample, Endian.little);
-    wav.setUint16(34, 16, Endian.little);
-    writeText(36, 'data');
-    wav.setUint32(40, dataSize, Endian.little);
-
-    for (var i = 0; i < sampleCount; i++) {
-      final time = i / sampleRate;
-      final attack = math.min(1.0, i / 24);
-      final envelope = math.exp(-time * 62) * attack;
-      final wave = math.sin(2 * math.pi * frequency * time);
-      final sample = (wave * envelope * 0.78 * 32767).round();
-      wav.setInt16(44 + i * bytesPerSample, sample, Endian.little);
-    }
-    return wav.buffer.asUint8List();
   }
 
   Future<void> _load() async {
@@ -219,40 +139,19 @@ class _ScalePresentationScreenState
     final bpm = _current?.bpm;
     if (!_metronomeEnabled || bpm == null || bpm <= 0) return;
 
-    final safeBpm = bpm.clamp(30, 300);
-    final beatDuration = Duration(
-      microseconds: (60000000 / safeBpm).round(),
+    _metronome.start(
+      bpm: bpm,
+      onBeat: (beat) {
+        if (mounted && _playing && _metronomeEnabled) {
+          setState(() => _activeBeat = beat);
+        }
+      },
     );
-    _beatIndex = 0;
-    unawaited(_playBeat());
-    _beatTimer = Timer.periodic(beatDuration, (_) {
-      unawaited(_playBeat());
-    });
   }
 
   void _stopMetronome() {
-    _beatTimer?.cancel();
-    _beatTimer = null;
-    _beatIndex = 0;
+    _metronome.stop();
     _activeBeat = -1;
-  }
-
-  Future<void> _playBeat() async {
-    if (!_playing || !_metronomeEnabled) return;
-    final currentBeat = _beatIndex % 4;
-    _beatIndex++;
-    if (mounted) setState(() => _activeBeat = currentBeat);
-
-    final pool = currentBeat == 0 ? _accentClickPool : _regularClickPool;
-    if (pool == null) return;
-    try {
-      final stop = await pool.start(volume: currentBeat == 0 ? 0.9 : 0.68);
-      Timer(const Duration(milliseconds: 80), () {
-        unawaited(stop().catchError((_) {}));
-      });
-    } catch (_) {
-      // O indicador visual continua mesmo se uma batida falhar.
-    }
   }
 
   void _changeSpeed(int direction) {
