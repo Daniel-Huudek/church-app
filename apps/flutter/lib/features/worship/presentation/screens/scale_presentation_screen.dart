@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
 import '../services/metronome_player.dart';
+import 'song_bpm_picker_screen.dart';
 
 /// Player de apresentação da escala: cifra com auto-scroll.
 class ScalePresentationScreen extends ConsumerStatefulWidget {
@@ -29,6 +30,7 @@ class _ScalePresentationScreenState
     extends ConsumerState<ScalePresentationScreen> {
   final _scrollController = ScrollController();
   final _metronome = MetronomePlayer();
+  final Map<String, int> _bpmOverrides = {};
   Timer? _scrollTimer;
 
   List<Song> _songs = [];
@@ -81,6 +83,12 @@ class _ScalePresentationScreenState
       ? null
       : _songs[_index];
 
+  int? get _currentBpm {
+    final song = _current;
+    if (song == null) return null;
+    return _bpmOverrides[song.id] ?? song.bpm;
+  }
+
   bool get _hasNext => _index < _songs.length - 1;
   bool get _hasPrev => _index > 0;
 
@@ -119,7 +127,7 @@ class _ScalePresentationScreenState
   }
 
   void _toggleMetronome() {
-    final bpm = _current?.bpm;
+    final bpm = _currentBpm;
     if (bpm == null || bpm <= 0) return;
     setState(() {
       _metronomeEnabled = !_metronomeEnabled;
@@ -136,7 +144,7 @@ class _ScalePresentationScreenState
 
   void _startMetronome() {
     _stopMetronome();
-    final bpm = _current?.bpm;
+    final bpm = _currentBpm;
     if (!_metronomeEnabled || bpm == null || bpm <= 0) return;
 
     _metronome.start(
@@ -165,6 +173,40 @@ class _ScalePresentationScreenState
     setState(() => _fontSize = (_fontSize + direction).clamp(14, 34));
   }
 
+  Future<void> _openBpmPicker() async {
+    final song = _current;
+    if (song == null) return;
+
+    final wasPlaying = _playing;
+    if (wasPlaying) _stopScroll();
+
+    final selected = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => SongBpmPickerScreen(
+          initialBpm: _currentBpm ?? 72,
+        ),
+      ),
+    );
+    if (!mounted) return;
+
+    if (selected != null) {
+      setState(() {
+        _bpmOverrides[song.id] = selected;
+        _activeBeat = -1;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Batida ajustada para $selected BPM nesta apresentação',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+    if (wasPlaying) _startScroll();
+  }
+
   void _goToSong(int index) {
     if (index < 0 || index >= _songs.length) return;
     _stopScroll();
@@ -179,6 +221,7 @@ class _ScalePresentationScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF7F8FA);
     final song = _current;
+    final bpm = _currentBpm;
 
     return Scaffold(
       backgroundColor: bg,
@@ -207,7 +250,7 @@ class _ScalePresentationScreenState
               Text(
                 '${_index + 1} / ${_songs.length}'
                 '${song?.key != null ? '  ·  Tom ${song!.key}' : ''}'
-                '${song?.bpm != null ? '  ·  ${song!.bpm} BPM' : ''}',
+                '${bpm != null ? '  ·  $bpm BPM' : ''}',
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark
@@ -254,7 +297,7 @@ class _ScalePresentationScreenState
     final bar = isDark ? const Color(0xFF161622) : Colors.white;
     final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB);
     final muted = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final bpm = _current?.bpm;
+    final bpm = _currentBpm;
 
     return SafeArea(
       top: false,
@@ -428,7 +471,7 @@ class _ScalePresentationScreenState
                   ? active
                       ? Icons.volume_up_rounded
                       : Icons.volume_off_rounded
-                  : Icons.music_off_rounded,
+                  : Icons.av_timer_rounded,
               size: 20,
               color: active ? const Color(0xFF008CFF) : muted,
             ),
@@ -437,7 +480,7 @@ class _ScalePresentationScreenState
               child: Text(
                 available
                     ? 'Batida · $bpm BPM'
-                    : 'Cadastre o BPM para ouvir a batida',
+                    : 'Definir BPM para ouvir a batida',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -478,6 +521,17 @@ class _ScalePresentationScreenState
                 ),
               ),
             ],
+            const SizedBox(width: 4),
+            IconButton(
+              tooltip: 'Ajustar BPM',
+              visualDensity: VisualDensity.compact,
+              onPressed: _openBpmPicker,
+              icon: Icon(
+                Icons.tune_rounded,
+                size: 20,
+                color: active ? const Color(0xFF008CFF) : muted,
+              ),
+            ),
           ],
         ),
       ),
