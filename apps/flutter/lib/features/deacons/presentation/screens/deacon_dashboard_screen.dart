@@ -153,7 +153,7 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
         } catch (_) {}
 
         final dayLabel = _capitalize(
-          DateFormat("EEEE, dd/MM", 'pt_BR').format(schedule.date),
+          DateFormat('EEEE, dd/MM', 'pt_BR').format(schedule.date),
         );
         buffer.writeln('*$dayLabel — ${schedule.startTime}*');
         if (item.title.trim().isNotEmpty) {
