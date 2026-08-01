@@ -783,9 +783,9 @@ class _BottomActionPanel extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: isDark ? const Color(0xFF7DD3FC) : _skyDark,
             ),
-            child: Text(
-              isMine ? 'Marcar indisponível' : 'Marcar indisponível',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            child: const Text(
+              'Marcar indisponível',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
         ],
