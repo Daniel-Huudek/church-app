@@ -8,6 +8,7 @@ on:
 
 env:
   NODE_VERSION: '22'
+  FLUTTER_VERSION: '3.35.7'
 
 jobs:
   lint-and-test:
@@ -43,6 +44,24 @@ jobs:
           pnpm --filter @church-app/api build
           pnpm --filter @church-app/web build
           echo "API + web build OK"
+
+  flutter-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Resolve Flutter dependencies
+        working-directory: apps/flutter
+        run: flutter pub get
+      - name: Build Flutter web
+        working-directory: apps/flutter
+        run: |
+          flutter build web --release \
+            --dart-define=API_URL=https://church.inspeare.com.br
 
   security-audit:
     runs-on: ubuntu-latest
