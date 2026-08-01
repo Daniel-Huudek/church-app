@@ -4,21 +4,30 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../shared/models/user_model.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../members/presentation/providers/member_provider.dart';
 import '../../../schedules/domain/schedule_model.dart';
 import '../../../schedules/presentation/providers/schedule_provider.dart';
 
+const _sky = Color(0xFF0EA5E9);
+const _skyDark = Color(0xFF0284C7);
+const _success = Color(0xFF10B981);
+const _warning = Color(0xFFF59E0B);
+const _errorColor = Color(0xFFEF4444);
+
 class DeaconScaleDetailScreen extends ConsumerStatefulWidget {
   final String id;
   const DeaconScaleDetailScreen({super.key, required this.id});
 
   @override
-  ConsumerState<DeaconScaleDetailScreen> createState() => _DeaconScaleDetailScreenState();
+  ConsumerState<DeaconScaleDetailScreen> createState() =>
+      _DeaconScaleDetailScreenState();
 }
 
-class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScreen> {
+class _DeaconScaleDetailScreenState
+    extends ConsumerState<DeaconScaleDetailScreen> {
   bool _loading = true;
   String? _error;
   ScheduleModel? _schedule;
@@ -26,6 +35,7 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
   Map<String, String> _memberNames = {};
   Map<String, String?> _memberUserIds = {};
   Map<String, String?> _memberEmails = {};
+  String? _selectedPositionId;
 
   @override
   void initState() {
@@ -49,6 +59,9 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
           _schedule = cached;
           _title = cached.eventName ?? _title;
           _loading = false;
+          _selectedPositionId ??= cached.positionDetails.isNotEmpty
+              ? cached.positionDetails.first.id
+              : null;
         });
       }
 
@@ -78,6 +91,18 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
       }
 
       if (!mounted) return;
+
+      final user = ref.read(authProvider).user;
+      SchedulePosition? mine;
+      for (final p in schedule.positionDetails) {
+        if (_isMine(p, user)) {
+          mine = p;
+          break;
+        }
+      }
+      final keepSelection =
+          schedule.positionDetails.any((p) => p.id == _selectedPositionId);
+
       setState(() {
         _schedule = schedule;
         _title = title;
@@ -85,6 +110,12 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
         _memberUserIds = userIds;
         _memberEmails = emails;
         _loading = false;
+        if (!keepSelection) {
+          _selectedPositionId = mine?.id ??
+              (schedule.positionDetails.isNotEmpty
+                  ? schedule.positionDetails.first.id
+                  : null);
+        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -93,6 +124,18 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
         if (_schedule == null) _error = e.toString();
       });
     }
+  }
+
+  bool _isMine(SchedulePosition position, UserModel? user) {
+    if (user == null) return false;
+    final linkedUserId = _memberUserIds[position.memberId];
+    final memberEmail = _memberEmails[position.memberId]?.trim().toLowerCase();
+    final userEmail = user.email.trim().toLowerCase();
+    return position.memberId == user.id ||
+        linkedUserId == user.id ||
+        (userEmail.isNotEmpty &&
+            memberEmail != null &&
+            memberEmail == userEmail);
   }
 
   Future<void> _confirm(SchedulePosition position, bool confirmed) async {
@@ -110,7 +153,9 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
     }
   }
 
@@ -119,9 +164,14 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir escala'),
-        content: const Text('Tem certeza que deseja excluir esta escala de diáconos? Esta ação não pode ser desfeita.'),
+        content: const Text(
+          'Tem certeza que deseja excluir esta escala de diáconos? Esta ação não pode ser desfeita.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Excluir', style: TextStyle(color: Colors.red)),
@@ -146,6 +196,38 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
     }
   }
 
+  Color _statusColor(SchedulePosition position) {
+    if (position.isConfirmed) return _success;
+    if (position.isSubstituted) return _errorColor;
+    return _warning;
+  }
+
+  String _statusLabel(SchedulePosition position) {
+    if (position.isConfirmed) return 'Confirmado';
+    if (position.isSubstituted) return 'Indisponível';
+    return 'Pendente';
+  }
+
+  String _initials(String name) {
+    final parts = name
+        .split(' ')
+        .where((s) => s.isNotEmpty)
+        .take(2)
+        .map((s) => s[0])
+        .join()
+        .toUpperCase();
+    return parts.isEmpty ? '?' : parts;
+  }
+
+  SchedulePosition? _findSelected(ScheduleModel schedule) {
+    for (final p in schedule.positionDetails) {
+      if (p.id == _selectedPositionId) return p;
+    }
+    return schedule.positionDetails.isNotEmpty
+        ? schedule.positionDetails.first
+        : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -155,145 +237,534 @@ class _DeaconScaleDetailScreenState extends ConsumerState<DeaconScaleDetailScree
     final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
     final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
     final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
-    final canManage = user?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS']) ?? false;
+    final canManage =
+        user?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS']) ?? false;
 
     if (_loading && _schedule == null) {
-      return Scaffold(backgroundColor: bg, body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: bg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
     if (_error != null || _schedule == null) {
       return Scaffold(
         backgroundColor: bg,
-        appBar: AppBar(backgroundColor: bg, elevation: 0, leading: BackButton(color: t1)),
-        body: Center(child: Text(_error ?? 'Escala não encontrada', style: TextStyle(color: t2))),
+        appBar: AppBar(
+          backgroundColor: bg,
+          elevation: 0,
+          leading: BackButton(color: t1),
+        ),
+        body: Center(
+          child: Text(
+            _error ?? 'Escala não encontrada',
+            style: TextStyle(color: t2),
+          ),
+        ),
       );
     }
 
     final schedule = _schedule!;
+    final selected = _findSelected(schedule);
+    final canActOnSelected =
+        selected != null && (_isMine(selected, user) || canManage);
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: bg,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: Icon(Icons.arrow_back, color: t1),
-        ),
-        title: Text('Detalhe da escala', style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
-        actions: [
-          if (canManage) ...[
-            IconButton(
-              tooltip: 'Editar escala',
-              onPressed: () async {
-                await context.push(AppRoutes.deaconEdit(widget.id));
-                if (mounted) _load();
-              },
-              icon: const Icon(Icons.edit_outlined, color: Color(0xFF008CFF)),
+      body: RefreshIndicator(
+        color: _sky,
+        onRefresh: _load,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: _DateHero(
+                title: _title,
+                date: schedule.date,
+                startTime: schedule.startTime,
+                endTime: schedule.endTime,
+                isDark: isDark,
+                canManage: canManage,
+                onBack: () => context.pop(),
+                onEdit: () async {
+                  await context.push(AppRoutes.deaconEdit(widget.id));
+                  if (mounted) _load();
+                },
+                onDelete: _deleteScale,
+              ),
             ),
-            IconButton(
-              tooltip: 'Excluir escala',
-              onPressed: _deleteScale,
-              icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  Text(
+                    'Postos',
+                    style: TextStyle(
+                      color: t1,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  if (schedule.positionDetails.isEmpty)
+                    Text(
+                      'Nenhuma função atribuída.',
+                      style: TextStyle(color: t2),
+                    )
+                  else
+                    _PostosGrid(
+                      positions: schedule.positionDetails,
+                      memberNames: _memberNames,
+                      selectedId: selected?.id,
+                      card: card,
+                      border: border,
+                      t1: t1,
+                      t2: t2,
+                      isDark: isDark,
+                      statusColor: _statusColor,
+                      statusLabel: _statusLabel,
+                      initials: _initials,
+                      onSelect: (id) => setState(() => _selectedPositionId = id),
+                    ),
+                  if (selected != null && canActOnSelected) ...[
+                    const SizedBox(height: 22),
+                    _ActionStrip(
+                      position: selected,
+                      memberName: _memberNames[selected.memberId] ??
+                          selected.memberName ??
+                          'Membro',
+                      isMine: _isMine(selected, user),
+                      t1: t1,
+                      t2: t2,
+                      card: card,
+                      border: border,
+                      onConfirm: () => _confirm(selected, true),
+                      onUnavailable: () => _confirm(selected, false),
+                    ),
+                  ],
+                ]),
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DateHero extends StatelessWidget {
+  final String title;
+  final DateTime date;
+  final String startTime;
+  final String endTime;
+  final bool isDark;
+  final bool canManage;
+  final VoidCallback onBack;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _DateHero({
+    required this.title,
+    required this.date,
+    required this.startTime,
+    required this.endTime,
+    required this.isDark,
+    required this.canManage,
+    required this.onBack,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.paddingOf(context).top;
+    final day = DateFormat('d', 'pt_BR').format(date);
+    final month = DateFormat('MMM', 'pt_BR')
+        .format(date)
+        .toUpperCase()
+        .replaceAll('.', '');
+    final weekday = DateFormat('EEEE', 'pt_BR').format(date);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20, topPad + 8, 12, 28),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [Color(0xFF0C4A6E), Color(0xFF082F49)]
+              : const [
+                  Color(0xFF38BDF8),
+                  Color(0xFF0EA5E9),
+                  Color(0xFF0284C7),
+                ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                tooltip: 'Voltar',
+              ),
+              const Spacer(),
+              if (canManage) ...[
+                IconButton(
+                  tooltip: 'Editar escala',
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                ),
+                IconButton(
+                  tooltip: 'Excluir escala',
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline, color: Colors.white),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                day,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 72,
+                  fontWeight: FontWeight.w700,
+                  height: 0.9,
+                  letterSpacing: -2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  month,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '$weekday · $startTime – $endTime',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+            ),
+          ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+    );
+  }
+}
+
+class _PostosGrid extends StatelessWidget {
+  final List<SchedulePosition> positions;
+  final Map<String, String> memberNames;
+  final String? selectedId;
+  final Color card;
+  final Color border;
+  final Color t1;
+  final Color t2;
+  final bool isDark;
+  final Color Function(SchedulePosition) statusColor;
+  final String Function(SchedulePosition) statusLabel;
+  final String Function(String) initials;
+  final ValueChanged<String> onSelect;
+
+  const _PostosGrid({
+    required this.positions,
+    required this.memberNames,
+    required this.selectedId,
+    required this.card,
+    required this.border,
+    required this.t1,
+    required this.t2,
+    required this.isDark,
+    required this.statusColor,
+    required this.statusLabel,
+    required this.initials,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 12.0;
+        final tileWidth = (constraints.maxWidth - gap) / 2;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)]),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_title, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text(
-                    DateFormat("EEEE, dd 'de' MMMM", 'pt_BR').format(schedule.date),
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+            for (final position in positions)
+              SizedBox(
+                width: tileWidth,
+                child: _PostoTile(
+                  position: position,
+                  memberName: memberNames[position.memberId] ??
+                      position.memberName ??
+                      'Membro',
+                  selected: position.id == selectedId,
+                  card: card,
+                  border: border,
+                  t1: t1,
+                  t2: t2,
+                  isDark: isDark,
+                  statusColor: statusColor(position),
+                  statusLabel: statusLabel(position),
+                  initials: initials(
+                    memberNames[position.memberId] ??
+                        position.memberName ??
+                        'Membro',
                   ),
-                  const SizedBox(height: 4),
-                  Text('${schedule.startTime} - ${schedule.endTime}', style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
-                ],
+                  onTap: () => onSelect(position.id),
+                ),
               ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PostoTile extends StatelessWidget {
+  final SchedulePosition position;
+  final String memberName;
+  final bool selected;
+  final Color card;
+  final Color border;
+  final Color t1;
+  final Color t2;
+  final bool isDark;
+  final Color statusColor;
+  final String statusLabel;
+  final String initials;
+  final VoidCallback onTap;
+
+  const _PostoTile({
+    required this.position,
+    required this.memberName,
+    required this.selected,
+    required this.card,
+    required this.border,
+    required this.t1,
+    required this.t2,
+    required this.isDark,
+    required this.statusColor,
+    required this.statusLabel,
+    required this.initials,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? _sky : border,
+              width: selected ? 1.5 : 1,
             ),
-            const SizedBox(height: 24),
-            Text('Funções', style: TextStyle(color: t1, fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            if (schedule.positionDetails.isEmpty)
-              Text('Nenhuma função atribuída.', style: TextStyle(color: t2))
-            else
-              ...schedule.positionDetails.map((position) {
-                final name = _memberNames[position.memberId] ?? position.memberName ?? 'Membro';
-                final linkedUserId = _memberUserIds[position.memberId];
-                final memberEmail = _memberEmails[position.memberId]?.trim().toLowerCase();
-                final userEmail = user?.email.trim().toLowerCase();
-                final isMine = user != null &&
-                    (position.memberId == user.id ||
-                        linkedUserId == user.id ||
-                        (userEmail != null &&
-                            userEmail.isNotEmpty &&
-                            memberEmail != null &&
-                            memberEmail == userEmail));
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                height: 4,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(13),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(position.position, style: TextStyle(color: t1, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(name, style: TextStyle(color: t2)),
-                      const SizedBox(height: 8),
-                      Text(
-                        position.isConfirmed
-                            ? 'Confirmado'
-                            : position.isSubstituted
-                                ? 'Indisponível'
-                                : 'Pendente',
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _sky.withValues(alpha: isDark ? 0.22 : 0.12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        initials,
                         style: TextStyle(
-                          color: position.isConfirmed
-                              ? const Color(0xFF10B981)
-                              : position.isSubstituted
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFFF59E0B),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                          color: isDark ? const Color(0xFF7DD3FC) : _skyDark,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
                         ),
                       ),
-                      if (isMine || (user?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER_DIACONOS']) ?? false)) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            TextButton(
-                              onPressed: () => _confirm(position, true),
-                              child: Text(isMine ? 'Confirmar presença' : 'Confirmar'),
-                            ),
-                            TextButton(
-                              onPressed: () => _confirm(position, false),
-                              child: Text(isMine ? 'Indisponível' : 'Cancelar'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              }),
-          ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      position.position,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: t1,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      memberName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: t2, fontSize: 12),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      statusLabel,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _ActionStrip extends StatelessWidget {
+  final SchedulePosition position;
+  final String memberName;
+  final bool isMine;
+  final Color t1;
+  final Color t2;
+  final Color card;
+  final Color border;
+  final VoidCallback onConfirm;
+  final VoidCallback onUnavailable;
+
+  const _ActionStrip({
+    required this.position,
+    required this.memberName,
+    required this.isMine,
+    required this.t1,
+    required this.t2,
+    required this.card,
+    required this.border,
+    required this.onConfirm,
+    required this.onUnavailable,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            isMine ? 'Sua função' : 'Função selecionada',
+            style: TextStyle(
+              color: t2,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            position.position,
+            style: TextStyle(
+              color: t1,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            memberName,
+            style: TextStyle(color: t2, fontSize: 13),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: onConfirm,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _sky,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Confirmar',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onUnavailable,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _errorColor,
+                    side: const BorderSide(color: _errorColor),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Indisponível',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
