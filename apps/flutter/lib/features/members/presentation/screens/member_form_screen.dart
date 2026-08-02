@@ -228,8 +228,9 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
       setState(() {
         _zipCtrl.text = address.zipCode;
         if (address.street.isNotEmpty) _streetCtrl.text = address.street;
-        if (address.neighborhood.isNotEmpty)
+        if (address.neighborhood.isNotEmpty) {
           _neighborhoodCtrl.text = address.neighborhood;
+        }
         _cityCtrl.text = address.city;
         _stateCtrl.text = address.state;
       });
@@ -280,28 +281,36 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     } else if (widget.isEditing) {
       data['nickname'] = null;
     }
-    if (_phoneCtrl.text.trim().isNotEmpty)
+    if (_phoneCtrl.text.trim().isNotEmpty) {
       data['phone'] = _phoneCtrl.text.trim();
-    if (_emailCtrl.text.trim().isNotEmpty)
+    }
+    if (_emailCtrl.text.trim().isNotEmpty) {
       data['email'] = _emailCtrl.text.trim();
-    if (_occupationCtrl.text.trim().isNotEmpty)
+    }
+    if (_occupationCtrl.text.trim().isNotEmpty) {
       data['occupation'] = _occupationCtrl.text.trim();
-    if (_notesCtrl.text.trim().isNotEmpty)
+    }
+    if (_notesCtrl.text.trim().isNotEmpty) {
       data['notes'] = _notesCtrl.text.trim();
+    }
     if (_gender != null) data['gender'] = _gender;
     if (_maritalStatus != null) data['maritalStatus'] = _maritalStatus;
     data['ministryIds'] = _ministryIds.toList();
     if (_ministryIds.isNotEmpty) data['ministryId'] = _ministryIds.first;
     if (_birthDate != null) data['dateOfBirth'] = _birthDate!.toIso8601String();
-    if (_baptismDate != null)
+    if (_baptismDate != null) {
       data['baptismDate'] = _baptismDate!.toIso8601String();
-    if (_conversionDate != null)
+    }
+    if (_conversionDate != null) {
       data['conversionDate'] = _conversionDate!.toIso8601String();
-    if (_admissionDate != null)
+    }
+    if (_admissionDate != null) {
       data['admissionDate'] = _admissionDate!.toIso8601String();
+    }
     if (_admissionType != null) data['admissionType'] = _admissionType;
-    if (_baptismChurchCtrl.text.trim().isNotEmpty)
+    if (_baptismChurchCtrl.text.trim().isNotEmpty) {
       data['baptismChurch'] = _baptismChurchCtrl.text.trim();
+    }
     if (_linkedUserId != null) {
       data['userId'] = _linkedUserId;
     } else if (widget.isEditing && _originalUserId != null) {
@@ -955,7 +964,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
               style: TextStyle(color: t1, fontWeight: FontWeight.w600),
             ),
             value: _isBaptized,
-            activeColor: const Color(0xFF008CFF),
+            activeThumbColor: const Color(0xFF008CFF),
             onChanged: (value) => setState(() => _isBaptized = value),
           ),
         ),
