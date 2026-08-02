@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../shared/models/user_model.dart';
 import '../../../../shared/utils/error_helper.dart';
+import '../../../../shared/widgets/app_avatar.dart';
 import '../../../users/presentation/providers/user_provider.dart';
 import '../../data/cep_lookup_service.dart';
 import '../../domain/member_model.dart';
@@ -61,11 +62,18 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   bool _saving = false;
   bool _lookingUpCep = false;
   String? _lastLookedUpCep;
+  String? _avatarUrl;
+  int _tabIndex = 0;
 
   static const _statuses = ['ATIVO', 'INATIVO', 'AFASTADO', 'TRANSFERIDO'];
   static const _roles = ['MEMBRO', 'DIACONO', 'PRESBITERO', 'PASTOR'];
   static const _genders = ['Masculino', 'Feminino', 'Outro'];
-  static const _marital = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)'];
+  static const _marital = [
+    'Solteiro(a)',
+    'Casado(a)',
+    'Divorciado(a)',
+    'Viúvo(a)'
+  ];
   static const _admissionTypes = [
     ('BATISMO', 'Batismo'),
     ('TRANSFERENCIA', 'Transferência'),
@@ -85,8 +93,20 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   @override
   void dispose() {
     for (final c in [
-      _nameCtrl, _nicknameCtrl, _phoneCtrl, _emailCtrl, _occupationCtrl, _notesCtrl, _baptismChurchCtrl,
-      _zipCtrl, _streetCtrl, _numberCtrl, _complementCtrl, _neighborhoodCtrl, _cityCtrl, _stateCtrl,
+      _nameCtrl,
+      _nicknameCtrl,
+      _phoneCtrl,
+      _emailCtrl,
+      _occupationCtrl,
+      _notesCtrl,
+      _baptismChurchCtrl,
+      _zipCtrl,
+      _streetCtrl,
+      _numberCtrl,
+      _complementCtrl,
+      _neighborhoodCtrl,
+      _cityCtrl,
+      _stateCtrl,
     ]) {
       c.dispose();
     }
@@ -110,11 +130,13 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   Future<void> _loadMember() async {
     setState(() => _loading = true);
     try {
-      final result = await ref.read(memberRepositoryProvider).getById(widget.memberId!);
+      final result =
+          await ref.read(memberRepositoryProvider).getById(widget.memberId!);
       _fill(result.data);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao carregar: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Erro ao carregar: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -128,6 +150,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     _occupationCtrl.text = member.occupation ?? '';
     _notesCtrl.text = member.notes ?? '';
     _baptismChurchCtrl.text = member.baptismChurch ?? '';
+    _avatarUrl = member.avatar;
     _birthDate = member.birthDate;
     _baptismDate = member.baptismDate;
     _conversionDate = member.conversionDate;
@@ -143,7 +166,9 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
       ..clear()
       ..addAll(member.ministryIds.isNotEmpty
           ? member.ministryIds
-          : (member.ministryId != null ? [member.ministryId!] : const <String>[]));
+          : (member.ministryId != null
+              ? [member.ministryId!]
+              : const <String>[]));
     _isBaptized = member.isBaptized;
     final address = member.address;
     if (address != null) {
@@ -164,7 +189,9 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
 
-  Future<void> _pickDate({required DateTime? current, required ValueChanged<DateTime?> onPicked}) async {
+  Future<void> _pickDate(
+      {required DateTime? current,
+      required ValueChanged<DateTime?> onPicked}) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: current ?? DateTime(1990, 1, 1),
@@ -194,13 +221,16 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     final requested = digits;
     setState(() => _lookingUpCep = true);
     try {
-      final address = await ref.read(cepLookupServiceProvider).lookup(requested);
+      final address =
+          await ref.read(cepLookupServiceProvider).lookup(requested);
       if (!mounted || address == null) return;
       _lastLookedUpCep = requested;
       setState(() {
         _zipCtrl.text = address.zipCode;
         if (address.street.isNotEmpty) _streetCtrl.text = address.street;
-        if (address.neighborhood.isNotEmpty) _neighborhoodCtrl.text = address.neighborhood;
+        if (address.neighborhood.isNotEmpty) {
+          _neighborhoodCtrl.text = address.neighborhood;
+        }
         _cityCtrl.text = address.city;
         _stateCtrl.text = address.state;
       });
@@ -213,19 +243,25 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     } on DioException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível consultar o CEP. Tente novamente.')),
+        const SnackBar(
+            content:
+                Text('Não foi possível consultar o CEP. Tente novamente.')),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível consultar o CEP. Tente novamente.')),
+        const SnackBar(
+            content:
+                Text('Não foi possível consultar o CEP. Tente novamente.')),
       );
     } finally {
       if (mounted) {
         setState(() => _lookingUpCep = false);
         final current = normalizeCep(_zipCtrl.text);
         // Só busca de novo se o usuário alterou o CEP durante a consulta.
-        if (current.length == 8 && current != requested && current != _lastLookedUpCep) {
+        if (current.length == 8 &&
+            current != requested &&
+            current != _lastLookedUpCep) {
           _onCepChanged(_zipCtrl.text);
         }
       }
@@ -245,20 +281,36 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     } else if (widget.isEditing) {
       data['nickname'] = null;
     }
-    if (_phoneCtrl.text.trim().isNotEmpty) data['phone'] = _phoneCtrl.text.trim();
-    if (_emailCtrl.text.trim().isNotEmpty) data['email'] = _emailCtrl.text.trim();
-    if (_occupationCtrl.text.trim().isNotEmpty) data['occupation'] = _occupationCtrl.text.trim();
-    if (_notesCtrl.text.trim().isNotEmpty) data['notes'] = _notesCtrl.text.trim();
+    if (_phoneCtrl.text.trim().isNotEmpty) {
+      data['phone'] = _phoneCtrl.text.trim();
+    }
+    if (_emailCtrl.text.trim().isNotEmpty) {
+      data['email'] = _emailCtrl.text.trim();
+    }
+    if (_occupationCtrl.text.trim().isNotEmpty) {
+      data['occupation'] = _occupationCtrl.text.trim();
+    }
+    if (_notesCtrl.text.trim().isNotEmpty) {
+      data['notes'] = _notesCtrl.text.trim();
+    }
     if (_gender != null) data['gender'] = _gender;
     if (_maritalStatus != null) data['maritalStatus'] = _maritalStatus;
     data['ministryIds'] = _ministryIds.toList();
     if (_ministryIds.isNotEmpty) data['ministryId'] = _ministryIds.first;
     if (_birthDate != null) data['dateOfBirth'] = _birthDate!.toIso8601String();
-    if (_baptismDate != null) data['baptismDate'] = _baptismDate!.toIso8601String();
-    if (_conversionDate != null) data['conversionDate'] = _conversionDate!.toIso8601String();
-    if (_admissionDate != null) data['admissionDate'] = _admissionDate!.toIso8601String();
+    if (_baptismDate != null) {
+      data['baptismDate'] = _baptismDate!.toIso8601String();
+    }
+    if (_conversionDate != null) {
+      data['conversionDate'] = _conversionDate!.toIso8601String();
+    }
+    if (_admissionDate != null) {
+      data['admissionDate'] = _admissionDate!.toIso8601String();
+    }
     if (_admissionType != null) data['admissionType'] = _admissionType;
-    if (_baptismChurchCtrl.text.trim().isNotEmpty) data['baptismChurch'] = _baptismChurchCtrl.text.trim();
+    if (_baptismChurchCtrl.text.trim().isNotEmpty) {
+      data['baptismChurch'] = _baptismChurchCtrl.text.trim();
+    }
     if (_linkedUserId != null) {
       data['userId'] = _linkedUserId;
     } else if (widget.isEditing && _originalUserId != null) {
@@ -275,8 +327,11 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
     if (hasAddress) {
       data['address'] = {
         'street': _streetCtrl.text.trim(),
-        'number': _numberCtrl.text.trim().isEmpty ? null : _numberCtrl.text.trim(),
-        'complement': _complementCtrl.text.trim().isEmpty ? null : _complementCtrl.text.trim(),
+        'number':
+            _numberCtrl.text.trim().isEmpty ? null : _numberCtrl.text.trim(),
+        'complement': _complementCtrl.text.trim().isEmpty
+            ? null
+            : _complementCtrl.text.trim(),
         'neighborhood': _neighborhoodCtrl.text.trim(),
         'city': _cityCtrl.text.trim(),
         'state': _stateCtrl.text.trim().toUpperCase(),
@@ -287,6 +342,13 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   }
 
   Future<void> _save({bool forceDuplicate = false}) async {
+    if (_nameCtrl.text.trim().isEmpty) {
+      setState(() => _tabIndex = 0);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe o nome completo')),
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
@@ -295,15 +357,20 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
         if (forceDuplicate) 'forceDuplicate': true,
       };
       if (widget.isEditing) {
-        await ref.read(memberListProvider.notifier).update(widget.memberId!, payload);
+        await ref
+            .read(memberListProvider.notifier)
+            .update(widget.memberId!, payload);
         if (!mounted) return;
         ref.invalidate(memberDetailProvider(widget.memberId!));
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Membro atualizado')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Membro atualizado')));
         context.pop();
       } else {
-        final created = await ref.read(memberListProvider.notifier).create(payload);
+        final created =
+            await ref.read(memberListProvider.notifier).create(payload);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Membro cadastrado')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Membro cadastrado')));
         context.go(AppRoutes.memberDetail(created.id));
       }
     } catch (e) {
@@ -321,8 +388,12 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
                 ? '$msg\n\nDeseja cadastrar mesmo assim?'
                 : 'Já existe um membro com dados parecidos. Deseja cadastrar mesmo assim?'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Cadastrar mesmo assim')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancelar')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Cadastrar mesmo assim')),
             ],
           ),
         );
@@ -332,12 +403,14 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
         }
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $msg')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Erro: $msg')));
       setState(() => _saving = false);
     }
   }
 
-  Future<void> _createMinistry(Color t1, Color t2, Color card, Color border) async {
+  Future<void> _createMinistry(
+      Color t1, Color t2, Color card, Color border) async {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final created = await showDialog<bool>(
@@ -366,10 +439,13 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF008CFF)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF008CFF)),
             child: const Text('Criar', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -405,225 +481,688 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ministries = ref.watch(ministryListProvider).valueOrNull ?? const <MinistryModel>[];
-    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF8FAFC);
+    final ministries =
+        ref.watch(ministryListProvider).valueOrNull ?? const <MinistryModel>[];
+    final bg = isDark ? const Color(0xFF0A0A0F) : const Color(0xFFF5F6F8);
     final card = isDark ? const Color(0xFF1A1A2E) : Colors.white;
-    final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final border = isDark ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB);
+    final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF17233B);
+    final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF667085);
+    final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE1E5EA);
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           onPressed: () => context.pop(),
-          icon: Icon(Icons.arrow_back, color: t1),
+          icon: Icon(Icons.close_rounded, color: t1),
         ),
         title: Text(
           widget.isEditing ? 'Editar membro' : 'Novo membro',
-          style: TextStyle(color: t1, fontWeight: FontWeight.w600),
+          style: TextStyle(color: t1, fontWeight: FontWeight.w700),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Salvar',
+            onPressed: _saving || _loading ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF008CFF),
+                    size: 28,
+                  ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                 children: [
-                  _section('Dados básicos', t1),
-                  _text('Nome completo *', _nameCtrl, t1, t2, card, border, requiredField: true),
-                  _text('Apelido', _nicknameCtrl, t1, t2, card, border),
-                  _text('Telefone', _phoneCtrl, t1, t2, card, border, keyboard: TextInputType.phone),
-                  _text('E-mail', _emailCtrl, t1, t2, card, border, keyboard: TextInputType.emailAddress),
-                  if (_usersLoaded && _appUsers.isNotEmpty)
-                    _dropdown<String?>(
-                      'Conta do app (para confirmar escalas)',
-                      _linkedUserId != null && _appUsers.any((u) => u.id == _linkedUserId)
-                          ? _linkedUserId
-                          : null,
-                      [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('Nenhuma / vincular pelo e-mail'),
-                        ),
-                        ..._appUsers.map(
-                          (u) => DropdownMenuItem<String?>(
-                            value: u.id,
-                            child: Text('${u.name} (${u.email})', overflow: TextOverflow.ellipsis),
-                          ),
-                        ),
-                      ],
-                      (v) => setState(() => _linkedUserId = v),
-                      t1, t2, card, border,
-                    )
-                  else if (_usersLoaded)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _linkedUserId != null
-                            ? 'Conta do app vinculada. Se o e-mail do membro for o mesmo do login, a confirmação nas escalas funciona automaticamente.'
-                            : 'Dica: use o mesmo e-mail da conta do app para vincular e permitir confirmação nas escalas.',
-                        style: TextStyle(color: t2, fontSize: 12),
+                  _profileHeader(t1, t2, card, border),
+                  const SizedBox(height: 18),
+                  _professionalTabs(t2, card, border),
+                  const SizedBox(height: 14),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: Container(
+                      key: ValueKey(_tabIndex),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: card,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: border),
+                      ),
+                      child: _tabContent(
+                        ministries,
+                        t1,
+                        t2,
+                        card,
+                        border,
                       ),
                     ),
-                  _dateField('Data de nascimento', _birthDate, () => _pickDate(current: _birthDate, onPicked: (d) => setState(() => _birthDate = d)), t1, t2, card, border),
-                  _dropdown<String>(
-                    'Gênero',
-                    _genders.contains(_gender) ? _gender : null,
-                    _genders.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                    (v) => setState(() => _gender = v),
-                    t1, t2, card, border,
-                  ),
-                  _dropdown<String>(
-                    'Estado civil',
-                    _marital.contains(_maritalStatus) ? _maritalStatus : null,
-                    _marital.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                    (v) => setState(() => _maritalStatus = v),
-                    t1, t2, card, border,
-                  ),
-                  _dropdown<String>(
-                    'Status',
-                    _status,
-                    _statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                    (v) => setState(() => _status = v ?? 'ATIVO'),
-                    t1, t2, card, border,
-                  ),
-                  _dropdown<String>(
-                    'Função',
-                    _role,
-                    _roles.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                    (v) => setState(() => _role = v ?? 'MEMBRO'),
-                    t1, t2, card, border,
-                  ),
-                  _text('Profissão', _occupationCtrl, t1, t2, card, border),
-                  const SizedBox(height: 20),
-                  _section('Vida espiritual', t1),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text('Batizado', style: TextStyle(color: t1)),
-                    value: _isBaptized,
-                    activeColor: const Color(0xFF008CFF),
-                    onChanged: (v) => setState(() => _isBaptized = v),
-                  ),
-                  if (_isBaptized) ...[
-                    _dateField('Data do batismo', _baptismDate, () => _pickDate(current: _baptismDate, onPicked: (d) => setState(() => _baptismDate = d)), t1, t2, card, border),
-                    _text('Igreja do batismo', _baptismChurchCtrl, t1, t2, card, border),
-                  ],
-                  _dateField('Data de conversão', _conversionDate, () => _pickDate(current: _conversionDate, onPicked: (d) => setState(() => _conversionDate = d)), t1, t2, card, border),
-                  _dateField('Data de admissão', _admissionDate, () => _pickDate(current: _admissionDate, onPicked: (d) => setState(() => _admissionDate = d)), t1, t2, card, border),
-                  _dropdown<String>(
-                    'Tipo de admissão',
-                    _admissionTypes.any((e) => e.$1 == _admissionType) ? _admissionType : null,
-                    _admissionTypes.map((e) => DropdownMenuItem(value: e.$1, child: Text(e.$2))).toList(),
-                    (v) => setState(() => _admissionType = v),
-                    t1, t2, card, border,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Ministérios', style: TextStyle(color: t2, fontSize: 13)),
-                            const SizedBox(height: 6),
-                            if (ministries.isEmpty)
-                              Text('Nenhum ministério cadastrado', style: TextStyle(color: t2))
-                            else
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: ministries.map((m) {
-                                  final selected = _ministryIds.contains(m.id);
-                                  return FilterChip(
-                                    label: Text(m.name),
-                                    selected: selected,
-                                    onSelected: (value) {
-                                      setState(() {
-                                        if (value) {
-                                          _ministryIds.add(m.id);
-                                        } else {
-                                          _ministryIds.remove(m.id);
-                                        }
-                                      });
-                                    },
-                                    selectedColor: const Color(0xFF008CFF).withValues(alpha: 0.2),
-                                    checkmarkColor: const Color(0xFF008CFF),
-                                    labelStyle: TextStyle(
-                                      color: selected ? const Color(0xFF008CFF) : t1,
-                                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                                    ),
-                                    backgroundColor: card,
-                                    side: BorderSide(color: selected ? const Color(0xFF008CFF) : border),
-                                  );
-                                }).toList(),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        tooltip: 'Novo ministério',
-                        onPressed: () => _createMinistry(t1, t2, card, border),
-                        style: IconButton.styleFrom(
-                          backgroundColor: const Color(0xFF008CFF).withValues(alpha: 0.1),
-                          foregroundColor: const Color(0xFF008CFF),
-                        ),
-                        icon: const Icon(Icons.add_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _text('Observações', _notesCtrl, t1, t2, card, border, maxLines: 3),
-                  const SizedBox(height: 20),
-                  _section('Endereço', t1),
-                  _cepField(t1, t2, card, border),
-                  _text('Rua', _streetCtrl, t1, t2, card, border),
-                  Row(
-                    children: [
-                      Expanded(child: _text('Número', _numberCtrl, t1, t2, card, border)),
-                      const SizedBox(width: 12),
-                      Expanded(flex: 2, child: _text('Complemento', _complementCtrl, t1, t2, card, border)),
-                    ],
-                  ),
-                  _text('Bairro', _neighborhoodCtrl, t1, t2, card, border),
-                  Row(
-                    children: [
-                      Expanded(flex: 3, child: _text('Cidade', _cityCtrl, t1, t2, card, border)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _text('UF', _stateCtrl, t1, t2, card, border)),
-                    ],
                   ),
                 ],
               ),
             ),
       bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ElevatedButton(
-            onPressed: _saving || _loading ? null : _save,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF008CFF),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(
-              _saving ? 'Salvando...' : (widget.isEditing ? 'Salvar alterações' : 'Cadastrar membro'),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
+        child: Container(
+          color: bg,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+          child: Row(
+            children: [
+              if (_tabIndex > 0) ...[
+                OutlinedButton(
+                  onPressed: () => setState(() => _tabIndex--),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF008CFF),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 15,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Icon(Icons.arrow_back_rounded),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _saving || _loading
+                      ? null
+                      : _tabIndex < 3
+                          ? () => setState(() => _tabIndex++)
+                          : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF008CFF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    _saving
+                        ? 'Salvando...'
+                        : _tabIndex < 3
+                            ? 'Próximo'
+                            : widget.isEditing
+                                ? 'Salvar alterações'
+                                : 'Cadastrar membro',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
+  int get _profileCompletion {
+    final checks = <bool>[
+      _nameCtrl.text.trim().isNotEmpty,
+      _phoneCtrl.text.trim().isNotEmpty,
+      _emailCtrl.text.trim().isNotEmpty,
+      _birthDate != null,
+      _gender != null,
+      _maritalStatus != null,
+      _occupationCtrl.text.trim().isNotEmpty,
+      _ministryIds.isNotEmpty,
+      _cityCtrl.text.trim().isNotEmpty,
+      _zipCtrl.text.trim().isNotEmpty,
+    ];
+    return (checks.where((item) => item).length / checks.length * 100).round();
+  }
+
+  Widget _profileHeader(Color t1, Color t2, Color card, Color border) {
+    final displayName =
+        _nameCtrl.text.trim().isEmpty ? 'Novo membro' : _nameCtrl.text.trim();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        children: [
+          AppAvatar(
+            name: displayName,
+            imageUrl: _avatarUrl,
+            authenticated: _avatarUrl != null,
+            size: 64,
+            showBorder: true,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: t1,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.isEditing
+                      ? 'Perfil $_profileCompletion% completo'
+                      : 'Preencha os dados do novo membro',
+                  style: TextStyle(color: t2, fontSize: 12),
+                ),
+                const SizedBox(height: 9),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: _profileCompletion / 100,
+                    minHeight: 6,
+                    backgroundColor: border,
+                    valueColor: const AlwaysStoppedAnimation(
+                      Color(0xFF008CFF),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _professionalTabs(Color t2, Color card, Color border) {
+    const tabs = [
+      ('Pessoal', Icons.person_outline_rounded),
+      ('Contato', Icons.phone_outlined),
+      ('Igreja', Icons.church_outlined),
+      ('Endereço', Icons.location_on_outlined),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: border),
+        ),
+        child: Row(
+          children: List.generate(tabs.length, (index) {
+            final selected = _tabIndex == index;
+            return GestureDetector(
+              onTap: () => setState(() => _tabIndex = index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      selected ? const Color(0xFF008CFF) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      tabs[index].$2,
+                      size: 16,
+                      color: selected ? Colors.white : t2,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      tabs[index].$1,
+                      style: TextStyle(
+                        color: selected ? Colors.white : t2,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _tabContent(
+    List<MinistryModel> ministries,
+    Color t1,
+    Color t2,
+    Color card,
+    Color border,
+  ) {
+    switch (_tabIndex) {
+      case 0:
+        return _personalTab(t1, t2, card, border);
+      case 1:
+        return _contactTab(t1, t2, card, border);
+      case 2:
+        return _churchTab(ministries, t1, t2, card, border);
+      default:
+        return _addressTab(t1, t2, card, border);
+    }
+  }
+
+  Widget _personalTab(Color t1, Color t2, Color card, Color border) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _section('Informações pessoais', t1),
+        _text(
+          'Nome completo *',
+          _nameCtrl,
+          t1,
+          t2,
+          card,
+          border,
+          requiredField: true,
+        ),
+        _text('Apelido', _nicknameCtrl, t1, t2, card, border),
+        _dateField(
+          'Data de nascimento',
+          _birthDate,
+          () => _pickDate(
+            current: _birthDate,
+            onPicked: (date) => setState(() => _birthDate = date),
+          ),
+          t1,
+          t2,
+          card,
+          border,
+        ),
+        _dropdown<String>(
+          'Gênero',
+          _genders.contains(_gender) ? _gender : null,
+          _genders
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .toList(),
+          (value) => setState(() => _gender = value),
+          t1,
+          t2,
+          card,
+          border,
+        ),
+        _dropdown<String>(
+          'Estado civil',
+          _marital.contains(_maritalStatus) ? _maritalStatus : null,
+          _marital
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .toList(),
+          (value) => setState(() => _maritalStatus = value),
+          t1,
+          t2,
+          card,
+          border,
+        ),
+        _text('Profissão', _occupationCtrl, t1, t2, card, border),
+      ],
+    );
+  }
+
+  Widget _contactTab(Color t1, Color t2, Color card, Color border) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _section('Contato e acesso', t1),
+        _text(
+          'Telefone',
+          _phoneCtrl,
+          t1,
+          t2,
+          card,
+          border,
+          keyboard: TextInputType.phone,
+        ),
+        _text(
+          'E-mail',
+          _emailCtrl,
+          t1,
+          t2,
+          card,
+          border,
+          keyboard: TextInputType.emailAddress,
+        ),
+        if (_usersLoaded && _appUsers.isNotEmpty)
+          _dropdown<String?>(
+            'Conta do app (para confirmar escalas)',
+            _linkedUserId != null &&
+                    _appUsers.any((user) => user.id == _linkedUserId)
+                ? _linkedUserId
+                : null,
+            [
+              const DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Nenhuma / vincular pelo e-mail'),
+              ),
+              ..._appUsers.map(
+                (user) => DropdownMenuItem<String?>(
+                  value: user.id,
+                  child: Text(
+                    '${user.name} (${user.email})',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+            (value) => setState(() => _linkedUserId = value),
+            t1,
+            t2,
+            card,
+            border,
+          ),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF008CFF).withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 18,
+                color: Color(0xFF008CFF),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Usar o mesmo e-mail da conta vincula o membro e permite confirmar escalas.',
+                  style: TextStyle(color: t2, fontSize: 12, height: 1.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _churchTab(
+    List<MinistryModel> ministries,
+    Color t1,
+    Color t2,
+    Color card,
+    Color border,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _section('Vida na igreja', t1),
+        Row(
+          children: [
+            Expanded(
+              child: _dropdown<String>(
+                'Status',
+                _status,
+                _statuses
+                    .map(
+                      (item) =>
+                          DropdownMenuItem(value: item, child: Text(item)),
+                    )
+                    .toList(),
+                (value) => setState(() => _status = value ?? 'ATIVO'),
+                t1,
+                t2,
+                card,
+                border,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _dropdown<String>(
+                'Cargo',
+                _role,
+                _roles
+                    .map(
+                      (item) =>
+                          DropdownMenuItem(value: item, child: Text(item)),
+                    )
+                    .toList(),
+                (value) => setState(() => _role = value ?? 'MEMBRO'),
+                t1,
+                t2,
+                card,
+                border,
+              ),
+            ),
+          ],
+        ),
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border),
+          ),
+          child: SwitchListTile(
+            title: Text(
+              'Membro batizado',
+              style: TextStyle(color: t1, fontWeight: FontWeight.w600),
+            ),
+            value: _isBaptized,
+            activeThumbColor: const Color(0xFF008CFF),
+            onChanged: (value) => setState(() => _isBaptized = value),
+          ),
+        ),
+        if (_isBaptized) ...[
+          _dateField(
+            'Data do batismo',
+            _baptismDate,
+            () => _pickDate(
+              current: _baptismDate,
+              onPicked: (date) => setState(() => _baptismDate = date),
+            ),
+            t1,
+            t2,
+            card,
+            border,
+          ),
+          _text(
+            'Igreja do batismo',
+            _baptismChurchCtrl,
+            t1,
+            t2,
+            card,
+            border,
+          ),
+        ],
+        _dateField(
+          'Data de conversão',
+          _conversionDate,
+          () => _pickDate(
+            current: _conversionDate,
+            onPicked: (date) => setState(() => _conversionDate = date),
+          ),
+          t1,
+          t2,
+          card,
+          border,
+        ),
+        _dateField(
+          'Data de admissão',
+          _admissionDate,
+          () => _pickDate(
+            current: _admissionDate,
+            onPicked: (date) => setState(() => _admissionDate = date),
+          ),
+          t1,
+          t2,
+          card,
+          border,
+        ),
+        _dropdown<String>(
+          'Tipo de admissão',
+          _admissionTypes.any((item) => item.$1 == _admissionType)
+              ? _admissionType
+              : null,
+          _admissionTypes
+              .map(
+                (item) =>
+                    DropdownMenuItem(value: item.$1, child: Text(item.$2)),
+              )
+              .toList(),
+          (value) => setState(() => _admissionType = value),
+          t1,
+          t2,
+          card,
+          border,
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ministérios',
+                    style: TextStyle(color: t2, fontSize: 13),
+                  ),
+                  const SizedBox(height: 8),
+                  if (ministries.isEmpty)
+                    Text(
+                      'Nenhum ministério cadastrado',
+                      style: TextStyle(color: t2),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ministries.map((ministry) {
+                        final selected = _ministryIds.contains(ministry.id);
+                        return FilterChip(
+                          label: Text(ministry.name),
+                          selected: selected,
+                          onSelected: (value) {
+                            setState(() {
+                              if (value) {
+                                _ministryIds.add(ministry.id);
+                              } else {
+                                _ministryIds.remove(ministry.id);
+                              }
+                            });
+                          },
+                          selectedColor: const Color(
+                            0xFF008CFF,
+                          ).withValues(alpha: 0.16),
+                          checkmarkColor: const Color(0xFF008CFF),
+                        );
+                      }).toList(),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Novo ministério',
+              onPressed: () => _createMinistry(t1, t2, card, border),
+              icon: const Icon(
+                Icons.add_circle_rounded,
+                color: Color(0xFF008CFF),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _text(
+          'Observações',
+          _notesCtrl,
+          t1,
+          t2,
+          card,
+          border,
+          maxLines: 3,
+        ),
+      ],
+    );
+  }
+
+  Widget _addressTab(Color t1, Color t2, Color card, Color border) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _section('Endereço', t1),
+        _cepField(t1, t2, card, border),
+        _text('Rua', _streetCtrl, t1, t2, card, border),
+        Row(
+          children: [
+            Expanded(
+              child: _text(
+                'Número',
+                _numberCtrl,
+                t1,
+                t2,
+                card,
+                border,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: _text(
+                'Complemento',
+                _complementCtrl,
+                t1,
+                t2,
+                card,
+                border,
+              ),
+            ),
+          ],
+        ),
+        _text('Bairro', _neighborhoodCtrl, t1, t2, card, border),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: _text(
+                'Cidade',
+                _cityCtrl,
+                t1,
+                t2,
+                card,
+                border,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _text('UF', _stateCtrl, t1, t2, card, border),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _section(String title, Color t1) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, top: 4),
-      child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: t1)),
+      child: Text(title,
+          style:
+              TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: t1)),
     );
   }
 
@@ -705,13 +1244,18 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
           Text(label, style: TextStyle(color: t2, fontSize: 13)),
           const SizedBox(height: 6),
           Container(
-            decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(12), border: Border.all(color: border)),
+            decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: border)),
             child: TextFormField(
               controller: ctrl,
               keyboardType: keyboard,
               maxLines: maxLines,
+              onChanged: (_) => setState(() {}),
               validator: requiredField
-                  ? (v) => (v == null || v.trim().isEmpty) ? 'Obrigatório' : null
+                  ? (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obrigatório' : null
                   : null,
               decoration: const InputDecoration(
                 border: InputBorder.none,
@@ -746,8 +1290,12 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(12), border: Border.all(color: border)),
-              child: Text(value == null ? 'Selecionar' : _fmt(value), style: TextStyle(color: value == null ? t2 : t1)),
+              decoration: BoxDecoration(
+                  color: card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: border)),
+              child: Text(value == null ? 'Selecionar' : _fmt(value),
+                  style: TextStyle(color: value == null ? t2 : t1)),
             ),
           ),
         ],
@@ -774,7 +1322,10 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(12), border: Border.all(color: border)),
+            decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: border)),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<T>(
                 isExpanded: true,
