@@ -588,14 +588,6 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
     );
   }
 
-  void _onReorderSelectedSongs(int oldIndex, int newIndex) {
-    setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
-      final song = _selectedSongs.removeAt(oldIndex);
-      _selectedSongs.insert(newIndex, song);
-    });
-  }
-
   Widget _buildMusicas(bool isDark) {
     final query = _searchCtrl.text.toLowerCase();
     final filtered = query.isEmpty
@@ -611,91 +603,6 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_selectedSongs.isNotEmpty) ...[
-          Text(
-            'Ordem na escala',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t1),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Arraste para definir a ordem das músicas',
-            style: TextStyle(fontSize: 12, color: t2),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            constraints: BoxConstraints(
-              maxHeight: (_selectedSongs.length * 64.0).clamp(64, 220),
-            ),
-            decoration: BoxDecoration(
-              color: card,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: border),
-            ),
-            child: ReorderableListView.builder(
-              shrinkWrap: true,
-              buildDefaultDragHandles: false,
-              itemCount: _selectedSongs.length,
-              onReorder: _onReorderSelectedSongs,
-              itemBuilder: (context, index) {
-                final song = _selectedSongs[index];
-                return Material(
-                  key: ValueKey('selected-song-${song.id}'),
-                  color: Colors.transparent,
-                  child: ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.only(left: 8, right: 4),
-                    leading: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ReorderableDragStartListener(
-                          index: index,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 4),
-                            child: Icon(Icons.drag_handle_rounded, color: Color(0xFF9CA3AF)),
-                          ),
-                        ),
-                        Container(
-                          width: 28,
-                          height: 28,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF008CFF).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${index + 1}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF008CFF),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    title: Text(
-                      song.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: t1),
-                    ),
-                    subtitle: song.artist != null
-                        ? Text(song.artist!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: t2))
-                        : null,
-                    trailing: IconButton(
-                      tooltip: 'Remover',
-                      icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF9CA3AF)),
-                      onPressed: () => setState(() {
-                        _selectedSongs.removeWhere((s) => s.id == song.id);
-                      }),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
         Container(
           height: 52,
           padding: const EdgeInsets.symmetric(horizontal: 16),
