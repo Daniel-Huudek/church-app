@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_avatar.dart';
 import '../../../../shared/widgets/app_badge.dart';
 import '../../../../shared/providers/auth_provider.dart';
@@ -44,10 +43,13 @@ class MemberDetailScreen extends ConsumerWidget {
     ].whereType<String>().where((e) => e.isNotEmpty).join(' - ');
     final parts = <String>[
       if (line1.isNotEmpty) line1,
-      if (address.complement != null && address.complement!.isNotEmpty) address.complement!,
-      if (address.neighborhood != null && address.neighborhood!.isNotEmpty) address.neighborhood!,
+      if (address.complement != null && address.complement!.isNotEmpty)
+        address.complement!,
+      if (address.neighborhood != null && address.neighborhood!.isNotEmpty)
+        address.neighborhood!,
       if (cityState.isNotEmpty) cityState,
-      if (address.zipCode != null && address.zipCode!.isNotEmpty) 'CEP ${address.zipCode}',
+      if (address.zipCode != null && address.zipCode!.isNotEmpty)
+        'CEP ${address.zipCode}',
     ];
     return parts.join('\n');
   }
@@ -80,6 +82,24 @@ class MemberDetailScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _callPhone(BuildContext context, String phone) async {
+    final ok = await openExternalUri(Uri(scheme: 'tel', path: phone));
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível iniciar a ligação')),
+      );
+    }
+  }
+
+  Future<void> _openEmail(BuildContext context, String email) async {
+    final ok = await openExternalUri(Uri(scheme: 'mailto', path: email));
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o e-mail')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -94,7 +114,8 @@ class MemberDetailScreen extends ConsumerWidget {
               children: [
                 const CircularProgressIndicator(),
                 const SizedBox(height: 16),
-                Text('Carregando...', style: Theme.of(context).textTheme.bodyMedium),
+                Text('Carregando...',
+                    style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
@@ -111,243 +132,510 @@ class MemberDetailScreen extends ConsumerWidget {
     }
 
     final member = state.member!;
-    final secondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final primary = isDark ? AppColors.darkText : const Color(0xFF17233B);
+    final secondary =
+        isDark ? AppColors.darkTextSecondary : const Color(0xFF667085);
+    final background = isDark ? AppColors.darkBg : const Color(0xFFF5F6F8);
+    final card = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkBorder : const Color(0xFFE1E5EA);
 
     return Scaffold(
+      backgroundColor: background,
       floatingActionButton: _MemberDetailActions(id: id, member: member),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: const Text('← Voltar', style: TextStyle(fontSize: 16, color: AppColors.primary)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      appBar: AppBar(
+        backgroundColor: background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: Icon(Icons.arrow_back_rounded, color: primary),
+        ),
+        title: Text(
+          'Perfil do membro',
+          style: TextStyle(color: primary, fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(memberDetailProvider(id).notifier).load(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
+          children: [
+            _profileDashboardHeader(
+              context,
+              member,
+              primary,
+              secondary,
+              card,
+              border,
+            ),
+            const SizedBox(height: 16),
+            _quickActions(context, member, card, border, secondary),
+            const SizedBox(height: 22),
+            _sectionTitle(context, 'Visão geral'),
+            const SizedBox(height: 10),
+            _overviewGrid(member, primary, secondary, card, border),
+            if (member.phone != null || member.email != null) ...[
+              const SizedBox(height: 22),
+              _sectionTitle(context, 'Contato'),
+              const SizedBox(height: 10),
+              _professionalCard(
+                card: card,
+                border: border,
                 child: Column(
                   children: [
-                    AppAvatar(
-                      name: member.name,
-                      imageUrl: member.avatar,
-                      authenticated: true,
-                      size: 80,
-                      showBorder: true,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      member.name,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    if (member.email != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        member.email!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: secondary),
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.sm),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        AppBadge(label: member.role),
-                        AppBadge(label: member.status, variant: AppBadgeVariant.info),
-                      ],
+                    if (member.phone != null)
+                      _InfoItem(label: 'Telefone', value: member.phone!),
+                    if (member.phone != null && member.email != null)
+                      Divider(color: border),
+                    if (member.email != null)
+                      _InfoItem(label: 'E-mail', value: member.email!),
+                    if (member.phone != null || member.email != null)
+                      Divider(color: border),
+                    _InfoItem(
+                      label: 'Conta do app',
+                      value:
+                          member.userId != null ? 'Vinculada' : 'Não vinculada',
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
-              if (member.phone != null || member.email != null) ...[
-                _sectionTitle(context, 'Contato'),
-                const SizedBox(height: AppSpacing.sm),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: AppCard(
-                    child: Column(
+            ],
+            if (member.ministries.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              _sectionTitle(context, 'Ministérios'),
+              const SizedBox(height: 10),
+              _professionalCard(
+                card: card,
+                border: border,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: member.ministries
+                      .map(
+                        (ministry) => AppBadge(
+                          label: ministry,
+                          variant: AppBadgeVariant.info,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+            const SizedBox(height: 22),
+            _sectionTitle(context, 'Vida na igreja'),
+            const SizedBox(height: 10),
+            _churchTimeline(member, primary, secondary, card, border),
+            if (member.address?.hasAny == true) ...[
+              const SizedBox(height: 22),
+              _sectionTitle(context, 'Endereço'),
+              const SizedBox(height: 10),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _openMaps(context, member.address!),
+                  borderRadius: BorderRadius.circular(16),
+                  child: _professionalCard(
+                    card: card,
+                    border: border,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (member.phone != null) ...[
-                          _ContactRow(
-                            icon: Icons.chat,
-                            value: member.phone!,
-                            onTap: () => _openWhatsApp(context, member.phone!),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          if (member.email != null) const Divider(),
-                        ],
-                        if (member.email != null)
-                          _ContactRow(
-                            icon: Icons.email,
-                            value: member.email!,
-                            onTap: () async {
-                              final uri = Uri(
-                                scheme: 'mailto',
-                                path: member.email,
-                              );
-                              final ok = await openExternalUri(uri);
-                              if (!ok && context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Não foi possível abrir o e-mail')),
-                                );
-                              }
-                            },
+                          child: const Icon(
+                            Icons.location_on_rounded,
+                            color: AppColors.primary,
                           ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-              ],
-              _sectionTitle(context, 'Informações pessoais'),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: AppCard(
-                  child: Column(
-                    children: [
-                      if (member.nickname != null && member.nickname!.trim().isNotEmpty) ...[
-                        _InfoItem(label: 'Apelido', value: member.nickname!.trim()),
-                        const Divider(),
-                      ],
-                      if (member.birthDate != null)
-                        _InfoItem(label: 'Nascimento', value: Formatters.formatDate(member.birthDate!)),
-                      if (member.birthDate != null && member.age.isNotEmpty) const Divider(),
-                      if (member.age.isNotEmpty) _InfoItem(label: 'Idade', value: member.age),
-                      if (member.gender != null) ...[
-                        if (member.birthDate != null || member.age.isNotEmpty) const Divider(),
-                        _InfoItem(label: 'Gênero', value: member.gender!),
-                      ],
-                      if (member.maritalStatus != null) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Estado civil', value: member.maritalStatus!),
-                      ],
-                      if (member.occupation != null) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Profissão', value: member.occupation!),
-                      ],
-                      if ((member.nickname != null && member.nickname!.trim().isNotEmpty) ||
-                          member.birthDate != null ||
-                          member.age.isNotEmpty ||
-                          member.gender != null ||
-                          member.maritalStatus != null ||
-                          member.occupation != null)
-                        const Divider(),
-                      _InfoItem(
-                        label: 'Conta do app',
-                        value: member.userId != null ? 'Vinculada (pode confirmar escalas)' : 'Não vinculada',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              _sectionTitle(context, 'Vida espiritual'),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: AppCard(
-                  child: Column(
-                    children: [
-                      _InfoItem(label: 'Batizado', value: member.isBaptized ? 'Sim' : 'Não'),
-                      if (member.baptismDate != null) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Data do batismo', value: Formatters.formatDate(member.baptismDate!)),
-                      ],
-                      if (member.baptismChurch != null) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Igreja do batismo', value: member.baptismChurch!),
-                      ],
-                      if (member.conversionDate != null) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Conversão', value: Formatters.formatDate(member.conversionDate!)),
-                      ],
-                      if (member.admissionDate != null) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Admissão', value: Formatters.formatDate(member.admissionDate!)),
-                      ],
-                      if (member.admissionType != null) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Tipo de admissão', value: _admissionLabel(member.admissionType)),
-                      ],
-                      if (member.notes != null && member.notes!.isNotEmpty) ...[
-                        const Divider(),
-                        _InfoItem(label: 'Observações', value: member.notes!),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              if (member.ministries.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xl),
-                _sectionTitle(context, 'Ministérios'),
-                const SizedBox(height: AppSpacing.sm),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: AppCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: member.ministries
-                            .map((m) => AppBadge(label: m, variant: AppBadgeVariant.info))
-                            .toList(),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              if (member.address?.hasAny == true) ...[
-                const SizedBox(height: AppSpacing.xl),
-                _sectionTitle(context, 'Endereço'),
-                const SizedBox(height: AppSpacing.sm),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: AppCard(
-                    padding: EdgeInsets.zero,
-                    onTap: () => _openMaps(context, member.address!),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.map_outlined, size: 20, color: AppColors.primary),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Text(
-                              _formatAddress(member.address!),
-                              style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _formatAddress(member.address!),
+                            style: TextStyle(
+                              color: primary,
+                              height: 1.45,
                             ),
                           ),
-                          const Icon(Icons.chevron_right, size: 20),
-                        ],
-                      ),
+                        ),
+                        Icon(
+                          Icons.open_in_new_rounded,
+                          size: 18,
+                          color: secondary,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-              const SizedBox(height: AppSpacing.xl2),
+              ),
             ],
-          ),
+            if (member.notes?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: 22),
+              _sectionTitle(context, 'Observações'),
+              const SizedBox(height: 10),
+              _professionalCard(
+                card: card,
+                border: border,
+                child: Text(
+                  member.notes!.trim(),
+                  style: TextStyle(color: secondary, height: 1.5),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 
   Widget _sectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkText
+                : const Color(0xFF17233B),
+          ),
+    );
+  }
+
+  Widget _profileDashboardHeader(
+    BuildContext context,
+    MemberModel member,
+    Color primary,
+    Color secondary,
+    Color card,
+    Color border,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          AppAvatar(
+            name: member.name,
+            imageUrl: member.avatar,
+            authenticated: true,
+            size: 76,
+            showBorder: true,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: primary,
+                        fontWeight: FontWeight.w800,
+                        height: 1.15,
+                      ),
+                ),
+                if (member.nickname?.trim().isNotEmpty == true) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    member.nickname!.trim(),
+                    style: TextStyle(color: secondary, fontSize: 13),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 6,
+                  children: [
+                    AppBadge(label: member.role),
+                    AppBadge(
+                      label: member.status,
+                      variant: AppBadgeVariant.info,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActions(
+    BuildContext context,
+    MemberModel member,
+    Color card,
+    Color border,
+    Color secondary,
+  ) {
+    final actions = <({IconData icon, String label, VoidCallback? onTap})>[
+      (
+        icon: Icons.chat_rounded,
+        label: 'WhatsApp',
+        onTap: member.phone == null
+            ? null
+            : () => _openWhatsApp(context, member.phone!),
+      ),
+      (
+        icon: Icons.phone_rounded,
+        label: 'Ligar',
+        onTap: member.phone == null
+            ? null
+            : () => _callPhone(context, member.phone!),
+      ),
+      (
+        icon: Icons.email_rounded,
+        label: 'E-mail',
+        onTap: member.email == null
+            ? null
+            : () => _openEmail(context, member.email!),
+      ),
+      (
+        icon: Icons.map_rounded,
+        label: 'Mapa',
+        onTap: member.address?.hasAny == true
+            ? () => _openMaps(context, member.address!)
+            : null,
+      ),
+    ];
+    return Row(
+      children: actions.map((action) {
+        final enabled = action.onTap != null;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: action != actions.last ? 8 : 0,
+            ),
+            child: InkWell(
+              onTap: action.onTap,
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: card,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: border),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      action.icon,
+                      color: enabled
+                          ? AppColors.primary
+                          : secondary.withValues(alpha: 0.45),
+                      size: 21,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      action.label,
+                      style: TextStyle(
+                        color: enabled
+                            ? secondary
+                            : secondary.withValues(alpha: 0.45),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _overviewGrid(
+    MemberModel member,
+    Color primary,
+    Color secondary,
+    Color card,
+    Color border,
+  ) {
+    final items = <(String, String, IconData)>[
+      ('Idade', member.age.isEmpty ? '—' : member.age, Icons.cake_outlined),
+      (
+        'Profissão',
+        member.occupation?.trim().isNotEmpty == true
+            ? member.occupation!.trim()
+            : '—',
+        Icons.work_outline_rounded,
+      ),
+      (
+        'Estado civil',
+        member.maritalStatus ?? '—',
+        Icons.favorite_border_rounded,
+      ),
+      (
+        'Cidade',
+        member.address?.city ?? '—',
+        Icons.location_city_rounded,
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = (constraints.maxWidth - 10) / 2;
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: items
+              .map(
+                (item) => Container(
+                  width: width,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: card,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(item.$3, size: 19, color: AppColors.primary),
+                      const SizedBox(height: 9),
+                      Text(
+                        item.$1,
+                        style: TextStyle(color: secondary, fontSize: 11),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.$2,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: primary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+  }
+
+  Widget _churchTimeline(
+    MemberModel member,
+    Color primary,
+    Color secondary,
+    Color card,
+    Color border,
+  ) {
+    final events = <(String, String)>[
+      if (member.conversionDate != null)
+        ('Conversão', Formatters.formatDate(member.conversionDate!)),
+      if (member.baptismDate != null)
+        ('Batismo', Formatters.formatDate(member.baptismDate!)),
+      if (member.admissionDate != null)
+        (
+          'Admissão${member.admissionType != null ? ' · ${_admissionLabel(member.admissionType)}' : ''}',
+          Formatters.formatDate(member.admissionDate!),
+        ),
+    ];
+    return _professionalCard(
+      card: card,
+      border: border,
+      child: events.isEmpty
+          ? Row(
+              children: [
+                Icon(Icons.church_outlined, color: secondary),
+                const SizedBox(width: 10),
+                Text(
+                  member.isBaptized
+                      ? 'Membro batizado'
+                      : 'Nenhuma data registrada',
+                  style: TextStyle(color: secondary),
+                ),
+              ],
+            )
+          : Column(
+              children: List.generate(events.length, (index) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          width: 13,
+                          height: 13,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        if (index < events.length - 1)
+                          Container(
+                            width: 2,
+                            height: 42,
+                            color: AppColors.primary.withValues(alpha: 0.2),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index < events.length - 1 ? 18 : 0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              events[index].$1,
+                              style: TextStyle(
+                                color: primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              events[index].$2,
+                              style: TextStyle(
+                                color: secondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+    );
+  }
+
+  Widget _professionalCard({
+    required Color card,
+    required Color border,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: child,
     );
   }
 }
@@ -380,8 +668,12 @@ class _MemberDetailActions extends ConsumerWidget {
                   title: const Text('Excluir membro'),
                   content: Text('Remover ${member.name} do cadastro?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Excluir')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancelar')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Excluir')),
                   ],
                 ),
               );
@@ -389,11 +681,13 @@ class _MemberDetailActions extends ConsumerWidget {
               try {
                 await ref.read(memberListProvider.notifier).delete(id);
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Membro excluído')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Membro excluído')));
                 context.go(AppRoutes.members);
               } catch (e) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text('Erro: $e')));
               }
             },
             child: const Icon(Icons.delete_outline),
@@ -409,32 +703,6 @@ class _MemberDetailActions extends ConsumerWidget {
             child: const Icon(Icons.edit),
           ),
       ],
-    );
-  }
-}
-
-class _ContactRow extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final VoidCallback onTap;
-
-  const _ContactRow({required this.icon, required this.value, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppColors.primary),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: Text(value)),
-            const Icon(Icons.chevron_right, size: 20),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -459,7 +727,10 @@ class _InfoItem extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
         ],
