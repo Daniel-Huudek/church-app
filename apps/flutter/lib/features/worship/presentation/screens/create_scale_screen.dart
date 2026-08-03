@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/calendar_date.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../../events/data/event_api.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/providers/event_provider.dart';
 import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
-import '../../../../shared/utils/person_name.dart';
 import '../../data/worship_api.dart';
 import '../../data/worship_ministry_helper.dart';
 import '../../domain/worship_models.dart';
@@ -57,13 +58,12 @@ class _CreateScaleScreenState extends ConsumerState<CreateScaleScreen> {
   List<EventModel> _availableEvents = [];
   Set<String> _eventsWithWorshipScale = {};
 
-  String _datePayload(DateTime date) =>
-      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  String _datePayload(DateTime date) => calendarDatePayload(date);
 
   void _applyEvent(EventModel event) {
     _eventId = event.id;
     _titleCtrl.text = event.title;
-    _selectedDate = event.date;
+    _selectedDate = calendarDate(event.date);
     _startTimeCtrl.text = event.startTime;
     _endTimeCtrl.text = event.endTime ?? '';
     _eventType = event.type;
