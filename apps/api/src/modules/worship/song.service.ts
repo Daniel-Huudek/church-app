@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError, NotFoundError } from '@church-app/shared';
+import { transposeChordText, transposeKey } from './chord-transposer';
 
 export class SongService {
   constructor(private prisma: PrismaClient) {}
@@ -45,12 +46,9 @@ export class SongService {
     const song = await this.prisma.song.findUnique({ where: { id } });
     if (!song) throw new NotFoundError('Song not found');
     if (!song.chords) throw new AppError('Song has no chords', 400);
-    const keyOrder = ['C','Cm','C7','Cm7','Cs','Csm','D','Dm','D7','Dm7','Eb','Ebm','E','Em','E7','Em7','F','Fm','F7','Fm7','Fs','Fsm','G','Gm','G7','Gm7','Ab','Abm','A','Am','A7','Am7','Bb','Bbm','B','Bm','B7','Bm7'];
-    const newKey = song.key ? keyOrder[(keyOrder.indexOf(song.key) + semitons + keyOrder.length) % keyOrder.length] : undefined;
-    const transposedChords = song.chords.replace(/\b([A-G][#b]?)(m?)(7?)\b/g, (m) => {
-      const idx = keyOrder.indexOf(m);
-      return idx === -1 ? m : keyOrder[(idx + semitons + keyOrder.length) % keyOrder.length];
-    });
+    const newKey = transposeKey(song.key, semitons);
+    const preferFlats = song.key?.includes('b') ?? false;
+    const transposedChords = transposeChordText(song.chords, semitons, preferFlats);
     return { transposedChords, originalKey: song.key, newKey };
   }
 
