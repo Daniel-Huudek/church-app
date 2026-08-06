@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/calendar_date.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/utils/error_helper.dart';
 import '../providers/event_provider.dart';
@@ -78,7 +79,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         _descCtrl.text = event.description ?? '';
         _locCtrl.text = event.location ?? '';
         _type = event.type;
-        _date = DateTime(event.date.year, event.date.month, event.date.day);
+        _date = calendarDate(event.date);
         _startTime = _parseTime(event.startTime) ?? const TimeOfDay(hour: 19, minute: 0);
         _endTime = _parseTime(event.endTime) ?? const TimeOfDay(hour: 21, minute: 0);
         _filled = true;
@@ -133,7 +134,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         'title': _titleCtrl.text.trim(),
         if (_descCtrl.text.trim().isNotEmpty) 'description': _descCtrl.text.trim(),
         'type': _type,
-        'date': DateTime(_date!.year, _date!.month, _date!.day).toIso8601String(),
+        'date': calendarDatePayload(_date!),
         'startTime': _fmtTime(_startTime!),
         'endTime': _fmtTime(_endTime!),
         if (_locCtrl.text.trim().isNotEmpty) 'location': _locCtrl.text.trim(),

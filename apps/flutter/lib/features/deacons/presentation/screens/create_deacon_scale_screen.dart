@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/utils/calendar_date.dart';
+import '../../../../shared/utils/person_name.dart';
 import '../../../events/data/event_api.dart';
 import '../../../events/domain/event_model.dart';
 import '../../../events/presentation/widgets/event_source_section.dart';
 import '../../../members/data/member_api.dart';
 import '../../../members/domain/member_model.dart';
-import '../../../../shared/utils/person_name.dart';
 import '../../../schedules/data/schedule_api.dart';
 import '../../data/deacon_ministry_helper.dart';
 
@@ -65,13 +66,12 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
     super.dispose();
   }
 
-  String _datePayload(DateTime date) =>
-      DateTime(date.year, date.month, date.day).toIso8601String();
+  String _datePayload(DateTime date) => calendarDatePayload(date);
 
   void _applyEvent(EventModel event) {
     _eventId = event.id;
     _titleCtrl.text = event.title;
-    _selectedDate = event.date;
+    _selectedDate = calendarDate(event.date);
     _startCtrl.text = event.startTime;
     _endCtrl.text = event.endTime ?? '21:00';
   }
@@ -129,7 +129,7 @@ class _CreateDeaconScaleScreenState extends ConsumerState<CreateDeaconScaleScree
         final schedule = await scheduleApi.getById(widget.scheduleId!);
         _ministryId = schedule.ministryId ?? ministry.id;
         _eventLinkMode = EventLinkMode.existing;
-        _selectedDate = schedule.date;
+        _selectedDate = calendarDate(schedule.date);
         _startCtrl.text = schedule.startTime;
         _endCtrl.text = schedule.endTime;
 
