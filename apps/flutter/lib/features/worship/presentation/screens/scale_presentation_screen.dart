@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/worship_models.dart';
 import '../providers/worship_provider.dart';
 import '../services/metronome_player.dart';
+import '../widgets/chord_viewer.dart';
 import 'song_bpm_picker_screen.dart';
 
 /// Player de apresentação da escala: cifra com auto-scroll.
@@ -31,6 +32,7 @@ class _ScalePresentationScreenState
   final _scrollController = ScrollController();
   final _metronome = MetronomePlayer();
   final Map<String, int> _bpmOverrides = {};
+  final Map<String, int> _transposeOverrides = {};
   Timer? _scrollTimer;
 
   List<Song> _songs = [];
@@ -38,6 +40,7 @@ class _ScalePresentationScreenState
   bool _loading = true;
   bool _playing = false;
   bool _metronomeMuted = false;
+  double _metronomeVolume = 0.8;
   int _activeBeat = -1;
   double _fontSize = 18;
   double _speed = 1.0;
@@ -67,10 +70,14 @@ class _ScalePresentationScreenState
       final result = await ref
           .read(worshipRepositoryProvider)
           .getWorshipEvent(widget.scaleId);
-      final songs = (result.data.songs ?? []).map((e) => e.song).toList();
+      final entries = result.data.songs ?? [];
+      final songs = entries.map((e) => e.song).toList();
       if (!mounted) return;
       setState(() {
         _songs = songs;
+        for (final entry in entries) {
+          _transposeOverrides[entry.song.id] = entry.transpose;
+        }
         if (_index < 0 || _index >= songs.length) _index = 0;
         _loading = false;
       });
@@ -87,6 +94,22 @@ class _ScalePresentationScreenState
     final song = _current;
     if (song == null) return null;
     return _bpmOverrides[song.id] ?? song.bpm;
+  }
+
+  int get _currentTranspose {
+    final song = _current;
+    if (song == null) return 0;
+    return _transposeOverrides[song.id] ?? 0;
+  }
+
+  String? get _currentKey {
+    final song = _current;
+    if (song?.key == null) return null;
+    return ChordTransposer.transposeKey(
+      song!.key,
+      _currentTranspose,
+      preferFlats: ChordTransposer.prefersFlats(song.key),
+    );
   }
 
   bool get _hasNext => _index < _songs.length - 1;
@@ -131,6 +154,7 @@ class _ScalePresentationScreenState
     if (bpm == null || bpm <= 0) return;
     setState(() => _metronomeMuted = !_metronomeMuted);
     _metronome.setMuted(_metronomeMuted);
+    _metronome.setVolume(_metronomeVolume);
   }
 
   void _startMetronome() {
@@ -139,6 +163,7 @@ class _ScalePresentationScreenState
     if (bpm == null || bpm <= 0) return;
 
     _metronome.setMuted(_metronomeMuted);
+    _metronome.setVolume(_metronomeVolume);
     _metronome.start(
       bpm: bpm,
       onBeat: (beat) {
@@ -163,6 +188,24 @@ class _ScalePresentationScreenState
 
   void _changeFont(int direction) {
     setState(() => _fontSize = (_fontSize + direction).clamp(14, 34));
+  }
+
+  void _changeTranspose(int direction) {
+    final song = _current;
+    if (song == null) return;
+    setState(() {
+      final current = _transposeOverrides[song.id] ?? 0;
+      _transposeOverrides[song.id] = (current + direction).clamp(-11, 11);
+    });
+  }
+
+  void _changeMetronomeVolume(double delta) {
+    setState(() {
+      _metronomeVolume = (_metronomeVolume + delta).clamp(0.1, 1.0);
+      _metronomeMuted = false;
+    });
+    _metronome.setMuted(false);
+    _metronome.setVolume(_metronomeVolume);
   }
 
   Future<void> _openBpmPicker() async {
@@ -241,7 +284,7 @@ class _ScalePresentationScreenState
             if (_songs.isNotEmpty)
               Text(
                 '${_index + 1} / ${_songs.length}'
-                '${song?.key != null ? '  ·  Tom ${song!.key}' : ''}'
+                '${_currentKey != null ? '  ·  Tom $_currentKey' : ''}'
                 '${bpm != null ? '  ·  $bpm BPM' : ''}',
                 style: TextStyle(
                   fontSize: 12,
@@ -276,6 +319,7 @@ class _ScalePresentationScreenState
                           song: song,
                           fontSize: _fontSize,
                           isDark: isDark,
+                          transpose: _currentTranspose,
                         ),
                       ),
                     ),
@@ -321,6 +365,33 @@ class _ScalePresentationScreenState
                   icon: Icons.text_increase_rounded,
                   label: 'A+',
                   onTap: () => _changeFont(1),
+                  muted: muted,
+                ),
+                const SizedBox(width: 4),
+                _ctrlChip(
+                  icon: Icons.music_note_rounded,
+                  label: 'Tom−',
+                  onTap: () => _changeTranspose(-1),
+                  muted: muted,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: Text(
+                    _currentTranspose == 0
+                        ? '0'
+                        : _currentTranspose > 0
+                            ? '+$_currentTranspose'
+                            : '$_currentTranspose',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF008CFF),
+                    ),
+                  ),
+                ),
+                _ctrlChip(
+                  icon: Icons.music_note_rounded,
+                  label: 'Tom+',
+                  onTap: () => _changeTranspose(1),
                   muted: muted,
                 ),
                 const Spacer(),
@@ -476,6 +547,31 @@ class _ScalePresentationScreenState
                 ),
               ),
               if (available)
+                IconButton(
+                  tooltip: 'Diminuir volume',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _changeMetronomeVolume(-0.1),
+                  icon: const Icon(Icons.volume_down_rounded, size: 19),
+                  color: accent,
+                ),
+              if (available)
+                Text(
+                  '${(_metronomeVolume * 100).round()}%',
+                  style: const TextStyle(
+                    color: accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              if (available)
+                IconButton(
+                  tooltip: 'Aumentar volume',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _changeMetronomeVolume(0.1),
+                  icon: const Icon(Icons.volume_up_rounded, size: 19),
+                  color: accent,
+                ),
+              if (available)
                 TextButton.icon(
                   onPressed: _toggleMetronomeMute,
                   style: TextButton.styleFrom(
@@ -604,11 +700,13 @@ class _SongPresentationBody extends StatelessWidget {
   final Song song;
   final double fontSize;
   final bool isDark;
+  final int transpose;
 
   const _SongPresentationBody({
     required this.song,
     required this.fontSize,
     required this.isDark,
+    required this.transpose,
   });
 
   @override
@@ -616,7 +714,6 @@ class _SongPresentationBody extends StatelessWidget {
     final chords = song.chords?.trim();
     final baseColor =
         isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151);
-    const chordColor = Color(0xFF008CFF);
 
     if (chords == null || chords.isEmpty) {
       return Padding(
@@ -634,87 +731,21 @@ class _SongPresentationBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ChordPresentationText(
-          text: chords,
-          fontSize: fontSize + 3,
-          chordColor: chordColor,
-          baseColor: baseColor,
+        ChordViewer(
+          chords: chords,
+          transpose: transpose,
+          preferFlats: ChordTransposer.prefersFlats(song.key),
+          textStyle: TextStyle(
+            fontFamily: 'monospace',
+            fontSize: fontSize + 3,
+            height: 1.55,
+            fontWeight: FontWeight.w500,
+            color: baseColor,
+          ),
         ),
         // Espaço extra para o auto-scroll chegar ao fim com folga.
         const SizedBox(height: 120),
       ],
     );
-  }
-}
-
-/// Cifra com acordes em destaque (azul) e restante do texto em tom neutro.
-class _ChordPresentationText extends StatelessWidget {
-  final String text;
-  final double fontSize;
-  final Color chordColor;
-  final Color baseColor;
-
-  const _ChordPresentationText({
-    required this.text,
-    required this.fontSize,
-    required this.chordColor,
-    required this.baseColor,
-  });
-
-  static final _chordRe = RegExp(
-    r'(\[[^\]]+\]|(?<![A-Za-z0-9/])([A-G](?:#|b)?)(m|maj|min|dim|aug|sus|add|M)?([0-9]*)(/([A-G](?:#|b)?))?(?![A-Za-z0-9]))',
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final base = TextStyle(
-      fontFamily: 'monospace',
-      fontSize: fontSize,
-      height: 1.55,
-      fontWeight: FontWeight.w500,
-      color: baseColor,
-    );
-    final chordStyle = base.copyWith(
-      color: chordColor,
-      fontWeight: FontWeight.w800,
-      fontSize: fontSize + 1,
-    );
-
-    final lines = text.split('\n');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final line in lines)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 2),
-            child: _line(line, base, chordStyle),
-          ),
-      ],
-    );
-  }
-
-  Widget _line(String line, TextStyle base, TextStyle chordStyle) {
-    if (line.isEmpty) return SelectableText(' ', style: base);
-
-    final spans = <InlineSpan>[];
-    var cursor = 0;
-    for (final m in _chordRe.allMatches(line)) {
-      if (m.start > cursor) {
-        spans.add(TextSpan(text: line.substring(cursor, m.start), style: base));
-      }
-      var token = m[0]!;
-      if (token.startsWith('[') && token.endsWith(']')) {
-        token = token.substring(1, token.length - 1);
-      }
-      spans.add(TextSpan(text: token, style: chordStyle));
-      cursor = m.end;
-    }
-    if (cursor < line.length) {
-      spans.add(TextSpan(text: line.substring(cursor), style: base));
-    }
-    if (spans.isEmpty) {
-      return SelectableText(line, style: base);
-    }
-    return SelectableText.rich(TextSpan(children: spans));
   }
 }

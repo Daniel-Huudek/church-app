@@ -21,6 +21,7 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
   double _fontSize = 15;
   int _transpose = 0;
   bool _preferFlats = false;
+  bool _savingTranspose = false;
 
   static const _sharpKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   static const _flatKeys = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -66,6 +67,42 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
 
   void _shiftTranspose(int delta) {
     setState(() => _transpose = (_transpose + delta).clamp(-11, 11));
+  }
+
+  Future<void> _saveTranspose() async {
+    final song = _song;
+    final key = _displayKey;
+    if (song == null || key == null || _transpose == 0 || _savingTranspose) {
+      return;
+    }
+
+    setState(() => _savingTranspose = true);
+    try {
+      final chords = song.chords == null
+          ? null
+          : ChordTransposer.transposeText(
+              song.chords!,
+              _transpose,
+              preferFlats: _preferFlats,
+            );
+      await WorshipApi(ref.read(apiClientProvider)).updateSong(song.id, {
+        'key': key,
+        if (chords != null) 'chords': chords,
+      });
+      if (!mounted) return;
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Novo tom e cifra salvos com sucesso.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível salvar o novo tom.')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingTranspose = false);
+    }
   }
 
   Future<void> _pickKey() async {
@@ -348,14 +385,27 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
             onPressed: () => _shiftTranspose(1),
             icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF008CFF)),
           ),
-          if (_transpose != 0)
-            TextButton(
+          if (_transpose != 0) ...[
+            IconButton(
+              tooltip: 'Salvar novo tom',
+              onPressed: _savingTranspose ? null : _saveTranspose,
+              icon: _savingTranspose
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_rounded, color: Color(0xFF008CFF)),
+            ),
+            IconButton(
+              tooltip: 'Voltar ao tom original',
               onPressed: () => setState(() {
                 _transpose = 0;
                 _preferFlats = ChordTransposer.prefersFlats(_song?.key);
               }),
-              child: const Text('Reset'),
+              icon: const Icon(Icons.restart_alt_rounded),
             ),
+          ],
         ],
       ),
     );
