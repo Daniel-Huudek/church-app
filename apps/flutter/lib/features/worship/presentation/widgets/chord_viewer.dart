@@ -51,10 +51,15 @@ class ChordTransposer {
   }
 
   static String transposeChordToken(String token, int semitones, {bool preferFlats = false}) {
-    final parts = splitChord(token);
-    if (parts == null) return token;
+    final slash = token.indexOf('/');
+    final head = slash < 0 ? token : token.substring(0, slash);
+    final bass = slash < 0 ? null : token.substring(slash + 1);
+    final parts = splitChord(head);
+    if (parts == null || (bass != null && rootIndex(bass) == null)) return token;
     final (root, suffix) = parts;
-    return '${transposeRoot(root, semitones, preferFlats: preferFlats)}$suffix';
+    final transposed = '${transposeRoot(root, semitones, preferFlats: preferFlats)}$suffix';
+    if (bass == null) return transposed;
+    return '$transposed/${transposeRoot(bass, semitones, preferFlats: preferFlats)}';
   }
 
   static String? transposeKey(String? key, int semitones, {bool preferFlats = false}) {
@@ -78,51 +83,66 @@ class ChordTransposer {
     return root.contains('b') || const {'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'}.contains(root);
   }
 
-  static final _looseChordRe = RegExp(
-    r'(?<![A-Za-z0-9/])([A-G](?:#|b)?)(m|maj|min|dim|aug|sus|add|M)?([0-9]*)(/([A-G](?:#|b)?))?(?![A-Za-z0-9])',
+  static final _chordTokenRe = RegExp(
+    r'^[A-G](?:#|b)?(?:(?:maj|min|dim|aug|sus|add|m|M)|\d+|[#b]\d+|\([^)]*\))*(?:/[A-G](?:#|b)?)?$',
   );
 
+  static final _tokenRe = RegExp(r'\S+');
+
+  static const _lineLabels = {'intro', 'verse', 'verso', 'chorus', 'refrão', 'refrao', 'bridge', 'ponte', 'solo', 'final'};
+
+  static String _stripNotation(String token) {
+    return token.replaceFirst(RegExp(r'^[|:,(]+'), '').replaceFirst(RegExp(r'[|:,.);]+$'), '');
+  }
+
+  static bool isChordToken(String token) => _chordTokenRe.hasMatch(_stripNotation(token));
+
+  /// Linhas livres só são tratadas como cifra quando a maioria dos seus
+  /// elementos são acordes. Isso evita transformar palavras da letra, como
+  /// "A Deus", em notas.
+  static bool isLooseChordLine(String line) {
+    var chords = 0;
+    var words = 0;
+    for (final match in _tokenRe.allMatches(line)) {
+      final token = _stripNotation(match[0]!);
+      if (token.isEmpty || _lineLabels.contains(token.toLowerCase())) continue;
+      words++;
+      if (_chordTokenRe.hasMatch(token)) chords++;
+    }
+    return chords > 0 && (words == 1 || chords / words >= 0.6);
+  }
+
   static String _transposeLoose(String source, int semitones, {bool preferFlats = false}) {
-    return source.replaceAllMapped(_looseChordRe, (m) {
-      final root = m[1]!;
-      final quality = m[2] ?? '';
-      final digits = m[3] ?? '';
-      final bass = m[5];
-      final head = transposeChordToken('$root$quality$digits', semitones, preferFlats: preferFlats);
-      if (bass == null) return head;
-      final bassRoot = transposeRoot(bass, semitones, preferFlats: preferFlats);
-      return '$head/$bassRoot';
+    if (!isLooseChordLine(source)) return source;
+    return source.replaceAllMapped(_tokenRe, (m) {
+      final raw = m[0]!;
+      final chord = _stripNotation(raw);
+      if (!_chordTokenRe.hasMatch(chord)) return raw;
+      final start = raw.indexOf(chord);
+      return '${raw.substring(0, start)}${transposeChordToken(chord, semitones, preferFlats: preferFlats)}${raw.substring(start + chord.length)}';
     });
   }
 
   static String transposeText(String source, int semitones, {bool preferFlats = false}) {
     if (semitones == 0 || source.isEmpty) return source;
 
-    // Processa ChordPro [Am7] e texto livre sem aplicar transpose duas vezes.
+    // Em ChordPro, apenas o conteúdo entre colchetes é cifra. Em texto livre,
+    // a classificação é feita linha a linha para proteger a letra.
+    if (!source.contains(RegExp(r'\[[^\]]+\]'))) {
+      return source.split('\n').map((line) => _transposeLoose(line, semitones, preferFlats: preferFlats)).join('\n');
+    }
     final buffer = StringBuffer();
     var cursor = 0;
     for (final m in RegExp(r'\[([^\]]+)\]').allMatches(source)) {
       if (m.start > cursor) {
-        buffer.write(
-          _transposeLoose(
-            source.substring(cursor, m.start),
-            semitones,
-            preferFlats: preferFlats,
-          ),
-        );
+        buffer.write(source.substring(cursor, m.start));
       }
       final inner = transposeChordToken(m[1]!, semitones, preferFlats: preferFlats);
       buffer.write('[$inner]');
       cursor = m.end;
     }
     if (cursor < source.length) {
-      buffer.write(
-        _transposeLoose(
-          source.substring(cursor),
-          semitones,
-          preferFlats: preferFlats,
-        ),
-      );
+      buffer.write(source.substring(cursor));
     }
     return buffer.toString();
   }
@@ -195,12 +215,13 @@ class ChordViewer extends StatelessWidget {
       return SelectableText.rich(TextSpan(children: spans));
     }
 
-    final chordRe = RegExp(
-      r'([A-G](?:#|b)?)(m|maj|min|dim|aug|sus|add|M)?([0-9]*)(/([A-G](?:#|b)?))?',
-    );
+    if (!ChordTransposer.isLooseChordLine(line)) {
+      return SelectableText(line.isEmpty ? ' ' : line, style: style);
+    }
     final spans = <InlineSpan>[];
     var cursor = 0;
-    for (final m in chordRe.allMatches(line)) {
+    for (final m in RegExp(r'\S+').allMatches(line)) {
+      if (!ChordTransposer.isChordToken(m[0]!)) continue;
       if (m.start > cursor) {
         spans.add(TextSpan(text: line.substring(cursor, m.start), style: style));
       }
