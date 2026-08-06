@@ -15,6 +15,7 @@ class MetronomePlayer {
   bool _disposed = false;
   bool _running = false;
   bool _muted = false;
+  double _volume = 0.8;
 
   Future<void> prepare() {
     return _prepareFuture ??= _prepare();
@@ -22,6 +23,10 @@ class MetronomePlayer {
 
   void setMuted(bool muted) {
     _muted = muted;
+  }
+
+  void setVolume(double volume) {
+    _volume = volume.clamp(0, 1).toDouble();
   }
 
   Future<void> _prepare() async {
@@ -116,7 +121,8 @@ class MetronomePlayer {
     if (pool == null) return;
 
     try {
-      final stop = await pool.start(volume: currentBeat == 0 ? 0.9 : 0.68);
+      final beatVolume = currentBeat == 0 ? _volume : _volume * 0.75;
+      final stop = await pool.start(volume: beatVolume);
       Timer(const Duration(milliseconds: 80), () {
         unawaited(stop().catchError((_) {}));
       });

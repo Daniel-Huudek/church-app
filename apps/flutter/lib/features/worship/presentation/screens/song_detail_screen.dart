@@ -20,11 +20,11 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
   bool _loading = true;
   double _fontSize = 15;
   int _transpose = 0;
+  bool _preferFlats = false;
+  bool _savingTranspose = false;
 
-  static const _keyOptions = [
-    'C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B',
-    'Am', 'Bbm', 'Bm', 'Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Abm',
-  ];
+  static const _sharpKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  static const _flatKeys = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
   @override
   void initState() {
@@ -44,6 +44,7 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
       setState(() {
         _song = Song.fromJson(data);
         _transpose = 0;
+        _preferFlats = ChordTransposer.prefersFlats(_song?.key);
         _loading = false;
       });
     } catch (_) {
@@ -60,7 +61,7 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
     return ChordTransposer.transposeKey(
       original,
       _transpose,
-      preferFlats: ChordTransposer.prefersFlats(original),
+      preferFlats: _preferFlats,
     );
   }
 
@@ -68,10 +69,52 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
     setState(() => _transpose = (_transpose + delta).clamp(-11, 11));
   }
 
+  Future<void> _saveTranspose() async {
+    final song = _song;
+    final key = _displayKey;
+    if (song == null || key == null || _transpose == 0 || _savingTranspose) {
+      return;
+    }
+
+    setState(() => _savingTranspose = true);
+    try {
+      final chords = song.chords == null
+          ? null
+          : ChordTransposer.transposeText(
+              song.chords!,
+              _transpose,
+              preferFlats: _preferFlats,
+            );
+      await WorshipApi(ref.read(apiClientProvider)).updateSong(song.id, {
+        'key': key,
+        if (chords != null) 'chords': chords,
+      });
+      if (!mounted) return;
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Novo tom e cifra salvos com sucesso.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível salvar o novo tom.')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingTranspose = false);
+    }
+  }
+
   Future<void> _pickKey() async {
     final song = _song;
     if (song == null) return;
-    final original = song.key?.trim().isNotEmpty == true ? song.key!.trim() : 'C';
+    final original = song.key?.trim();
+    if (original == null || original.isEmpty) return;
+    final suffix = ChordTransposer.splitChord(original)?.$2 ?? '';
+    final isMinor = suffix.startsWith('min') ||
+        (suffix.startsWith('m') && !suffix.startsWith('maj'));
+    final roots = _preferFlats ? _flatKeys : _sharpKeys;
+    final keyOptions = roots.map((root) => isMinor ? '${root}m' : root).toList();
     final selected = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -96,7 +139,7 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
                 SizedBox(
                   height: 280,
                   child: GridView.builder(
-                    itemCount: _keyOptions.length,
+                    itemCount: keyOptions.length,
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       mainAxisSpacing: 8,
@@ -104,8 +147,8 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
                       childAspectRatio: 1.6,
                     ),
                     itemBuilder: (_, i) {
-                      final key = _keyOptions[i];
-                      final isSelected = _displayKey == key;
+                      final key = keyOptions[i];
+                      final isSelected = ChordTransposer.semitonesBetween(_displayKey ?? original, key) == 0;
                       return InkWell(
                         onTap: () => Navigator.pop(ctx, key),
                         borderRadius: BorderRadius.circular(10),
@@ -140,7 +183,10 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
     final semitones = ChordTransposer.semitonesBetween(original, selected);
     // Prefer shortest path signed (-5 instead of +7 when closer)
     final signed = semitones > 6 ? semitones - 12 : semitones;
-    setState(() => _transpose = signed);
+    setState(() {
+      _transpose = signed;
+      _preferFlats = selected.contains('b');
+    });
   }
 
   @override
@@ -228,7 +274,7 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
                 child: ChordViewer(
                   chords: s.chords!,
                   transpose: _transpose,
-                  preferFlats: ChordTransposer.prefersFlats(s.key),
+                  preferFlats: _preferFlats,
                   textStyle: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: _fontSize,
@@ -271,7 +317,8 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
   }
 
   Widget _buildTransposeControls(bool isDark) {
-    final displayKey = _displayKey ?? '—';
+    final hasOriginalKey = _song?.key?.trim().isNotEmpty == true;
+    final displayKey = _displayKey ?? 'Não informado';
     final card = isDark ? const Color(0xFF161622) : Colors.white;
     final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE5E7EB);
     final muted = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
@@ -297,7 +344,7 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
                 Text('Tom', style: TextStyle(fontSize: 12, color: muted, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 GestureDetector(
-                  onTap: _pickKey,
+                  onTap: hasOriginalKey ? _pickKey : null,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
@@ -315,8 +362,10 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
                             color: Color(0xFF008CFF),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        const Icon(Icons.expand_more_rounded, size: 18, color: Color(0xFF008CFF)),
+                        if (hasOriginalKey) ...[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.expand_more_rounded, size: 18, color: Color(0xFF008CFF)),
+                        ],
                       ],
                     ),
                   ),
@@ -336,11 +385,27 @@ class _SongDetailScreenState extends ConsumerState<SongDetailScreen> {
             onPressed: () => _shiftTranspose(1),
             icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF008CFF)),
           ),
-          if (_transpose != 0)
-            TextButton(
-              onPressed: () => setState(() => _transpose = 0),
-              child: const Text('Reset'),
+          if (_transpose != 0) ...[
+            IconButton(
+              tooltip: 'Salvar novo tom',
+              onPressed: _savingTranspose ? null : _saveTranspose,
+              icon: _savingTranspose
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_rounded, color: Color(0xFF008CFF)),
             ),
+            IconButton(
+              tooltip: 'Voltar ao tom original',
+              onPressed: () => setState(() {
+                _transpose = 0;
+                _preferFlats = ChordTransposer.prefersFlats(_song?.key);
+              }),
+              icon: const Icon(Icons.restart_alt_rounded),
+            ),
+          ],
         ],
       ),
     );
