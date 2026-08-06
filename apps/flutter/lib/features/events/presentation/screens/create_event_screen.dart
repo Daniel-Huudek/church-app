@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/calendar_date.dart';
 import '../providers/event_provider.dart';
 
 class CreateEventScreen extends ConsumerStatefulWidget {
@@ -46,11 +47,11 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       final rawYear = int.tryParse(parts[2]);
       if (day != null && month != null && rawYear != null) {
         final year = rawYear < 100 ? 2000 + rawYear : rawYear;
-        return DateTime(year, month, day).toIso8601String();
+        return calendarDatePayload(DateTime(year, month, day));
       }
     }
     final parsed = DateTime.tryParse(value);
-    return parsed?.toIso8601String() ?? value;
+    return parsed != null ? calendarDatePayload(parsed) : value;
   }
 
   void _handleSave() async {

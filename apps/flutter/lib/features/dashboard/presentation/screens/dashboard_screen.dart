@@ -7,6 +7,7 @@ import '../../../../core/config/theme/app_spacing.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/utils/calendar_date.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/widgets/animated/fade_in.dart';
 import '../../../../shared/widgets/animated/slide_up.dart';
@@ -42,10 +43,11 @@ class _PersonalScale {
 }
 
 DateTime _scaleMoment(DateTime date, String startTime) {
+  final day = calendarDate(date);
   final parts = startTime.split(':');
   final hour = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 0 : 0;
   final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
-  return DateTime(date.year, date.month, date.day, hour, minute);
+  return DateTime(day.year, day.month, day.day, hour, minute);
 }
 
 final _personalScaleProvider =
@@ -59,11 +61,6 @@ final _personalScaleProvider =
   if (member == null) return null;
 
   final candidates = <_PersonalScale>[];
-  final startOfToday = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    DateTime.now().day,
-  );
   final eventRepo = ref.read(eventRepositoryProvider);
 
   try {
@@ -78,7 +75,7 @@ final _personalScaleProvider =
 
       try {
         final event = (await eventRepo.getById(worshipEvent.eventId)).data;
-        if (event.date.isBefore(startOfToday)) continue;
+        if (isCalendarDateBeforeToday(event.date)) continue;
         final role = isMinister
             ? 'Ministro'
             : (musician?.instrument?.trim().isNotEmpty == true
@@ -123,7 +120,7 @@ final _personalScaleProvider =
         ministryId: deaconMinistries.first.id,
       );
       for (final schedule in schedules) {
-        if (schedule.date.isBefore(startOfToday)) continue;
+        if (isCalendarDateBeforeToday(schedule.date)) continue;
         final position = schedule.positionDetails
             .where((item) => item.memberId == member.id)
             .firstOrNull;
@@ -205,10 +202,9 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   List<EventModel> _upcoming(List<EventModel> events) {
-    final now = DateTime.now();
-    final startOfToday = DateTime(now.year, now.month, now.day);
     final upcoming = events
-        .where((e) => !e.date.isBefore(startOfToday) && e.status != 'CANCELADO')
+        .where((e) =>
+            isCalendarDateTodayOrFuture(e.date) && e.status != 'CANCELADO')
         .toList()
       ..sort((a, b) {
         final byDate = a.date.compareTo(b.date);
@@ -487,9 +483,10 @@ class _PersonalScaleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final day = DashboardScreen._eventDay.format(scale.date);
+    final scaleDay = calendarDate(scale.date);
+    final day = DashboardScreen._eventDay.format(scaleDay);
     final month = DashboardScreen._eventMonth
-        .format(scale.date)
+        .format(scaleDay)
         .replaceAll('.', '')
         .toUpperCase();
     final statusColor = scale.status == 'Confirmado'
@@ -1083,8 +1080,9 @@ class _EventRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final day = DashboardScreen._eventDay.format(event.date);
-    final month = DashboardScreen._eventMonth.format(event.date).toUpperCase();
+    final eventDay = calendarDate(event.date);
+    final day = DashboardScreen._eventDay.format(eventDay);
+    final month = DashboardScreen._eventMonth.format(eventDay).toUpperCase();
     final typeLabel = _typeLabels[event.type] ?? 'Evento';
 
     return Material(

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/utils/calendar_date.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/utils/person_name.dart';
 import '../../../../shared/widgets/scale_month_picker.dart';
@@ -153,7 +154,7 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
         } catch (_) {}
 
         final dayLabel = _capitalize(
-          DateFormat('EEEE, dd/MM', 'pt_BR').format(schedule.date),
+          DateFormat('EEEE, dd/MM', 'pt_BR').format(calendarDate(schedule.date)),
         );
         buffer.writeln('*$dayLabel — ${schedule.startTime}*');
         if (item.title.trim().isNotEmpty) {
@@ -221,12 +222,11 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
     final t1 = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF17233B);
     final t2 = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF667085);
 
-    final today = DateTime.now();
     final filtered = _items.where((item) {
       final date = item.schedule.date;
       return _tab == 0
-          ? !date.isBefore(DateTime(today.year, today.month, today.day))
-          : date.isBefore(DateTime(today.year, today.month, today.day));
+          ? isCalendarDateTodayOrFuture(date)
+          : isCalendarDateBeforeToday(date);
     }).toList()
       ..sort((a, b) => _tab == 0
           ? a.schedule.date.compareTo(b.schedule.date)
@@ -535,12 +535,13 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
     final progress = total == 0 ? 0.0 : (confirmed / total).clamp(0.0, 1.0);
     final card = isDark ? const Color(0xFF161622) : Colors.white;
     final border = isDark ? const Color(0xFF2D2D44) : const Color(0xFFE4E7EC);
+    final scheduleDay = calendarDate(schedule.date);
     final month = DateFormat('MMM', 'pt_BR')
-        .format(schedule.date)
+        .format(scheduleDay)
         .replaceAll('.', '')
         .toUpperCase();
     final weekday = _capitalize(
-      DateFormat('EEEE', 'pt_BR').format(schedule.date),
+      DateFormat('EEEE', 'pt_BR').format(scheduleDay),
     );
 
     return Material(
@@ -581,7 +582,7 @@ class _DeaconDashboardScreenState extends ConsumerState<DeaconDashboardScreen> {
                     child: Column(
                       children: [
                         Text(
-                          schedule.date.day.toString().padLeft(2, '0'),
+                          scheduleDay.day.toString().padLeft(2, '0'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,

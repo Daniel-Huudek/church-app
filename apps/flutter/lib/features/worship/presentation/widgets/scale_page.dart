@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/offline/offline_guard.dart';
+import '../../../../core/utils/calendar_date.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/utils/person_name.dart';
 import '../../../../shared/widgets/scale_month_picker.dart';
@@ -110,7 +111,9 @@ class _ScalePageState extends ConsumerState<ScalePage> {
         final date = item.event?.date ?? we.createdAt;
         final startTime = item.event?.startTime ?? '--:--';
         final title = item.event?.title ?? 'Evento';
-        final dayLabel = _capitalize(DateFormat("EEEE, dd/MM", 'pt_BR').format(date));
+        final dayLabel = _capitalize(
+          DateFormat("EEEE, dd/MM", 'pt_BR').format(calendarDate(date)),
+        );
 
         buffer.writeln('*$dayLabel — $startTime*');
         buffer.writeln(title);
@@ -229,8 +232,6 @@ class _ScalePageState extends ConsumerState<ScalePage> {
 
     final isDark = widget.isDark;
     final scaleTab = widget.scaleTab;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final currentUser = ref.read(authProvider).user;
     final currentUserId = currentUser?.id;
     final showAll = currentUser?.hasAnyRole(['ADMINISTRADOR', 'PASTOR', 'LIDER', 'LIDER_LOUVOR']) ?? false;
@@ -246,8 +247,9 @@ class _ScalePageState extends ConsumerState<ScalePage> {
         }
       }
       final date = item.event?.date ?? item.worshipEvent.createdAt;
-      final eventDate = DateTime(date.year, date.month, date.day);
-      return scaleTab == 0 ? eventDate.isAfter(today.subtract(const Duration(days: 1))) : eventDate.isBefore(today);
+      return scaleTab == 0
+          ? isCalendarDateTodayOrFuture(date)
+          : isCalendarDateBeforeToday(date);
     }).toList()
       ..sort((a, b) {
         final aDate = a.event?.date ?? a.worshipEvent.createdAt;
@@ -326,7 +328,7 @@ class _ScalePageState extends ConsumerState<ScalePage> {
                                   final startTime = ev?.startTime ?? '--:--';
                                   final confirmedCount = musicians.where((m) => m.isConfirmed).length;
                                   final title = ev?.title ?? 'Evento';
-                                  final date = ev?.date ?? we.createdAt;
+                                  final date = calendarDate(ev?.date ?? we.createdAt);
                                   final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                                   final day = date.day.toString().padLeft(2, '0');
                                   final month = months[date.month - 1];

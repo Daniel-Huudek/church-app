@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/offline/offline_guard.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/utils/calendar_date.dart';
 import '../../../../shared/models/user_model.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../events/presentation/providers/event_provider.dart';
@@ -461,7 +462,7 @@ class _SummaryBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateLabel = DateFormat("dd 'de' MMMM 'de' yyyy (EEEE)", 'pt_BR')
-        .format(date);
+        .format(calendarDate(date));
     final progress = total == 0 ? 0.0 : confirmed / total;
 
     return Container(
